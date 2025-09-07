@@ -1,11 +1,16 @@
-'use client'; 
+'use client';
 
 import { useState } from 'react';
 import CareerCard from "@/components/CareerCard";
-import { fetchRecommendations } from '@/lib/api'; // Import our new API function
-import { Recommendation } from '@/types';      // Import our new data type
+import { Recommendation } from '@/types';
+import { fetchRecommendations, saveRecommendationToHistory } from '@/lib/api'; // Import our data fetching and saving functions
+import { useAuth } from '@/context/AuthContext'; // Import the useAuth hook to get the logged-in user
 
 export default function Home() {
+  // Get the current logged-in user from our AuthContext
+  const { user } = useAuth(); 
+
+  // State variables to manage the form and results
   const [academicStream, setAcademicStream] = useState('Computer Science');
   const [skills, setSkills] = useState('Python, JavaScript, SQL');
   const [interests, setInterests] = useState('AI Ethics, Open Source');
@@ -13,21 +18,32 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // This function runs when the user clicks the "Get AI Recommendations" button
   const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+    event.preventDefault(); // Prevents the browser from reloading the page
     setIsLoading(true);
     setError('');
     setRecommendations([]);
 
+    // Prepare the input for the API
+    const skillsArray = skills.split(',').map(s => s.trim());
+    const interestsArray = interests.split(',').map(i => i.trim());
+
     try {
-      const userInput = {
-        academicStream,
-        skills: skills.split(',').map(s => s.trim()),
-        interests: interests.split(',').map(i => i.trim()),
-      };
-      
-      const data = await fetchRecommendations(userInput);
-      setRecommendations(data.careerPaths);
+      // 1. Fetch new recommendations from our backend
+      const newRecommendations = await fetchRecommendations(academicStream, skillsArray, interestsArray);
+      setRecommendations(newRecommendations);
+
+      // 2. If a user is logged in AND we got results, save them to Firestore
+      if (user && newRecommendations.length > 0) {
+        const userInput = {
+          academicStream,
+          skills: skillsArray,
+          interests: interestsArray,
+        };
+        // We pass the user's unique ID (user.uid) to the save function
+        await saveRecommendationToHistory(user.uid, userInput, newRecommendations);
+      }
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
@@ -85,7 +101,7 @@ export default function Home() {
         </button>
       </form>
 
-      {/* Results Section */}
+      {/* Results Section: Shows loading, error, or the final cards */}
       {isLoading && <p className="text-white text-center">Loading recommendations...</p>}
       {error && <p className="text-red-500 text-center">{error}</p>}
       
@@ -102,3 +118,4 @@ export default function Home() {
     </div>
   );
 }
+
