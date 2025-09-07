@@ -18,13 +18,13 @@ const Sidebar = () => {
       <div className="mb-10">
         <Link href="/" className="flex items-center gap-2">
           <Image
-            src="/logo.jpg" // The path starts from the 'public' folder
+            src="/logo.png" // The path starts from the 'public' folder
             alt="SkillSphere Logo"
             width={40} // Specify the width
             height={40} // Specify the height
             priority // Helps load the logo faster
           />
-          <span className="text-2xl font-bold">SkillSphere</span>
+          {/* <span className="text-2xl font-bold">SkillSphere</span> */}
         </Link>
       </div>
       {/* --- END OF UPDATE --- */}
