@@ -1,17 +1,11 @@
-'use client'; // This makes the component interactive
+'use client'; 
 
 import { useState } from 'react';
 import CareerCard from "@/components/CareerCard";
-
-// Define a type for our recommendation data for better code quality
-type Recommendation = {
-  title: string;
-  justification: string;
-  roadmap: string[];
-};
+import { fetchRecommendations } from '@/lib/api'; // Import our new API function
+import { Recommendation } from '@/types';      // Import our new data type
 
 export default function Home() {
-  // State variables to hold our data
   const [academicStream, setAcademicStream] = useState('Computer Science');
   const [skills, setSkills] = useState('Python, JavaScript, SQL');
   const [interests, setInterests] = useState('AI Ethics, Open Source');
@@ -19,30 +13,20 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Function to handle the form submission
   const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault(); // Prevent the page from reloading
+    event.preventDefault();
     setIsLoading(true);
     setError('');
     setRecommendations([]);
 
     try {
-      // Call your backend API
-      const response = await fetch('https://skillsphere-backend-479787868915.asia-south1.run.app/api/generate-recommendations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          academicStream,
-          skills: skills.split(',').map(s => s.trim()), // Convert string to array
-          interests: interests.split(',').map(i => i.trim()), // Convert string to array
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to get recommendations from the server.');
-      }
-
-      const data = await response.json();
+      const userInput = {
+        academicStream,
+        skills: skills.split(',').map(s => s.trim()),
+        interests: interests.split(',').map(i => i.trim()),
+      };
+      
+      const data = await fetchRecommendations(userInput);
       setRecommendations(data.careerPaths);
 
     } catch (err) {
