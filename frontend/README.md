@@ -1,37 +1,122 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+SkillSphere: AI-Powered Skill & Career Advisor
+SkillSphere is a modern, full-stack web application designed to provide personalized career and skill recommendations to users based on their academic background, existing skills, and personal interests. Leveraging the power of Google's Gemini AI, this application offers tailored advice to help guide users on their professional journey.
 
-## Getting Started
+The application is fully deployed to the cloud, featuring a responsive user interface, user authentication, and a persistent history of recommendations.
 
-First, run the development server:
+Live Application URL: https://skillsphere-app.web.app
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+(Suggestion: Create a folder named readme-assets in your root directory and add a nice screenshot of your app named skillsphere-screenshot.jpg)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+✨ Features
+Personalized AI Recommendations: Utilizes Google's Gemini Pro model to generate three distinct career paths based on user inputs.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Detailed Career Roadmaps: Each recommendation includes a clear justification and actionable steps for the user to follow.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Secure User Authentication: Users can sign in securely with their Google accounts via Firebase Authentication.
 
-## Learn More
+Persistent History: Logged-in users have their recommendation history automatically saved to a private collection in Cloud Firestore.
 
-To learn more about Next.js, take a look at the following resources:
+Fully Responsive UI: The user interface is built with Next.js and Tailwind CSS, providing a seamless experience on both desktop and mobile devices.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Professional Architecture: The codebase is organized into a scalable monorepo structure, with a clear separation between the frontend and a service-oriented backend.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Cloud-Native Deployment: The entire application is deployed on Google Cloud Platform, with the backend running on Cloud Run and the frontend on Firebase Hosting.
 
-## Deploy on Vercel
+🛠️ Tech Stack & Architecture
+This project is a full-stack application built with a modern, cloud-native architecture.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Frontend
+Framework: Next.js (with App Router)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-"# skillsphere-ai-advisor" 
+Language: TypeScript
+
+Styling: Tailwind CSS
+
+Authentication: Firebase Authentication
+
+Database: Cloud Firestore for user history.
+
+Deployment: Firebase Hosting
+
+Backend
+Framework: Node.js with Express.js
+
+Language: JavaScript
+
+AI Integration: Google Vertex AI SDK for the Gemini Pro model.
+
+Containerization: Docker
+
+Deployment: Google Cloud Run
+
+Project Structure
+The project is organized as a monorepo with two main packages: frontend and backend.
+
+SkillSphere/
+├── backend/          # Node.js backend service
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── routes/
+│   │   └── services/
+│   ├── Dockerfile
+│   └── ...
+├── frontend/         # Next.js frontend application
+│   ├── src/
+│   │   ├── app/
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── lib/
+│   │   └── types/
+│   └── ...
+└── README.md
+
+🚀 Getting Started Locally
+Prerequisites
+Node.js (v18 or later)
+
+Docker Desktop
+
+Google Cloud SDK (gcloud)
+
+Firebase CLI (firebase-tools)
+
+Setup Instructions
+Clone the repository:
+
+git clone [https://github.com/your-username/your-repo-name.git](https://github.com/your-username/your-repo-name.git)
+cd your-repo-name
+
+Configure Backend:
+
+Navigate to the backend directory: cd backend
+
+Create a .env file and populate it with your Google Cloud Project ID and region.
+
+Install dependencies: npm install
+
+Authenticate with Google Cloud for local development: gcloud auth application-default login
+
+Configure Frontend:
+
+Navigate to the frontend directory: cd frontend
+
+In src/lib/firebase.ts, replace the placeholder firebaseConfig with your actual Firebase web app configuration.
+
+Install dependencies: npm install
+
+Authenticate with Firebase: firebase login
+
+Run the Application:
+
+Start the backend server (from the backend folder): npm start
+
+Start the frontend development server (from the frontend folder): npm run dev
+
+The application will be available at http://localhost:3000.
+
+☁️ Deployment
+The application is designed for a full cloud deployment on Google Cloud Platform.
+
+Backend (Cloud Run): The backend is containerized using Docker and deployed as a serverless service on Cloud Run. The deployment is configured to run with a dedicated service account that has Vertex AI User permissions. The service is also configured with a minimum of 1 instance to prevent cold starts.
+
+Frontend (Firebase Hosting): The frontend is a static Next.js application deployed to Firebase Hosting, which provides a global CDN for fast delivery.
