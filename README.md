@@ -1,5 +1,5 @@
 SkillSphere: AI-Powered Skill & Career Advisor
-SkillSphere is a modern, full-stack web application designed to provide personalized career and skill recommendations to users based on their academic background, existing skills, and personal interests. Leveraging the power of Google's Gemini AI, this application offers tailored advice to help guide users on their professional journey.
+SkillSphere is a modern, full-stack web application designed to provide personalized career and skill recommendations. Leveraging the power of Google's Gemini AI, this application offers tailored advice to help guide users on their professional journey.
 
 The application is fully deployed to the cloud, featuring a responsive user interface, user authentication, and a persistent history of recommendations.
 
@@ -7,7 +7,7 @@ Live Application URL: https://skillsphere-app.web.app
 
 (Suggestion: Create a folder named readme-assets in your root directory and add a nice screenshot of your app named skillsphere-screenshot.jpg)
 
-✨ Features
+✨ Core Features
 Personalized AI Recommendations: Utilizes Google's Gemini Pro model to generate three distinct career paths based on user inputs.
 
 Detailed Career Roadmaps: Each recommendation includes a clear justification and actionable steps for the user to follow.
@@ -34,7 +34,7 @@ Styling: Tailwind CSS
 
 Authentication: Firebase Authentication
 
-Database: Cloud Firestore for user history.
+Database (Client): Cloud Firestore
 
 Deployment: Firebase Hosting
 
@@ -53,14 +53,14 @@ Project Structure
 The project is organized as a monorepo with two main packages: frontend and backend.
 
 SkillSphere/
-├── backend/          # Node.js backend service
+├── backend/
 │   ├── src/
 │   │   ├── controllers/
 │   │   ├── routes/
 │   │   └── services/
 │   ├── Dockerfile
 │   └── ...
-├── frontend/         # Next.js frontend application
+├── frontend/
 │   ├── src/
 │   │   ├── app/
 │   │   ├── components/
@@ -90,17 +90,17 @@ Configure Backend:
 
 Navigate to the backend directory: cd backend
 
-Create a .env file and populate it with your Google Cloud Project ID and region.
+Create a .env file and add your Google Cloud PROJECT_ID and REGION.
 
 Install dependencies: npm install
 
-Authenticate with Google Cloud for local development: gcloud auth application-default login
+Authenticate for local development: gcloud auth application-default login
 
 Configure Frontend:
 
 Navigate to the frontend directory: cd frontend
 
-In src/lib/firebase.ts, replace the placeholder firebaseConfig with your actual Firebase web app configuration.
+In src/lib/firebase.ts, replace the placeholder firebaseConfig with your actual Firebase web app configuration keys.
 
 Install dependencies: npm install
 
@@ -110,13 +110,13 @@ Run the Application:
 
 Start the backend server (from the backend folder): npm start
 
-Start the frontend development server (from the frontend folder): npm run dev
+Start the frontend server (from the frontend folder): npm run dev
 
-The application will be available at http://localhost:3000.
+The application will then be available at http://localhost:3000.
 
 ☁️ Deployment
 The application is designed for a full cloud deployment on Google Cloud Platform.
 
-Backend (Cloud Run): The backend is containerized using Docker and deployed as a serverless service on Cloud Run. The deployment is configured to run with a dedicated service account that has Vertex AI User permissions. The service is also configured with a minimum of 1 instance to prevent cold starts.
+Backend (Cloud Run): The backend is containerized using Docker and deployed as a serverless service on Cloud Run. It is configured to run with a dedicated service account and has a minimum of 1 instance to prevent cold starts.
 
 Frontend (Firebase Hosting): The frontend is a static Next.js application deployed to Firebase Hosting, which provides a global CDN for fast delivery.
