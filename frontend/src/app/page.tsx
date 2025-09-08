@@ -3,13 +3,15 @@
 import { useState } from 'react';
 import CareerCard from "@/components/CareerCard";
 import { Recommendation } from '@/types';
-import { fetchRecommendations, saveRecommendationToHistory } from '@/lib/api';
-import { useAuth } from '@/context/AuthContext';
-import LoadingSpinner from '@/components/LoadingSpinner'; // 1. Import the new component
+import { fetchRecommendations, saveRecommendationToHistory } from '@/lib/api'; // Import our data fetching and saving functions
+import { useAuth } from '@/context/AuthContext'; // Import the useAuth hook to get the logged-in user
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function Home() {
+  // Get the current logged-in user from our AuthContext
   const { user } = useAuth(); 
 
+  // State variables to manage the form and results
   const [academicStream, setAcademicStream] = useState('Computer Science');
   const [skills, setSkills] = useState('Python, JavaScript, SQL');
   const [interests, setInterests] = useState('AI Ethics, Open Source');
@@ -17,23 +19,33 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // This function runs when the user clicks the "Get AI Recommendations" button
   const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+    event.preventDefault(); // Prevents the browser from reloading the page
     setIsLoading(true);
     setError('');
     setRecommendations([]);
 
+    // Prepare the input for the API
     const skillsArray = skills.split(',').map(s => s.trim());
     const interestsArray = interests.split(',').map(i => i.trim());
 
     try {
+      // 1. Fetch new recommendations from our backend
       const newRecommendations = await fetchRecommendations(academicStream, skillsArray, interestsArray);
       setRecommendations(newRecommendations);
 
+      // 2. If a user is logged in AND we got results, save them to Firestore
       if (user && newRecommendations.length > 0) {
-        const userInput = { academicStream, skills: skillsArray, interests: interestsArray };
+        const userInput = {
+          academicStream,
+          skills: skillsArray,
+          interests: interestsArray,
+        };
+        // We pass the user's unique ID (user.uid) to the save function
         await saveRecommendationToHistory(user.uid, userInput, newRecommendations);
       }
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     } finally {
@@ -43,12 +55,16 @@ export default function Home() {
 
   return (
     <div>
-      <h1 className="text-4xl font-bold text-white">Personalized Recommendations</h1>
-      <p className="text-slate-400 mt-2 mb-8">Powered by Google Gemini AI</p>
+      <h1 className="text-4xl font-bold text-white">
+        Personalized Recommendations
+      </h1>
+      <p className="text-slate-400 mt-2 mb-8">
+        Powered by Google Gemini AI
+      </p>
 
-      {/* Input Form (no changes here) */}
+      {/* Input Form */}
       <form onSubmit={handleSubmit} className="bg-slate-800 p-6 rounded-lg mb-8">
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Academic Stream</label>
             <input 
@@ -86,7 +102,7 @@ export default function Home() {
         </button>
       </form>
 
-      {/* --- THIS IS THE UPDATED RESULTS SECTION --- */}
+      {/* Results Section: Shows loading, error, or the final cards */}
       <div className="mt-8">
         {isLoading && (
           <div className="flex justify-center py-10">
