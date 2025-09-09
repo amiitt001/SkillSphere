@@ -3,7 +3,7 @@
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
-import Image from 'next/image'; // <-- THIS IS THE MISSING IMPORT
+import Image from 'next/image';
 
 const Auth = () => {
   const { user, loading } = useAuth();
@@ -25,14 +25,14 @@ const Auth = () => {
     <div>
       {user ? (
         <div className="flex items-center gap-3">
-          {/* This div wrapper ensures the image doesn't get squished by the layout */}
-          <div className="flex-shrink-0">
+          {/* This wrapper div now has explicit sizing and flex properties */}
+          <div className="flex-shrink-0 w-10 h-10"> 
             <Image
-              src={user.photoURL || '/logo.png'} // Use a fallback image
+              src={user.photoURL || '/logo.png'}
               alt={user.displayName || 'User'}
               width={40}
               height={40}
-              className="w-10 h-10 rounded-full"
+              className="w-full h-full rounded-full object-cover" // Ensures image fills the container
             />
           </div>
           <span className="text-white font-medium hidden sm:block">{user.displayName}</span>
@@ -50,3 +50,4 @@ const Auth = () => {
 };
 
 export default Auth;
+
