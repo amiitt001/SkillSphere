@@ -3,49 +3,39 @@
 import { useState } from 'react';
 import CareerCard from "@/components/CareerCard";
 import { Recommendation } from '@/types';
-import { fetchRecommendations, saveRecommendationToHistory } from '@/lib/api'; // Import our data fetching and saving functions
-import { useAuth } from '@/context/AuthContext'; // Import the useAuth hook to get the logged-in user
+import { fetchRecommendations, saveRecommendationToHistory } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import TagInput from '@/components/TagInput'; // 1. Import our new component
 
 export default function Home() {
-  // Get the current logged-in user from our AuthContext
   const { user } = useAuth(); 
 
-  // State variables to manage the form and results
   const [academicStream, setAcademicStream] = useState('Computer Science');
-  const [skills, setSkills] = useState('Python, JavaScript, SQL');
-  const [interests, setInterests] = useState('AI Ethics, Open Source');
+  
+  // 2. State for skills and interests is now an array of strings
+  const [skills, setSkills] = useState<string[]>(['Python', 'JavaScript', 'SQL']);
+  const [interests, setInterests] = useState<string[]>(['AI Ethics', 'Open Source']);
+  
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // This function runs when the user clicks the "Get AI Recommendations" button
   const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault(); // Prevents the browser from reloading the page
+    event.preventDefault();
     setIsLoading(true);
     setError('');
     setRecommendations([]);
 
-    // Prepare the input for the API
-    const skillsArray = skills.split(',').map(s => s.trim());
-    const interestsArray = interests.split(',').map(i => i.trim());
-
     try {
-      // 1. Fetch new recommendations from our backend
-      const newRecommendations = await fetchRecommendations(academicStream, skillsArray, interestsArray);
+      // 3. We can now use the skills and interests arrays directly
+      const newRecommendations = await fetchRecommendations(academicStream, skills, interests);
       setRecommendations(newRecommendations);
 
-      // 2. If a user is logged in AND we got results, save them to Firestore
       if (user && newRecommendations.length > 0) {
-        const userInput = {
-          academicStream,
-          skills: skillsArray,
-          interests: interestsArray,
-        };
-        // We pass the user's unique ID (user.uid) to the save function
+        const userInput = { academicStream, skills, interests };
         await saveRecommendationToHistory(user.uid, userInput, newRecommendations);
       }
-
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     } finally {
@@ -64,33 +54,25 @@ export default function Home() {
 
       {/* Input Form */}
       <form onSubmit={handleSubmit} className="bg-slate-800 p-6 rounded-lg mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Academic Stream</label>
             <input 
               type="text"
               value={academicStream}
               onChange={(e) => setAcademicStream(e.target.value)}
-              className="w-full bg-slate-700 text-white rounded-md p-2 border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+              className="w-full bg-slate-700 text-white rounded-md p-2 border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none min-h-[44px]"
             />
           </div>
+
+          {/* 4. Replace the old inputs with our new TagInput component */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Skills (comma-separated)</label>
-            <input 
-              type="text"
-              value={skills}
-              onChange={(e) => setSkills(e.target.value)}
-              className="w-full bg-slate-700 text-white rounded-md p-2 border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none"
-            />
+            <label className="block text-sm font-medium text-slate-300 mb-2">Skills</label>
+            <TagInput tags={skills} setTags={setSkills} placeholder="Type a skill and press Enter..." />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Interests (comma-separated)</label>
-            <input 
-              type="text"
-              value={interests}
-              onChange={(e) => setInterests(e.target.value)}
-              className="w-full bg-slate-700 text-white rounded-md p-2 border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none"
-            />
+            <label className="block text-sm font-medium text-slate-300 mb-2">Interests</label>
+            <TagInput tags={interests} setTags={setInterests} placeholder="Type an interest and press Enter..." />
           </div>
         </div>
         <button 
@@ -102,7 +84,7 @@ export default function Home() {
         </button>
       </form>
 
-      {/* Results Section: Shows loading, error, or the final cards */}
+      {/* Results Section (no changes here) */}
       <div className="mt-8">
         {isLoading && (
           <div className="flex justify-center py-10">

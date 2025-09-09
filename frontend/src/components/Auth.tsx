@@ -3,7 +3,7 @@
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
-import Image from 'next/image';
+// We are no longer using the Next.js Image component, so the import is removed.
 
 const Auth = () => {
   const { user, loading } = useAuth();
@@ -25,14 +25,15 @@ const Auth = () => {
     <div>
       {user ? (
         <div className="flex items-center gap-3">
-          {/* This wrapper div now has explicit sizing and flex properties */}
-          <div className="flex-shrink-0 w-10 h-10"> 
-            <Image
-              src={user.photoURL || '/logo.png'}
+          <div className="flex-shrink-0 w-10 h-10">
+            {/* --- THIS IS THE FIX --- */}
+            {/* Using a standard HTML img tag to bypass Next.js optimization */}
+            <img
+              src={user.photoURL || '/logo.png'} // Fallback to logo if no photo
               alt={user.displayName || 'User'}
-              width={40}
-              height={40}
-              className="w-full h-full rounded-full object-cover" // Ensures image fills the container
+              width="40"
+              height="40"
+              className="w-full h-full rounded-full object-cover"
             />
           </div>
           <span className="text-white font-medium hidden sm:block">{user.displayName}</span>
