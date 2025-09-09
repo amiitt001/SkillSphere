@@ -5,7 +5,6 @@
 [![Cloud Run](https://img.shields.io/badge/Backend-GCP%20Cloud%20Run-blue)]()  
 [![Next.js](https://img.shields.io/badge/Frontend-Next.js-black)]()  
 [![Tailwind CSS](https://img.shields.io/badge/Style-TailwindCSS-teal)]()  
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)  
 
 👉 **Live Demo:** [SkillSphere Web App](https://skillsphere-app.web.app)  
 
@@ -146,8 +145,6 @@ SkillSphere/
 │   │   └── types/
 │   └── ...
 └── README.md
-<<<<<<< HEAD
-=======
 
 🚀 Getting Started Locally
 Prerequisites
@@ -199,4 +196,3 @@ The application is designed for a full cloud deployment on Google Cloud Platform
 Backend (Cloud Run): The backend is containerized using Docker and deployed as a serverless service on Cloud Run. It is configured to run with a dedicated service account and has a minimum of 1 instance to prevent cold starts.
 
 Frontend (Firebase Hosting): The frontend is a static Next.js application deployed to Firebase Hosting, which provides a global CDN for fast delivery.
->>>>>>> 6f9f51ae33da0aa6d724bda38432ad158394c9de
