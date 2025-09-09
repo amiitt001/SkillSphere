@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🚀 SkillSphere: AI-Powered Skill & Career Advisor  
 
 [![Firebase Hosting](https://img.shields.io/badge/Hosting-Firebase-orange)]()  
@@ -132,11 +131,7 @@ SkillSphere/
 │   │   └── services/
 │   ├── Dockerfile
 │   └── ...
-<<<<<<< HEAD
 ├── frontend/          # Next.js frontend application
-=======
-├── frontend/
->>>>>>> 6f9f51ae33da0aa6d724bda38432ad158394c9de
 │   ├── src/
 │   │   ├── app/
 │   │   ├── components/
