@@ -49,8 +49,8 @@ export default function Home() {
         Personalized Recommendations
       </h1>
       <p className="text-slate-400 mt-2 mb-8">
-        Powered by Google Gemini AI
-      </p>
+  Your Personal AI Career Navigator - Now Deployed Automatically!
+</p>
 
       {/* Input Form */}
       <form onSubmit={handleSubmit} className="bg-slate-800 p-6 rounded-lg mb-8">

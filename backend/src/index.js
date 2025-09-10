@@ -22,4 +22,5 @@ app.use('/api', recommendationRoutes);
 // Start the server
 app.listen(port, () => {
   console.log(`Backend server is running on http://localhost:${port}`);
+  console.log('✅ CI/CD test: This version was deployed automatically by GitHub Actions!');
 });
