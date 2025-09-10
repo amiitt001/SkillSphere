@@ -1,0 +1,47 @@
+# Name of the workflow
+name: Deploy Frontend to Firebase Hosting
+
+# When this workflow should run
+on:
+  push:
+    branches:
+      - main # Run only when code is pushed to the main branch
+    paths:
+      - 'frontend/**' # Only run if changes were made inside the frontend folder
+
+# The sequence of jobs to run
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest # Use a standard Linux virtual machine
+
+    steps:
+      # Step 1: Check out the repository code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # Use Node.js version 18
+
+      # Step 3: Install dependencies and build the frontend
+      # The working-directory tells the step to run commands inside the 'frontend' folder
+      - name: Install and Build
+        run: |
+          cd frontend
+          npm install
+          npm run build
+        
+      # Step 4: Deploy to Firebase Hosting
+      - name: Deploy to Firebase
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_TOKEN }}' # Use the token we stored
+          channelId: live
+          projectId: '${{ secrets.FIREBASE_PROJECT_ID }}' # Use the project ID we stored
+          entryPoint: ./frontend # Specify the root of the frontend project
+
+
+    
