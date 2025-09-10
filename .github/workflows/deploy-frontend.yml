@@ -5,13 +5,13 @@ name: Deploy Frontend to Firebase Hosting
 on:
   push:
     branches:
-      - main
+      - main # Run only when code is pushed to the main branch
     paths:
-      - 'frontend/**'
+      - 'frontend/**' # Only run if changes were made inside the frontend folder
 
 jobs:
   build_and_deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # Use a standard Linux virtual machine
 
     steps:
       # Step 1: Check out the repository code
@@ -38,19 +38,8 @@ jobs:
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' # Use the service account JSON stored as a secret
           channelId: live
-          projectId: '${{ secrets.FIREBASE_PROJECT_ID }}'
-          entryPoint: ./frontend
-# ```
-
-# I've updated your `deploy-frontend.yml` file.
-
-# Now, all you need to do is commit this change and push it to your GitHub repository.
-
-# ```bash
-# # (Run from your main SkillSphere project folder)
-# git add .
-# git commit -m "fix(ci): Update Node.js version to 20 for frontend deployment"
-# git push origin main
+          projectId: 'skillsphere-app' # Replace with your actual Firebase project ID
+          entryPoint: ./frontend # Specify the root of the frontend project
 
