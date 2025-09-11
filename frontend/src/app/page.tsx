@@ -1,5 +1,7 @@
 'use client';
 
+// This is a test comment to trigger the CI/CD workflow.
+
 import { useState } from 'react';
 import CareerCard from "@/components/CareerCard";
 import { Recommendation } from '@/types';
