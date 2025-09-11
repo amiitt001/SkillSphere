@@ -5,13 +5,13 @@ name: Deploy Frontend to Firebase Hosting
 on:
   push:
     branches:
-      - main # Run only when code is pushed to the main branch
+      - main
     paths:
-      - 'frontend/**' # Only run if changes were made inside the frontend folder
+      - 'frontend/**'
 
 jobs:
   build_and_deploy:
-    runs-on: ubuntu-latest # Use a standard Linux virtual machine
+    runs-on: ubuntu-latest
 
     steps:
       # Step 1: Check out the repository code
@@ -38,8 +38,8 @@ jobs:
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' # Use the service account JSON stored as a secret
+          firebaseServiceAccount: '${{ secrets.FIREBASE_TOKEN }}'
           channelId: live
-          projectId: 'skillsphere-app' # Replace with your actual Firebase project ID
-          entryPoint: ./frontend # Specify the root of the frontend project
+          projectId: '${{ secrets.FIREBASE_PROJECT_ID }}'
+          entryPoint: ./frontend
 
