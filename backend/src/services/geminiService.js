@@ -1,23 +1,19 @@
 const { VertexAI } = require('@google-cloud/vertexai');
 
-// --- Google Gemini AI Configuration ---
+// AI Configuration (unchanged)
 const vertex_ai = new VertexAI({
   project: process.env.GCLOUD_PROJECT_ID,
   location: process.env.GCLOUD_REGION,
 });
-
-const generativeModel = vertex_ai.getGenerativeModel({
-  model: 'gemini-1.0-pro', // Using the stable model
-});
-// --- End of AI Configuration ---
+const generativeModel = vertex_ai.getGenerativeModel({ model: 'gemini-1.0-pro' });
 
 async function generateCareerRecommendations(userInput) {
   const { academicStream, skills, interests } = userInput;
 
-  // A detailed prompt for the AI
+  // --- THIS IS THE UPDATED PROMPT ---
   const prompt = `
     You are an expert career and skills advisor named "SkillSphere".
-    Your task is to provide personalized career path recommendations based on a user's academic stream, skills, and interests.
+    Your task is to provide personalized career path recommendations for a user in India based on their academic stream, skills, and interests.
 
     User's Profile:
     - Academic Stream: ${academicStream}
@@ -26,8 +22,28 @@ async function generateCareerRecommendations(userInput) {
 
     Instructions:
     1.  Analyze the user's profile to identify 3 distinct and relevant career paths.
-    2.  For each path, provide a "title", a concise "justification", and a "roadmap" (a list of 3-5 actionable steps).
-    3.  Your entire response MUST be a single, valid JSON object with a single key "careerPaths".
+    2.  For each path, provide the following information:
+        - "title": The name of the career path.
+        - "justification": A concise explanation of why it's a good fit for the user.
+        - "roadmap": A list of 3-5 actionable steps to pursue that career.
+        - "estimatedSalary": A typical annual salary range for this role in India (e.g., "₹8,00,000 - ₹15,00,000 LPA").
+        - "suggestedCertifications": A list of 2-3 relevant professional certifications.
+        - "keyCompanies": A list of 2-3 notable companies in India that hire for this role.
+    3.  Your entire response MUST be a single, valid JSON object with a single key "careerPaths". Do not include any text, markdown formatting, or notes before or after the JSON object.
+    
+    Example JSON format:
+    {
+      "careerPaths": [
+        {
+          "title": "Example Career",
+          "justification": "This fits your profile because...",
+          "roadmap": ["First step.", "Second step."],
+          "estimatedSalary": "₹X,XX,XXX - ₹Y,YY,YYY LPA",
+          "suggestedCertifications": ["Certification A", "Certification B"],
+          "keyCompanies": ["Company X", "Company Y"]
+        }
+      ]
+    }
   `;
 
   const req = {
@@ -47,7 +63,7 @@ async function generateCareerRecommendations(userInput) {
   }
 }
 
-// Export the function so other files can use it
 module.exports = {
   generateCareerRecommendations,
 };
+
