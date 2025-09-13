@@ -1,20 +1,27 @@
-import { collection, addDoc, serverTimestamp, doc, deleteDoc } from 'firebase/firestore'; // 1. Import 'doc' and 'deleteDoc'
+import { collection, addDoc, serverTimestamp, doc, deleteDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { Recommendation } from '@/types';
 
-// This function is unchanged
+// This is the function we need to update
 export async function fetchRecommendations(
   academicStream: string,
   skills: string[],
   interests: string[]
 ): Promise<Recommendation[]> {
-  const response = await fetch('https://skillsphere-vt5h.onrender.com/api/generate-recommendations', {
+
+  // --- THIS IS THE FIX ---
+  // Replace the old URL with your new, live Render backend URL
+  const backendUrl = 'https://skillsphere-vt5h.onrender.com/api/generate-recommendations';
+  
+  const response = await fetch(backendUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ academicStream, skills, interests }),
   });
 
   if (!response.ok) {
+    // This will now catch the CORS error if it still exists, but it shouldn't
+    console.error('Fetch response not OK:', response);
     throw new Error('Failed to get recommendations from the server.');
   }
 
@@ -22,7 +29,7 @@ export async function fetchRecommendations(
   return data.careerPaths;
 }
 
-// This function is unchanged
+// The other functions are unchanged
 export async function saveRecommendationToHistory(
   userId: string,
   input: { academicStream: string; skills: string[]; interests: string[] },
@@ -41,19 +48,15 @@ export async function saveRecommendationToHistory(
   }
 }
 
-// --- NEW FUNCTION ---
-// This function deletes a specific document from a user's history
 export async function deleteHistoryItem(userId: string, docId: string) {
   try {
-    // Create a direct reference to the document we want to delete
     const docRef = doc(db, 'users', userId, 'history', docId);
-    // Delete the document
     await deleteDoc(docRef);
     console.log("Successfully deleted history item!");
   } catch (error) {
     console.error("Error deleting history item:", error);
-    // Throw the error so the UI can handle it
     throw new Error("Failed to delete history item.");
   }
 }
+
 
