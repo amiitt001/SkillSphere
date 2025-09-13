@@ -8,7 +8,7 @@ export async function fetchRecommendations(
   skills: string[],
   interests: string[]
 ): Promise<Recommendation[]> {
-  const response = await fetch('https://skillsphere-backend-479787868915.asia-south1.run.app/api/generate-recommendations', {
+  const response = await fetch('https://skillsphere-vt5h.onrender.com/api/generate-recommendations', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ academicStream, skills, interests }),
