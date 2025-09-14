@@ -1,9 +1,9 @@
 // Import necessary packages
 const express = require('express');
-const cors = require('cors'); // Make sure 'cors' is required
+const cors = require('cors');
 require('dotenv').config();
 
-// Import our new routes
+// Import our routes
 const recommendationRoutes = require('./routes/recommendationsRoutes');
 
 // Initialize Express app
@@ -11,28 +11,30 @@ const app = express();
 const port = process.env.PORT || 8080;
 
 // --- THIS IS THE FIX ---
-// Define which origins are allowed to connect
+// Define the specific domains (origins) that are allowed to connect to this backend.
 const allowedOrigins = [
-  'https://skillsphere-app.web.app', // Your live frontend
-  'http://localhost:3000' // Your local development frontend
+  'https://skillsphere-app.web.app', // Your LIVE frontend URL
+  'http://localhost:3000'             // Your LOCAL development frontend URL
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
     }
+    return callback(null, true);
   }
 };
 
-// Use the CORS middleware with our options
+// Use the CORS middleware with our specific options
 app.use(cors(corsOptions));
 // --- END OF FIX ---
 
 
-// Middleware setup
+// Standard middleware
 app.use(express.json());
 
 // API Routes
@@ -41,7 +43,5 @@ app.use('/api', recommendationRoutes);
 // Start the server
 app.listen(port, () => {
   console.log(`Backend server is running on http://localhost:${port}`);
-  console.log('✅ CI/CD test: This version was deployed automatically by GitHub Actions!');
 });
-
 
