@@ -14,7 +14,7 @@ on:
 
 # Environment variables available to all jobs in this workflow
 env:
-  PROJECT_ID: skillsphere-live
+  PROJECT_ID: skillsphere-final
   GAR_LOCATION: asia-south1 # Google Artifact Registry location
   SERVICE_NAME: skillsphere-backend
   REGION: asia-south1 # Google Cloud Run location

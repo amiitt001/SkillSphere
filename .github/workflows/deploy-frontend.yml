@@ -14,26 +14,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Check out the repository code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
+          # --- THIS IS THE FIX ---
           # Use Node.js version 20, which is compatible with the latest Firebase tools
           node-version: '20'
 
-      # Step 3: Install dependencies and build the frontend
       - name: Install and Build
         run: |
           cd frontend
           npm install
           npm run build
         
-      # Step 4: Deploy to Firebase Hosting
-      - name: Deploy to Firebase
+      - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
