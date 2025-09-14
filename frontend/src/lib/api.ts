@@ -11,9 +11,9 @@ export async function fetchRecommendations(
 
   // --- THIS IS THE FIX ---
   // Replace the old URL with your new, live Render backend URL
-  const backendUrl = 'https://skillsphere-vt5h.onrender.com/api/generate-recommendations';
+  // const backendUrl = 'https://skillsphere-vt5h.onrender.com/api/generate-recommendations';
   
-  const response = await fetch(backendUrl, {
+ const response = await fetch('https://skillsphere-vt5h.onrender.com/api/generate-recommendations', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ academicStream, skills, interests }),
