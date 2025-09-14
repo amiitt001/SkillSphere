@@ -8,16 +8,18 @@ on:
     # Only for pushes to the 'main' branch
     branches:
       - main
-    # And only when files inside the 'backend/' folder are changed
+    # And only when files inside the 'backend/' folder or this workflow file itself are changed
     paths:
       - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
 
 # Environment variables available to all jobs in this workflow
 env:
-  PROJECT_ID: skillsphere-final
+  PROJECT_ID: skillsphere-final-472106
   GAR_LOCATION: asia-south1 # Google Artifact Registry location
   SERVICE_NAME: skillsphere-backend
   REGION: asia-south1 # Google Cloud Run location
+  RUNNER_SERVICE_ACCOUNT: skillsphere-final-runner@skillsphere-final-472106.iam.gserviceaccount.com
 
 jobs:
   build-and-deploy:
@@ -30,7 +32,7 @@ jobs:
         uses: actions/checkout@v4
 
       # Step 2: Authenticate to Google Cloud using the Service Account Key
-      # This is the more reliable method we switched to.
+      # This is the reliable method that bypasses the permission issues.
       - name: Authenticate to Google Cloud
         uses: 'google-github-actions/auth@v2'
         with:
@@ -57,6 +59,6 @@ jobs:
           gcloud run deploy ${{ env.SERVICE_NAME }} \
             --image=${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/skillsphere-images/${{ env.SERVICE_NAME }}:${{ github.sha }} \
             --region=${{ env.REGION }} \
-            --service-account=skillsphere-runner@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
+            --service-account=${{ env.RUNNER_SERVICE_ACCOUNT }} \
             --allow-unauthenticated
 
