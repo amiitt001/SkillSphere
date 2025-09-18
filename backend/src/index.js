@@ -1,26 +1,24 @@
-// Import necessary packages
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
+const dotenv = require('dotenv');
+// ... other imports
 
-// Import our routes
-const recommendationRoutes = require('./routes/recommendationsRoutes');
-
-// Initialize Express app
+dotenv.config();
 const app = express();
-const port = process.env.PORT || 8080;
 
-// --- THIS IS THE FIX ---
-// Define the specific domains (origins) that are allowed to connect to this backend.
+// --- START: CORS CONFIGURATION ---
+// 1. Define the list of allowed origins (your live frontend and local dev environment)
 const allowedOrigins = [
-  'https://skillsphere-app.web.app', // Your LIVE frontend URL
-  'http://localhost:3000'             // Your LOCAL development frontend URL
+  'https://skillsphere-app-d03b7.web.app',
+  'http://localhost:3000'
 ];
 
+// 2. Create the CORS options object
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
+    
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
       return callback(new Error(msg), false);
@@ -29,19 +27,17 @@ const corsOptions = {
   }
 };
 
-// Use the CORS middleware with our specific options
+// 3. Apply the CORS middleware with your options
 app.use(cors(corsOptions));
-// --- END OF FIX ---
+// --- END: CORS CONFIGURATION ---
 
 
-// Standard middleware
+// --- Your other middleware and routes ---
 app.use(express.json());
+// ... your routes like app.use('/api', recommendationRoutes);
 
-// API Routes
-app.use('/api', recommendationRoutes);
-
-// Start the server
-app.listen(port, () => {
-  console.log(`Backend server is running on http://localhost:${port}`);
+// ... your server listen code
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
 });
-
