@@ -10,7 +10,7 @@ const generativeModel = vertex_ai.getGenerativeModel({ model: 'gemini-1.0-pro' }
 async function generateCareerRecommendations(userInput) {
   const { academicStream, skills, interests } = userInput;
 
-  // --- THIS IS THE UPDATED PROMPT ---
+  // Prompt is unchanged
   const prompt = `
     You are an expert career and skills advisor named "SkillSphere".
     Your task is to provide personalized career path recommendations for a user in India based on their academic stream, skills, and interests.
@@ -54,9 +54,21 @@ async function generateCareerRecommendations(userInput) {
   };
 
   try {
-    const result = await generativeModel.generateContent(req);
-    const responseText = result.response.candidates[0].content.parts[0].text;
+    // --- THIS IS THE MODIFIED PART ---
+    // 1. Use generateContentStream instead of generateContent
+    const streamResult = await generativeModel.generateContentStream(req);
+
+    // 2. Aggregate the streamed chunks into a single string
+    let responseText = '';
+    for await (const item of streamResult.stream) {
+      if (item.candidates && item.candidates[0].content && item.candidates[0].content.parts[0]) {
+         responseText += item.candidates[0].content.parts[0].text;
+      }
+    }
+
+    // 3. Parse the fully assembled JSON string
     return JSON.parse(responseText);
+
   } catch (error) {
     console.error("Error communicating with Gemini AI:", error);
     throw new Error("Failed to get a valid response from the AI service.");
@@ -66,4 +78,3 @@ async function generateCareerRecommendations(userInput) {
 module.exports = {
   generateCareerRecommendations,
 };
-

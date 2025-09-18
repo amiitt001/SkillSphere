@@ -1,45 +1,62 @@
 'use client';
 
-// This is a test comment to trigger the CI/CD workflow.
-
 import { useState } from 'react';
-import CareerCard from "@/components/CareerCard";
-import { Recommendation } from '@/types';
-import { fetchRecommendations, saveRecommendationToHistory } from '@/lib/api';
+// We won't use CareerCard for the raw stream, so it can be removed if you don't use it elsewhere.
+// import CareerCard from "@/components/CareerCard"; 
 import { useAuth } from '@/context/AuthContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import TagInput from '@/components/TagInput'; // 1. Import our new component
+import TagInput from '@/components/TagInput';
 
 export default function Home() {
-  const { user } = useAuth(); 
+  const { user } = useAuth();
 
   const [academicStream, setAcademicStream] = useState('Computer Science');
-  
-  // 2. State for skills and interests is now an array of strings
   const [skills, setSkills] = useState<string[]>(['Python', 'JavaScript', 'SQL']);
   const [interests, setInterests] = useState<string[]>(['AI Ethics', 'Open Source']);
   
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  // --- CHANGE #1: State for the streaming text ---
+  // We'll store the incoming AI text in 'completion' instead of a structured 'recommendations' array.
+  const [completion, setCompletion] = useState('');
+  
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // --- CHANGE #2: The entire handleSubmit function is replaced with the streaming logic ---
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
     setError('');
-    setRecommendations([]);
+    setCompletion(''); // Clear previous completion text
 
     try {
-      // 3. We can now use the skills and interests arrays directly
-      const newRecommendations = await fetchRecommendations(academicStream, skills, interests);
-      setRecommendations(newRecommendations);
+      // Start the fetch request to your backend
+      const response = await fetch('https://skillsphere-vt5h.onrender.com/api/generate-recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ academicStream, skills, interests }),
+      });
 
-      if (user && newRecommendations.length > 0) {
-        const userInput = { academicStream, skills, interests };
-        await saveRecommendationToHistory(user.uid, userInput, newRecommendations);
+      if (!response.body) {
+        throw new Error('Response body is empty.');
+      }
+
+      // Get a reader and decoder to process the stream
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      // Read the stream in a loop
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break; // The stream is finished
+
+        // Decode the chunk and append it to our state
+        const decodedChunk = decoder.decode(value);
+        setCompletion((prev) => prev + decodedChunk);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+      const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+      setError(message);
+      console.error("Error fetching streaming data:", message);
     } finally {
       setIsLoading(false);
     }
@@ -51,10 +68,10 @@ export default function Home() {
         Personalized Recommendations
       </h1>
       <p className="text-slate-400 mt-2 mb-8">
-  Your Personal AI Career Navigator - Now Deployed Automatically!
-</p>
+        Your Personal AI Career Navigator - Now Deployed Automatically!
+      </p>
 
-      {/* Input Form */}
+      {/* Input Form (no changes here) */}
       <form onSubmit={handleSubmit} className="bg-slate-800 p-6 rounded-lg mb-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
@@ -66,8 +83,6 @@ export default function Home() {
               className="w-full bg-slate-700 text-white rounded-md p-2 border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none min-h-[44px]"
             />
           </div>
-
-          {/* 4. Replace the old inputs with our new TagInput component */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Skills</label>
             <TagInput tags={skills} setTags={setSkills} placeholder="Type a skill and press Enter..." />
@@ -86,29 +101,25 @@ export default function Home() {
         </button>
       </form>
 
-      {/* Results Section (no changes here) */}
+      {/* --- CHANGE #3: The results section now displays the raw streaming text --- */}
       <div className="mt-8">
-        {isLoading && (
+        {isLoading && !completion && (
           <div className="flex justify-center py-10">
             <LoadingSpinner />
           </div>
         )}
         {error && <p className="text-red-500 text-center">{error}</p>}
         
-        {!isLoading && !error && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recommendations.map((rec, index) => (
-              <CareerCard
-                key={index}
-                title={rec.title}
-                justification={rec.justification}
-                roadmap={rec.roadmap}
-              />
-            ))}
+        {/* Render the completion text as it arrives */}
+        {completion && (
+          <div className="bg-slate-800 p-6 rounded-lg text-white">
+            {/* Using a <pre> tag helps preserve formatting like newlines from the AI's response */}
+            <pre className="whitespace-pre-wrap font-sans">
+              {completion}
+            </pre>
           </div>
         )}
       </div>
     </div>
   );
 }
-
