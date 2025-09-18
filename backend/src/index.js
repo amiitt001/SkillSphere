@@ -36,6 +36,10 @@ app.use(cors(corsOptions));
 app.use(express.json());
 // ... your routes like app.use('/api', recommendationRoutes);
 
+// CORRECT VERSION
+const recommendationRoutes = require('./routes/recommendationsRoutes');
+app.use('/api', recommendationRoutes); // This adds the crucial prefix
+
 // ... your server listen code
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
