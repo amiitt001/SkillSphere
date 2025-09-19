@@ -1,6 +1,7 @@
 // In frontend/src/app/api/history/save/route.ts
 import { type NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
+export const dynamic = 'force-dynamic'; 
 
 // Change from POST to GET
 export async function GET(request: NextRequest) {
