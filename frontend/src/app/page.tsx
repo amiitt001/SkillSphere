@@ -13,11 +13,11 @@ export default function Home() {
   const [academicStream, setAcademicStream] = useState('Computer Science');
   const [skills, setSkills] = useState<string[]>(['Python', 'JavaScript', 'SQL']);
   const [interests, setInterests] = useState<string[]>(['AI Ethics', 'Open Source']);
-  
+
   // --- CHANGE #1: State for the streaming text ---
   // We'll store the incoming AI text in 'completion' instead of a structured 'recommendations' array.
   const [completion, setCompletion] = useState('');
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -76,7 +76,7 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Academic Stream</label>
-            <input 
+            <input
               type="text"
               value={academicStream}
               onChange={(e) => setAcademicStream(e.target.value)}
@@ -92,7 +92,7 @@ export default function Home() {
             <TagInput tags={interests} setTags={setInterests} placeholder="Type an interest and press Enter..." />
           </div>
         </div>
-        <button 
+        <button
           type="submit"
           disabled={isLoading}
           className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-md disabled:bg-slate-600 disabled:cursor-not-allowed"
@@ -109,7 +109,7 @@ export default function Home() {
           </div>
         )}
         {error && <p className="text-red-500 text-center">{error}</p>}
-        
+
         {/* Render the completion text as it arrives */}
         {completion && (
           <div className="bg-slate-800 p-6 rounded-lg text-white">
