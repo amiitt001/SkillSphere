@@ -5,11 +5,10 @@ import CareerCard from "@/components/CareerCard";
 import LoadingSpinner from '@/components/LoadingSpinner';
 import TagInput from '@/components/TagInput';
 import { Recommendation } from '@/types';
-import ComparisonTable from '@/components/ComparisonTable'; // Use the new table component
+import ComparisonTable from '@/components/ComparisonTable';
 import { saveRecommendationToHistory } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
-// Define the type for our new table data
 interface TableRow {
   feature: string;
   career1_details: string;
@@ -24,14 +23,12 @@ export default function Home() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
-  // State for the comparison feature
+  const [isUploading, setIsUploading] = useState(false);
   const [selectedCareers, setSelectedCareers] = useState<string[]>([]);
   const [isComparing, setIsComparing] = useState(false);
   const [comparisonSummary, setComparisonSummary] = useState('');
   const [tableData, setTableData] = useState<TableRow[]>([]);
 
-  // This function handles selecting and deselecting cards
   const handleSelectCareer = (title: string) => {
     setSelectedCareers(prevSelected => {
       if (prevSelected.includes(title)) {
@@ -44,7 +41,38 @@ export default function Home() {
     });
   };
 
-  // Main form submission to get initial recommendations
+  const handleResumeUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setError('');
+
+    const formData = new FormData();
+    formData.append('resume', file);
+
+    try {
+      const response = await fetch('/api/resume-upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload and process resume.');
+      }
+
+      const result = await response.json();
+      if (result.skills) {
+        setSkills(prevSkills => [...new Set([...prevSkills, ...result.skills])]);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+      setError(message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
@@ -69,12 +97,11 @@ export default function Home() {
         const resultJson = JSON.parse(jsonString);
         setRecommendations(resultJson.recommendations);
 
-
-        // if (user && resultJson.recommendations.length > 0) {
-        //   const userInput = { academicStream, skills, interests };
-        //   await saveRecommendationToHistory(user.uid, userInput, resultJson.recommendations);
-        //   console.log("History saved successfully via API!");
-        // }
+        if (user && resultJson.recommendations.length > 0) {
+          const userInput = { academicStream, skills, interests };
+          await saveRecommendationToHistory(user.uid, userInput, resultJson.recommendations);
+          console.log("History saved successfully via API!");
+        }
       } else {
         throw new Error("No valid JSON object found in the AI response.");
       }
@@ -87,7 +114,6 @@ export default function Home() {
     }
   };
 
-  // Function to get the career comparison from the AI
   const handleCompare = async () => {
     if (selectedCareers.length !== 2) return;
     setIsComparing(true);
@@ -99,14 +125,11 @@ export default function Home() {
       const params = new URLSearchParams({ career1: selectedCareers[0], career2: selectedCareers[1] });
       const url = `/api/compare-careers?${params.toString()}`;
       const response = await fetch(url);
-
       if (!response.ok || !response.body) { throw new Error(`Server responded with status: ${response.status}`); }
-
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let fullResponse = '';
       while (true) { const { done, value } = await reader.read(); if (done) break; fullResponse += decoder.decode(value); }
-
       const jsonMatch = fullResponse.match(/{[\s\S]*}/);
       if (jsonMatch && jsonMatch[0]) {
         const jsonString = jsonMatch[0];
@@ -129,17 +152,47 @@ export default function Home() {
       <h1 className="text-4xl font-bold text-white">Personalized Recommendations</h1>
       <p className="text-slate-400 mt-2 mb-8">Powered by Google Gemini AI</p>
 
-      {/* Input Form (Unchanged) */}
-      <form onSubmit={handleSubmit} className="bg-slate-800 p-6 rounded-lg mb-8">{/* ... form content ... */}<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6"><div><label className="block text-sm font-medium text-slate-300 mb-2">Academic Stream</label><input type="text" value={academicStream} onChange={(e) => setAcademicStream(e.target.value)} className="w-full bg-slate-700 text-white rounded-md p-2 border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none min-h-[44px]" /></div><div><label className="block text-sm font-medium text-slate-300 mb-2">Skills</label><TagInput tags={skills} setTags={setSkills} placeholder="Type a skill and press Enter..." /></div><div><label className="block text-sm font-medium text-slate-300 mb-2">Interests</label><TagInput tags={interests} setTags={setInterests} placeholder="Type an interest and press Enter..." /></div></div><button type="submit" disabled={isLoading} className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-md disabled:bg-slate-600 disabled:cursor-not-allowed">{isLoading ? 'Generating...' : 'Get AI Recommendations'}</button></form>
+      <form onSubmit={handleSubmit} className="bg-slate-800 p-6 rounded-lg mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Academic Stream</label>
+            <input type="text" value={academicStream} onChange={(e) => setAcademicStream(e.target.value)} className="w-full bg-slate-700 text-white rounded-md p-2 border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none min-h-[44px]"/>
+          </div>
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <label className="block text-sm font-medium text-slate-300">Skills</label>
+              <label htmlFor="resume-upload" className="text-sm text-sky-400 hover:text-sky-300 cursor-pointer">
+                {isUploading ? 'Analyzing...' : 'or Upload Resume'}
+              </label>
+              <input 
+                id="resume-upload" 
+                type="file" 
+                className="hidden" 
+                accept=".pdf"
+                onChange={handleResumeUpload}
+                disabled={isUploading}
+              />
+            </div>
+            <TagInput tags={skills} setTags={setSkills} placeholder="Skills are extracted from resume..." />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Interests</label>
+            <TagInput tags={interests} setTags={setInterests} placeholder="Type an interest and press Enter..." />
+          </div>
+        </div>
+        <button type="submit" disabled={isLoading || isUploading} className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-md disabled:bg-slate-600 disabled:cursor-not-allowed">
+          {isLoading ? 'Generating...' : 'Get AI Recommendations'}
+        </button>
+      </form>
 
       {/* Results Section */}
       <div className="mt-8">
         {isLoading && <div className="flex justify-center py-10"><LoadingSpinner /></div>}
         {error && <p className="text-red-500 text-center">{error}</p>}
-
+        
         {recommendations.length > 0 && (
           <div className="flex justify-center mb-6">
-            <button
+            <button 
               onClick={handleCompare}
               disabled={selectedCareers.length !== 2 || isComparing}
               className="px-6 py-2 bg-green-600 text-white font-bold rounded-md disabled:bg-slate-600 disabled:cursor-not-allowed hover:bg-green-700 transition-colors"
@@ -151,13 +204,12 @@ export default function Home() {
 
         {isComparing && <div className="flex justify-center py-10"><LoadingSpinner /></div>}
 
-        {/* Display Comparison Result using the new Table component */}
         {!isComparing && (comparisonSummary || tableData.length > 0) && (
           <div className="bg-slate-900 p-6 rounded-lg text-white mb-8">
             <h2 className="text-2xl font-bold text-green-400 mb-4">Career Comparison</h2>
             <p className="text-slate-300 mb-6">{comparisonSummary}</p>
-            <ComparisonTable
-              data={tableData}
+            <ComparisonTable 
+              data={tableData} 
               career1Title={selectedCareers[0]}
               career2Title={selectedCareers[1]}
             />
