@@ -6,8 +6,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import TagInput from '@/components/TagInput';
 import { Recommendation } from '@/types';
 import ComparisonTable from '@/components/ComparisonTable';
-import { saveRecommendationToHistory } from '@/lib/api';
-import { useAuth } from '@/context/AuthContext';
+
 
 interface TableRow {
   feature: string;
@@ -16,7 +15,6 @@ interface TableRow {
 }
 
 export default function Home() {
-  const { user } = useAuth();
   const [academicStream, setAcademicStream] = useState('Computer Science');
   const [skills, setSkills] = useState<string[]>(['Python', 'JavaScript', 'SQL']);
   const [interests, setInterests] = useState<string[]>(['AI Ethics', 'Open Source']);
@@ -37,43 +35,38 @@ export default function Home() {
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setIsLoading(true);
-    setError('');
-    setRecommendations([]);
-    setSelectedCareers([]);
-    setComparisonSummary('');
-    setTableData([]);
+  event.preventDefault();
+  setIsLoading(true);
+  setError('');
+  setRecommendations([]);
+  setSelectedCareers([]);
+  setComparisonSummary('');
+  setTableData([]);
 
-    try {
-      const params = new URLSearchParams({ academicStream, skills: skills.join(','), interests: interests.join(',') });
-      const url = `/api/generate-recommendations?${params.toString()}`;
-      const response = await fetch(url);
-      if (!response.ok || !response.body) { throw new Error(`Server responded with status: ${response.status}`); }
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let fullResponse = '';
-      while (true) { const { done, value } = await reader.read(); if (done) break; fullResponse += decoder.decode(value); }
-      const jsonMatch = fullResponse.match(/{[\s\S]*}/);
-      if (jsonMatch && jsonMatch[0]) {
-        const jsonString = jsonMatch[0];
-        const resultJson = JSON.parse(jsonString);
-        setRecommendations(resultJson.recommendations);
-        if (user && resultJson.recommendations.length > 0) {
-          const userInput = { academicStream, skills, interests };
-          await saveRecommendationToHistory(user.uid, userInput, resultJson.recommendations);
-          console.log("History saved successfully via API!");
-        }
-      } else {
-        throw new Error("No valid JSON object found in the AI response.");
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-      setError(message);
-    } finally {
-      setIsLoading(false);
+  try {
+    const params = new URLSearchParams({ academicStream, skills: skills.join(','), interests: interests.join(',') });
+    const url = `/api/generate-recommendations?${params.toString()}`;
+    const response = await fetch(url);
+    if (!response.ok || !response.body) { throw new Error(`Server responded with status: ${response.status}`); }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullResponse = '';
+    while (true) { const { done, value } = await reader.read(); if (done) break; fullResponse += decoder.decode(value); }
+    const jsonMatch = fullResponse.match(/{[\s\S]*}/);
+    if (jsonMatch && jsonMatch[0]) {
+      const jsonString = jsonMatch[0];
+      const resultJson = JSON.parse(jsonString);
+      setRecommendations(resultJson.recommendations);
+    } else {
+      throw new Error("No valid JSON object found in the AI response.");
     }
-  };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+    setError(message);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleCompare = async () => {
     if (selectedCareers.length !== 2) return;
