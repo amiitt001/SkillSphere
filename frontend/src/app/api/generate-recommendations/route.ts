@@ -20,23 +20,31 @@ export async function GET(request: NextRequest) {
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
     const prompt = `
-      You are an expert career and skills advisor named "SkillSphere".
-      Your task is to provide personalized career path recommendations for a user in India based on their academic stream, skills, and interests.
-      The response should be well-formatted as markdown text, suitable for direct display to the user.
+  You are an expert career and skills advisor. Your task is to provide personalized career path recommendations for a user in India.
+  Your entire response MUST be a single, valid JSON object. Do not include any text, markdown formatting, or notes before or after the JSON object.
 
-      User's Profile:
-      - Academic Stream: ${academicStream}
-      - Skills: ${skills.join(', ')}
-      - Interests: ${interests.join(', ')}
+  The JSON object should have a single key "recommendations", which is an array of 3 career path objects.
+  Each career path object must have the following keys:
+  - "title": The name of the career path (e.g., "AI/Machine Learning Engineer").
+  - "justification": A concise, one-sentence explanation of why it's a good fit for the user.
+  - "roadmap": An array of 3-4 strings, with each string being a short, actionable step.
 
-      Instructions:
-      1.  Analyze the user's profile to identify 3 distinct and relevant career paths.
-      2.  For each path, provide a clear title and a few paragraphs explaining:
-          - Why it's a good fit for the user.
-          - A brief roadmap of actionable steps.
-          - A typical salary range in India (LPA).
-      3.  Format the entire output clearly using markdown (e.g., using ### for titles and bullet points for lists).
-    `;
+  User's Profile:
+  - Academic Stream: ${academicStream}
+  - Skills: ${skills.join(', ')}
+  - Interests: ${interests.join(', ')}
+  
+  Example JSON format:
+  {
+    "recommendations": [
+      {
+        "title": "Example Career",
+        "justification": "This fits your profile because...",
+        "roadmap": ["First step.", "Second step.", "Third step."]
+      }
+    ]
+  }
+`;
 
     // Get the streaming response from the AI
     const result = await model.generateContentStream(prompt);
