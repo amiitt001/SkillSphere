@@ -2,15 +2,20 @@
 // File: frontend/src/app/api/generate-recommendations/route.ts
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { type NextRequest } from 'next/server';
 
 export const runtime = 'edge';
 
-export async function POST(request: Request) {
+
+export async function GET(request: NextRequest) { 
   try {
-    const { academicStream, skills, interests } = await request.json();
+    // CHANGE #2: Read data from URL search parameters instead of a request body
+    const searchParams = request.nextUrl.searchParams;
+    const academicStream = searchParams.get('academicStream') || '';
+    const skills = searchParams.get('skills')?.split(',') || [];
+    const interests = searchParams.get('interests')?.split(',') || [];
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
     const prompt = `

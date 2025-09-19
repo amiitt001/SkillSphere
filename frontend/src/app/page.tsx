@@ -23,45 +23,48 @@ export default function Home() {
 
   // --- CHANGE #2: The entire handleSubmit function is replaced with the streaming logic ---
   const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setIsLoading(true);
-    setError('');
-    setCompletion(''); // Clear previous completion text
+  event.preventDefault();
+  setIsLoading(true);
+  setError('');
+  setCompletion('');
 
-    try {
-      // Start the fetch request to your backend
-      const response = await fetch('/api/generate-recommendations',  {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ academicStream, skills, interests }),
-      });
+  try {
+    // CHANGE #3: Build the URL with search parameters
+    const params = new URLSearchParams({
+      academicStream: academicStream,
+      skills: skills.join(','),
+      interests: interests.join(','),
+    });
+    const url = `/api/generate-recommendations?${params.toString()}`;
 
-      if (!response.body) {
-        throw new Error('Response body is empty.');
-      }
+    // CHANGE #4: The fetch call is now a simple GET request
+    const response = await fetch(url); // No method, headers, or body needed
 
-      // Get a reader and decoder to process the stream
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-
-      // Read the stream in a loop
-      while (true) {
-        // CORRECT VERSION
-const { done, value } = await reader.read();
-        if (done) break; // The stream is finished
-
-        // Decode the chunk and append it to our state
-        const decodedChunk = decoder.decode(value);
-        setCompletion((prev) => prev + decodedChunk);
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-      setError(message);
-      console.error("Error fetching streaming data:", message);
-    } finally {
-      setIsLoading(false);
+    if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
     }
-  };
+    if (!response.body) {
+        throw new Error('Response body is empty.');
+    }
+    
+    // The rest of the streaming logic remains the same
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const decodedChunk = decoder.decode(value);
+      setCompletion((prev) => prev + decodedChunk);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+    setError(message);
+    console.error("Error fetching streaming data:", message);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div>
