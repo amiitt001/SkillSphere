@@ -23,48 +23,53 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setIsLoading(true);
-    setError('');
-    setRecommendations([]); // Clear previous recommendations
+  // In frontend/src/app/page.tsx
 
-    try {
-      const params = new URLSearchParams({
-        academicStream,
-        skills: skills.join(','),
-        interests: interests.join(','),
-      });
-      const url = `/api/generate-recommendations?${params.toString()}`;
-      const response = await fetch(url);
+const handleSubmit = async (event: React.FormEvent) => {
+  event.preventDefault();
+  setIsLoading(true);
+  setError('');
+  setRecommendations([]);
 
-      if (!response.ok || !response.body) {
-        throw new Error(`Server responded with status: ${response.status}`);
-      }
-    
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let fullResponse = '';
+  try {
+    const params = new URLSearchParams({
+      academicStream,
+      skills: skills.join(','),
+      interests: interests.join(','),
+    });
+    const url = `/api/generate-recommendations?${params.toString()}`;
+    const response = await fetch(url);
 
-      // Read the stream and assemble the full string
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        fullResponse += decoder.decode(value);
-      }
-      
-      // Once the stream is done, parse the complete JSON string
-      const resultJson = JSON.parse(fullResponse);
-      setRecommendations(resultJson.recommendations);
-
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-      setError(message);
-      console.error("Error fetching or parsing data:", message);
-    } finally {
-      setIsLoading(false);
+    if (!response.ok || !response.body) {
+      throw new Error(`Server responded with status: ${response.status}`);
     }
-  };
+  
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullResponse = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      fullResponse += decoder.decode(value);
+    }
+    
+    // --- THIS IS THE FIX ---
+    // Clean the response string to remove markdown backticks before parsing
+    const cleanedResponse = fullResponse.replace(/^```json\s*/, '').replace(/```$/, '');
+      
+    const resultJson = JSON.parse(cleanedResponse);
+    setRecommendations(resultJson.recommendations);
+
+  } catch (err) {
+    // This is where your "Unexpected token" error message comes from
+    const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+    setError(message);
+    console.error("Error fetching or parsing data:", message);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div>
