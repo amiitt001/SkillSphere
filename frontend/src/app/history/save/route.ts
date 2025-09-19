@@ -1,10 +1,15 @@
 // In frontend/src/app/api/history/save/route.ts
 import { type NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/firebase-admin'; // We'll create this file next
+import { db } from '@/lib/firebase-admin';
 
-export async function POST(request: NextRequest) {
+// Change from POST to GET
+export async function GET(request: NextRequest) {
   try {
-    const { userId, userInput, recommendations } = await request.json();
+    // Read data from URL search parameters
+    const searchParams = request.nextUrl.searchParams;
+    const userId = searchParams.get('userId');
+    const userInput = JSON.parse(searchParams.get('userInput') || '{}');
+    const recommendations = JSON.parse(searchParams.get('recommendations') || '[]');
 
     if (!userId || !userInput || !recommendations) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
@@ -20,11 +25,9 @@ export async function POST(request: NextRequest) {
     };
 
     if (historyDoc.exists) {
-      // If user has history, add to their existing array of recommendations
       const existingData = historyDoc.data()?.items || [];
       await historyRef.set({ items: [newEntry, ...existingData] });
     } else {
-      // If it's a new user, create the document
       await historyRef.set({ items: [newEntry] });
     }
 

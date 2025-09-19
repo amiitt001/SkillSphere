@@ -10,14 +10,20 @@ interface UserInput {
 // Calls your secure backend route to save history
 export async function saveRecommendationToHistory(
   userId: string,
-  userInput: UserInput,
-  recommendations: Recommendation[]
+  userInput: any,
+  recommendations: any
 ) {
-  const response = await fetch('/api/history/save', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, userInput, recommendations }),
+  // Build the URL with the data as search parameters
+  const params = new URLSearchParams({
+    userId: userId,
+    userInput: JSON.stringify(userInput),
+    recommendations: JSON.stringify(recommendations),
   });
+  const url = `/api/history/save?${params.toString()}`;
+
+  // Send the GET request
+  const response = await fetch(url); // No method, headers, or body needed
+
   if (!response.ok) {
     throw new Error('Failed to save to history.');
   }
