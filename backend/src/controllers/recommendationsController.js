@@ -1,21 +1,15 @@
-const { VertexAI } = require('@google-cloud/vertexai');
+// controllers/recommendationsController.js - NEW VERSION
 
-// Initialize Vertex AI
-const vertex_ai = new VertexAI({
-  project: process.env.GCLOUD_PROJECT_ID,
-  location: process.env.GCLOUD_REGION,
-});
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Get the generative model
-const generativeModel = vertex_ai.getGenerativeModel({ model: 'gemini-1.0-pro' });
+// 1. Initialize with your API Key
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// This is the main function that will be called by your route
 const getRecommendations = async (req, res) => {
   try {
     const { academicStream, skills, interests } = req.body;
 
-    // --- IMPORTANT: The prompt is now adjusted for a text stream ---
-    // Instead of demanding a JSON object, we ask for a human-readable response.
+    // 2. The prompt is the same, but remove the demand for JSON.
     const prompt = `
       You are an expert career and skills advisor named "SkillSphere".
       Your task is to provide personalized career path recommendations for a user in India based on their academic stream, skills, and interests.
@@ -35,32 +29,24 @@ const getRecommendations = async (req, res) => {
       3.  Format the entire output clearly using markdown (e.g., using ### for titles and bullet points for lists).
     `;
     
-    const reqForStreaming = {
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    };
+    // 3. Get the model and start the stream
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const result = await model.generateContentStream(prompt);
 
-    // Call the streaming API
-    const streamResult = await generativeModel.generateContentStream(reqForStreaming);
-
-    // Set headers for a streaming response
+    // 4. Set headers and stream the response to the client
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Transfer-Encoding', 'chunked');
 
-    // Stream each chunk to the browser
-    for await (const item of streamResult.stream) {
-      if (item.candidates && item.candidates[0].content && item.candidates[0].content.parts[0]) {
-        const chunkText = item.candidates[0].content.parts[0].text;
-        res.write(chunkText);
-      }
+    for await (const chunk of result.stream) {
+      const chunkText = chunk.text();
+      res.write(chunkText);
     }
 
-    // End the response when the stream is finished
     res.end();
 
   } catch (error) {
     console.error("Error in getRecommendations stream:", error);
-    // Send a final error message if something goes wrong
-    res.status(500).end("Error generating streaming recommendation.");
+    res.status(500).send("Error generating streaming recommendation.");
   }
 };
 
