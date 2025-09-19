@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
   // This configuration will ignore TypeScript and ESLint errors during the build
   typescript: {
     // !! WARN !!
