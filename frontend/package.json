@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-     "build": "next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest --watch"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "firebase": "^12.2.1",
     "next": "15.5.2",
     "react": "19.1.0",
