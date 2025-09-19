@@ -17,19 +17,36 @@ export default function Home() {
   const [skills, setSkills] = useState<string[]>(['Python', 'JavaScript', 'SQL']);
   const [interests, setInterests] = useState<string[]>(['AI Ethics', 'Open Source']);
   
-  // State to hold the final, parsed recommendations
+  
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+    const [selectedCareers, setSelectedCareers] = useState<string[]>([]);
 
-  // In frontend/src/app/page.tsx
+      const handleSelectCareer = (title: string) => {
+    setSelectedCareers(prevSelected => {
+      // If the title is already selected, unselect it
+      if (prevSelected.includes(title)) {
+        return prevSelected.filter(t => t !== title);
+      }
+      // If less than 2 are selected, add the new title
+      if (prevSelected.length < 2) {
+        return [...prevSelected, title];
+      }
+      // If 2 are already selected, do nothing (or show a message)
+      return prevSelected;
+    });
+  };
+
+ 
 
 const handleSubmit = async (event: React.FormEvent) => {
   event.preventDefault();
   setIsLoading(true);
   setError('');
   setRecommendations([]);
+   setSelectedCareers([]); 
 
   try {
     const params = new URLSearchParams({
@@ -111,6 +128,8 @@ const handleSubmit = async (event: React.FormEvent) => {
                 title={rec.title}
                 justification={rec.justification}
                 roadmap={rec.roadmap}
+                isSelected={selectedCareers.includes(rec.title)}
+                onSelect={handleSelectCareer}
               />
             ))}
           </div>
