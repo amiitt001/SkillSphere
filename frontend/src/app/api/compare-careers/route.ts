@@ -18,22 +18,21 @@ export async function GET(request: NextRequest) {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
-    const prompt = `
-      You are an expert career advisor. Your task is to provide a detailed comparison between two career paths for a user in India.
-      The response should be formatted as clear, human-readable markdown text.
+  const prompt = `
+  You are an expert career advisor. Your task is to provide a comparison between two career paths for a user in India.
+  Your entire response MUST be a single, valid JSON object. Do not include any text, markdown, or notes outside of the JSON.
 
-      Compare the following two careers:
-      - Career 1: "${career1}"
-      - Career 2: "${career2}"
+  The JSON object must have two top-level keys: "summary" and "tableData".
+  - "summary": A 2-3 sentence paragraph comparing the careers at a high level.
+  - "tableData": An array of objects, where each object represents a row in a comparison table.
 
-      Instructions:
-      For your comparison, please include the following sections:
-      - A brief overview of each role.
-      - A comparison of the day-to-day responsibilities.
-      - A comparison of the typical salary ranges in India.
-      - A comparison of the long-term growth prospects.
-    `;
+  Each object in the "tableData" array must have three keys:
+  - "feature": The name of the feature being compared (e.g., "Core Skills", "Tools & Tech", "Focus").
+  - "career1_details": The details for the first career, "${career1}".
+  - "career2_details": The details for the second career, "${career2}".
 
+  Generate at least 4-5 feature comparison rows.
+`;
     const result = await model.generateContentStream(prompt);
 
     const stream = new ReadableStream({
