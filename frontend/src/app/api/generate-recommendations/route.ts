@@ -3,6 +3,7 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { type NextRequest } from 'next/server';
+export const dynamic = 'force-dynamic';
 
 export const runtime = 'edge';
 
