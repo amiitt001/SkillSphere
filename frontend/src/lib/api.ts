@@ -19,7 +19,7 @@ export async function saveRecommendationToHistory(
     userInput: JSON.stringify(userInput),
     recommendations: JSON.stringify(recommendations),
   });
-  const url = `/api/history/save?${params.toString()}`;
+const url = `/api/history-v2/save?${params.toString()}`;
 
   // Send the GET request
   const response = await fetch(url); // No method, headers, or body needed
