@@ -55,14 +55,20 @@ const handleSubmit = async (event: React.FormEvent) => {
     }
     
     // --- THIS IS THE FIX ---
-    // Clean the response string to remove markdown backticks before parsing
-    const cleanedResponse = fullResponse.replace(/^```json\s*/, '').replace(/```$/, '');
-      
-    const resultJson = JSON.parse(cleanedResponse);
-    setRecommendations(resultJson.recommendations);
+    // Use a regular expression to find the first valid JSON object in the string.
+    // This will ignore any extra text before or after the JSON.
+    const jsonMatch = fullResponse.match(/{[\s\S]*}/);
+
+    if (jsonMatch && jsonMatch[0]) {
+      const jsonString = jsonMatch[0];
+      const resultJson = JSON.parse(jsonString);
+      setRecommendations(resultJson.recommendations);
+    } else {
+      // This error will be thrown if no JSON is found at all.
+      throw new Error("No valid JSON object found in the AI response.");
+    }
 
   } catch (err) {
-    // This is where your "Unexpected token" error message comes from
     const message = err instanceof Error ? err.message : 'An unknown error occurred.';
     setError(message);
     console.error("Error fetching or parsing data:", message);
@@ -70,7 +76,6 @@ const handleSubmit = async (event: React.FormEvent) => {
     setIsLoading(false);
   }
 };
-
   return (
     <div>
       <h1 className="text-4xl font-bold text-white">
