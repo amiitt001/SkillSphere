@@ -60,21 +60,51 @@ export default function Home() {
   };
 
   // --- NEW: Function to handle the comparison ---
-  const handleCompare = async () => {
-    if (selectedCareers.length !== 2) return;
-    setIsComparing(true);
-    setComparisonResult('');
-    setError('');
-    // In the next step, we'll make this call our new backend API
-    // For now, it will just show a loading state
-    console.log("Comparing:", selectedCareers);
-    // Placeholder to simulate API call
-    setTimeout(() => {
-        setComparisonResult(`This is a placeholder comparison for ${selectedCareers[0]} and ${selectedCareers[1]}. The real AI response will go here.`);
-        setIsComparing(false);
-    }, 2000);
-  };
+ // In frontend/src/app/page.tsx
 
+const handleCompare = async () => {
+  // Guard clause to ensure we have two careers to compare
+  if (selectedCareers.length !== 2) return;
+
+  // Set loading states
+  setIsComparing(true);
+  setComparisonResult('');
+  setError('');
+
+  try {
+    // Build the URL with the two selected careers
+    const params = new URLSearchParams({
+      career1: selectedCareers[0],
+      career2: selectedCareers[1],
+    });
+    const url = `/api/compare-careers?${params.toString()}`;
+
+    // Fetch the streaming response from the new API route
+    const response = await fetch(url);
+    if (!response.ok || !response.body) {
+      throw new Error(`Server responded with status: ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    // Read the stream and update the UI in real-time
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const decodedChunk = decoder.decode(value);
+      setComparisonResult((prev) => prev + decodedChunk);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+    setError(message);
+    console.error("Error fetching comparison data:", message);
+  } finally {
+    setIsComparing(false);
+  }
+};
+
+ 
 
   return (
     <div>
