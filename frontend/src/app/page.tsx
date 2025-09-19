@@ -23,7 +23,6 @@ export default function Home() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
   const [selectedCareers, setSelectedCareers] = useState<string[]>([]);
   const [isComparing, setIsComparing] = useState(false);
   const [comparisonSummary, setComparisonSummary] = useState('');
@@ -31,46 +30,10 @@ export default function Home() {
 
   const handleSelectCareer = (title: string) => {
     setSelectedCareers(prevSelected => {
-      if (prevSelected.includes(title)) {
-        return prevSelected.filter(t => t !== title);
-      }
-      if (prevSelected.length < 2) {
-        return [...prevSelected, title];
-      }
+      if (prevSelected.includes(title)) { return prevSelected.filter(t => t !== title); }
+      if (prevSelected.length < 2) { return [...prevSelected, title]; }
       return prevSelected;
     });
-  };
-
-  const handleResumeUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    setError('');
-
-    const formData = new FormData();
-    formData.append('resume', file);
-
-    try {
-      const response = await fetch('/api/resume-upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload and process resume.');
-      }
-
-      const result = await response.json();
-      if (result.skills) {
-        setSkills(prevSkills => [...new Set([...prevSkills, ...result.skills])]);
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-      setError(message);
-    } finally {
-      setIsUploading(false);
-    }
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -96,7 +59,6 @@ export default function Home() {
         const jsonString = jsonMatch[0];
         const resultJson = JSON.parse(jsonString);
         setRecommendations(resultJson.recommendations);
-
         if (user && resultJson.recommendations.length > 0) {
           const userInput = { academicStream, skills, interests };
           await saveRecommendationToHistory(user.uid, userInput, resultJson.recommendations);
@@ -108,7 +70,6 @@ export default function Home() {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'An unknown error occurred.';
       setError(message);
-      console.error("Error fetching or parsing data:", message);
     } finally {
       setIsLoading(false);
     }
@@ -159,28 +120,15 @@ export default function Home() {
             <input type="text" value={academicStream} onChange={(e) => setAcademicStream(e.target.value)} className="w-full bg-slate-700 text-white rounded-md p-2 border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none min-h-[44px]"/>
           </div>
           <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-slate-300">Skills</label>
-              <label htmlFor="resume-upload" className="text-sm text-sky-400 hover:text-sky-300 cursor-pointer">
-                {isUploading ? 'Analyzing...' : 'or Upload Resume'}
-              </label>
-              <input 
-                id="resume-upload" 
-                type="file" 
-                className="hidden" 
-                accept=".pdf"
-                onChange={handleResumeUpload}
-                disabled={isUploading}
-              />
-            </div>
-            <TagInput tags={skills} setTags={setSkills} placeholder="Skills are extracted from resume..." />
+            <label className="block text-sm font-medium text-slate-300 mb-2">Skills</label>
+            <TagInput tags={skills} setTags={setSkills} placeholder="Type a skill and press Enter..." />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Interests</label>
             <TagInput tags={interests} setTags={setInterests} placeholder="Type an interest and press Enter..." />
           </div>
         </div>
-        <button type="submit" disabled={isLoading || isUploading} className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-md disabled:bg-slate-600 disabled:cursor-not-allowed">
+        <button type="submit" disabled={isLoading} className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-md disabled:bg-slate-600 disabled:cursor-not-allowed">
           {isLoading ? 'Generating...' : 'Get AI Recommendations'}
         </button>
       </form>
@@ -189,7 +137,7 @@ export default function Home() {
       <div className="mt-8">
         {isLoading && <div className="flex justify-center py-10"><LoadingSpinner /></div>}
         {error && <p className="text-red-500 text-center">{error}</p>}
-        
+
         {recommendations.length > 0 && (
           <div className="flex justify-center mb-6">
             <button 
