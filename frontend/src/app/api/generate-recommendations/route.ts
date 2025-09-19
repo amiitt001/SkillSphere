@@ -2,7 +2,6 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// This tells Vercel to use the Edge runtime, which is faster and supports streaming.
 export const runtime = 'edge';
 
 export async function POST(request: Request) {
@@ -48,7 +47,7 @@ export async function POST(request: Request) {
       },
     });
 
-    // Return the stream as the response
+
     return new Response(stream, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
