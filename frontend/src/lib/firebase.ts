@@ -2,21 +2,26 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-
+// This is the CORRECT way to configure Firebase.
+// It reads the secret keys from your Vercel environment variables.
 const firebaseConfig = {
-  apiKey: "AIzaSyARWDPdvilNxs2aNN1_EhsQo0lxr4Q5A14",
-  authDomain: "skillsphere-app.firebaseapp.com",
-  projectId: "skillsphere-app",
-  storageBucket: "skillsphere-app.firebasestorage.app",
-  messagingSenderId: "248590277730",
-  appId: "1:248590277730:web:a03aab5a250f21ff85c53b",
-  measurementId: "G-24MCVJGH7M"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase for SSR
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// Initialize Firebase
+let app;
+if (!getApps().length) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApp();
+}
+
 const auth = getAuth(app);
 const db = getFirestore(app);
 
 export { app, auth, db };
-
