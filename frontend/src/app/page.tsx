@@ -5,6 +5,7 @@ import CareerCard from "@/components/CareerCard";
 import LoadingSpinner from '@/components/LoadingSpinner';
 import TagInput from '@/components/TagInput';
 import { Recommendation } from '@/types';
+import ComparisonView from '@/components/ComparisonView';
 
 export default function Home() {
   const [academicStream, setAcademicStream] = useState('Computer Science');
@@ -135,7 +136,8 @@ const handleCompare = async () => {
         {comparisonResult && (
             <div className="bg-slate-900 p-6 rounded-lg text-white mb-8">
                 <h2 className="text-2xl font-bold text-green-400 mb-4">Career Comparison</h2>
-                <pre className="whitespace-pre-wrap font-sans">{comparisonResult}</pre>
+                <ComparisonView comparisonText={comparisonResult} />
+
             </div>
         )}
 
