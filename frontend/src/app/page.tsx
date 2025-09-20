@@ -7,9 +7,7 @@ import TagInput from '@/components/TagInput';
 import { Recommendation } from '@/types';
 import ComparisonTable from '@/components/ComparisonTable';
 import { useAuth } from '@/context/AuthContext';
-import ReactMarkdown from 'react-markdown'; // Import for styling the new feature's output
 
-// Define the type for our table data
 interface TableRow {
   feature: string;
   career1_details: string;
@@ -29,11 +27,6 @@ export default function Home() {
   const [comparisonSummary, setComparisonSummary] = useState('');
   const [tableData, setTableData] = useState<TableRow[]>([]);
 
-  // --- ADD THIS NEW STATE for the Resume Co-Pilot ---
-  const [jobDescription, setJobDescription] = useState('');
-  const [isHelping, setIsHelping] = useState(false);
-  const [resumePoints, setResumePoints] = useState('');
-
   const handleSelectCareer = (title: string) => {
     setSelectedCareers(prevSelected => {
       if (prevSelected.includes(title)) { return prevSelected.filter(t => t !== title); }
@@ -41,41 +34,8 @@ export default function Home() {
       return prevSelected;
     });
   };
-  
-  // --- ADD THIS NEW FUNCTION for the Resume Co-Pilot ---
-  const handleResumeHelper = async () => {
-    if (!jobDescription) return;
-    setIsHelping(true);
-    setResumePoints('');
-    setError('');
-
-    try {
-      const response = await fetch('/api/resume-helper', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ skills, jobDescription }),
-      });
-
-      if (!response.ok || !response.body) { throw new Error(`Server responded with status: ${response.status}`); }
-      
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const decodedChunk = decoder.decode(value);
-        setResumePoints((prev) => prev + decodedChunk);
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-      setError(message);
-    } finally {
-      setIsHelping(false);
-    }
-  };
 
   const handleSubmit = async (event: React.FormEvent) => {
-    // ... This function is unchanged ...
     event.preventDefault();
     setIsLoading(true);
     setError('');
@@ -98,7 +58,10 @@ export default function Home() {
         const jsonString = jsonMatch[0];
         const resultJson = JSON.parse(jsonString);
         setRecommendations(resultJson.recommendations);
-      
+        if (user && resultJson.recommendations.length > 0) {
+          const userInput = { academicStream, skills, interests };
+        
+        }
       } else {
         throw new Error("No valid JSON object found in the AI response.");
       }
@@ -111,7 +74,6 @@ export default function Home() {
   };
 
   const handleCompare = async () => {
-    // ... This function is unchanged ...
     if (selectedCareers.length !== 2) return;
     setIsComparing(true);
     setComparisonSummary('');
@@ -144,14 +106,11 @@ export default function Home() {
     }
   };
 
- return (
+  return (
     <div>
       <h1 className="text-4xl font-bold text-white">Personalized Recommendations</h1>
       <p className="text-slate-400 mt-2 mb-8">Powered by Google Gemini AI</p>
 
-      {/* ================================================= */}
-      {/* SECTION 1: PERSONALIZED RECOMMENDATIONS FORM    */}
-      {/* ================================================= */}
       <form onSubmit={handleSubmit} className="bg-slate-800 p-6 rounded-lg mb-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
@@ -172,9 +131,6 @@ export default function Home() {
         </button>
       </form>
 
-      {/* ================================================= */}
-      {/* SECTION 2: RECOMMENDATION & COMPARISON RESULTS   */}
-      {/* ================================================= */}
       <div className="mt-8">
         {isLoading && <div className="flex justify-center py-10"><LoadingSpinner /></div>}
         {error && <p className="text-red-500 text-center">{error}</p>}
@@ -218,42 +174,6 @@ export default function Home() {
           </div>
         )}
       </div>
-
-      {/* ================================================= */}
-      {/* SECTION 3: AI RESUME CO-PILOT                   */}
-      {/* ================================================= */}
-      <div className="mt-8 pt-8 border-t border-slate-700">
-        <div className="bg-slate-800 p-6 rounded-lg">
-          <h2 className="text-2xl font-bold text-white mb-4">AI Resume Co-Pilot</h2>
-          <p className="text-slate-400 mb-4">Paste a job description below, and the AI will generate powerful resume bullet points based on your skills.</p>
-          <textarea
-            value={jobDescription}
-            onChange={(e) => setJobDescription(e.target.value)}
-            className="w-full bg-slate-700 text-white rounded-md p-2 border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none"
-            rows={8}
-            placeholder="Paste the job description here..."
-          />
-          <button
-            onClick={handleResumeHelper}
-            disabled={isHelping || !jobDescription}
-            className="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md disabled:bg-slate-600 disabled:cursor-not-allowed"
-          >
-            {isHelping ? 'Generating Points...' : 'Generate Resume Points'}
-          </button>
-          
-          {isHelping && !resumePoints && <div className="flex justify-center py-6"><LoadingSpinner /></div>}
-
-          {resumePoints && (
-            <div className="mt-6">
-              <h3 className="text-xl font-bold text-white mb-2">Suggested Resume Points:</h3>
-              <div className="bg-slate-900 p-4 rounded-md">
-                 <div className="prose prose-invert prose-sm">
-                   <ReactMarkdown>{resumePoints}</ReactMarkdown>
-                 </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
     </div>
-  );}
+  );
+}
