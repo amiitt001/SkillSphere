@@ -144,17 +144,85 @@ export default function Home() {
     }
   };
 
-  return (
+ return (
     <div>
       <h1 className="text-4xl font-bold text-white">Personalized Recommendations</h1>
       <p className="text-slate-400 mt-2 mb-8">Powered by Google Gemini AI</p>
 
-      <form onSubmit={handleSubmit} className="bg-slate-800 p-6 rounded-lg mb-8">{/* ... form content ... */}</form>
+      {/* ================================================= */}
+      {/* SECTION 1: PERSONALIZED RECOMMENDATIONS FORM    */}
+      {/* ================================================= */}
+      <form onSubmit={handleSubmit} className="bg-slate-800 p-6 rounded-lg mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Academic Stream</label>
+            <input type="text" value={academicStream} onChange={(e) => setAcademicStream(e.target.value)} className="w-full bg-slate-700 text-white rounded-md p-2 border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none min-h-[44px]"/>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Skills</label>
+            <TagInput tags={skills} setTags={setSkills} placeholder="Type a skill and press Enter..." />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Interests</label>
+            <TagInput tags={interests} setTags={setInterests} placeholder="Type an interest and press Enter..." />
+          </div>
+        </div>
+        <button type="submit" disabled={isLoading} className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-md disabled:bg-slate-600 disabled:cursor-not-allowed">
+          {isLoading ? 'Generating...' : 'Get AI Recommendations'}
+        </button>
+      </form>
 
-      {/* ... Results Section, Compare Button, Comparison Table, and Career Cards are unchanged ... */}
-      
-      {/* --- ADD THIS ENTIRE NEW SECTION for the Resume Co-Pilot --- */}
+      {/* ================================================= */}
+      {/* SECTION 2: RECOMMENDATION & COMPARISON RESULTS   */}
+      {/* ================================================= */}
       <div className="mt-8">
+        {isLoading && <div className="flex justify-center py-10"><LoadingSpinner /></div>}
+        {error && <p className="text-red-500 text-center">{error}</p>}
+        
+        {recommendations.length > 0 && (
+          <div className="flex justify-center mb-6">
+            <button 
+              onClick={handleCompare}
+              disabled={selectedCareers.length !== 2 || isComparing}
+              className="px-6 py-2 bg-green-600 text-white font-bold rounded-md disabled:bg-slate-600 disabled:cursor-not-allowed hover:bg-green-700 transition-colors"
+            >
+              {isComparing ? 'Comparing...' : `Compare (${selectedCareers.length}/2 Selected)`}
+            </button>
+          </div>
+        )}
+
+        {isComparing && <div className="flex justify-center py-10"><LoadingSpinner /></div>}
+
+        {!isComparing && (comparisonSummary || tableData.length > 0) && (
+          <div className="bg-slate-900 p-6 rounded-lg text-white mb-8">
+            <h2 className="text-2xl font-bold text-green-400 mb-4">Career Comparison</h2>
+            <p className="text-slate-300 mb-6">{comparisonSummary}</p>
+            <ComparisonTable 
+              data={tableData} 
+              career1Title={selectedCareers[0]}
+              career2Title={selectedCareers[1]}
+            />
+          </div>
+        )}
+
+        {!isLoading && !error && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {recommendations.map((rec) => (
+              <CareerCard
+                key={rec.title}
+                {...rec}
+                isSelected={selectedCareers.includes(rec.title)}
+                onSelect={handleSelectCareer}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ================================================= */}
+      {/* SECTION 3: AI RESUME CO-PILOT                   */}
+      {/* ================================================= */}
+      <div className="mt-8 pt-8 border-t border-slate-700">
         <div className="bg-slate-800 p-6 rounded-lg">
           <h2 className="text-2xl font-bold text-white mb-4">AI Resume Co-Pilot</h2>
           <p className="text-slate-400 mb-4">Paste a job description below, and the AI will generate powerful resume bullet points based on your skills.</p>
@@ -180,9 +248,7 @@ export default function Home() {
               <h3 className="text-xl font-bold text-white mb-2">Suggested Resume Points:</h3>
               <div className="bg-slate-900 p-4 rounded-md">
                  <div className="prose prose-invert prose-sm">
-                   <ReactMarkdown>
-                   {resumePoints}
-                 </ReactMarkdown>
+                   <ReactMarkdown>{resumePoints}</ReactMarkdown>
                  </div>
               </div>
             </div>
@@ -190,5 +256,4 @@ export default function Home() {
         </div>
       </div>
     </div>
-  );
-}
+  );}
