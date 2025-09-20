@@ -98,10 +98,7 @@ export default function Home() {
         const jsonString = jsonMatch[0];
         const resultJson = JSON.parse(jsonString);
         setRecommendations(resultJson.recommendations);
-        if (user && resultJson.recommendations.length > 0) {
-          const userInput = { academicStream, skills, interests };
-          await saveRecommendationToHistory(user.uid, userInput, resultJson.recommendations);
-        }
+      
       } else {
         throw new Error("No valid JSON object found in the AI response.");
       }
