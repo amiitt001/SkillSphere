@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-// We no longer need 'next/image'
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { signOut } from 'firebase/auth';
@@ -31,9 +30,12 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     }
   };
 
+  // --- THIS IS THE CHANGE ---
+  // Add the new "AI Resume Co-Pilot" link to this array.
   const navItems = [
     { href: '/', label: 'Dashboard' },
     { href: '/history', label: 'History' },
+    { href: '/resume-helper', label: 'AI Resume Co-Pilot' }, // <-- ADD THIS LINE
   ];
 
   return (
@@ -44,15 +46,13 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       ></div>
       <aside 
         className={`fixed inset-y-0 left-0 z-40 w-64 bg-slate-800 text-white flex-shrink-0 p-4 flex flex-col
-                   transform transition-transform duration-300 ease-in-out 
-                   ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-                   md:relative md:translate-x-0 md:flex`}
+                  transform transition-transform duration-300 ease-in-out 
+                  ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+                  md:relative md:translate-x-0 md:flex`}
       >
         <div className="mb-10">
           <Link href="/" className="flex items-center gap-2" onClick={onClose}>
             <div className="flex-shrink-0 w-10 h-10">
-              {/* --- THIS IS THE FIX --- */}
-              {/* Using a standard HTML img tag to bypass Next.js optimization */}
               <img
                 src="/logo.png"
                 alt="SkillSphere Logo"
@@ -102,4 +102,3 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 };
 
 export default Sidebar;
-
