@@ -63,8 +63,7 @@ Confused about your career path? Overwhelmed by too many choices?
 
 ## 📂 Project Structure  
 
-SkillSphere/
-├── backend/           # Node.js backend service
+## SkillSphere/├── backend/           # Node.js backend service
 =======
 SkillSphere: AI-Powered Skill & Career Advisor
 SkillSphere is a modern, full-stack web application designed to provide personalized career and skill recommendations. Leveraging the power of Google's Gemini AI, this application offers tailored advice to help guide users on their professional journey.
@@ -101,9 +100,9 @@ SkillSphere has huge potential to evolve into a **full-fledged career developmen
 
 
 
-Project Structure
+#### Project Structure
 The project is organized as a monorepo with two main packages: frontend and backend.
-
+'''
 SkillSphere/
 └── frontend/                  <-- Root of the Vercel Project
     ├── public/                <-- Static assets (images, fonts)
@@ -127,6 +126,7 @@ SkillSphere/
     │
     ├── next.config.ts         <-- Next.js configuration
     └── package.json           <-- Project dependencies
+'''
 
 
 
