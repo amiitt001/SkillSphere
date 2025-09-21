@@ -100,9 +100,11 @@ SkillSphere has huge potential to evolve into a **full-fledged career developmen
 
 
 
-#### Project Structure
-The project is organized as a monorepo with two main packages: frontend and backend.
-'''
+## 📁 Project Structure
+
+The project is structured as a unified full-stack Next.js application. The `frontend` directory contains the entire codebase.
+
+```
 SkillSphere/
 └── frontend/                  <-- Root of the Vercel Project
     ├── public/                <-- Static assets (images, fonts)
@@ -126,8 +128,7 @@ SkillSphere/
     │
     ├── next.config.ts         <-- Next.js configuration
     └── package.json           <-- Project dependencies
-'''
-
+```
 
 
 ## 🚀 Getting Started Locally
