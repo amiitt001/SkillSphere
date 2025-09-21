@@ -35,7 +35,7 @@ Confused about your career path? Overwhelmed by too many choices?
 ---
 
 ## 🖼️ Screenshots  
-![SkillSphere Demo](./readme-assets/skillsphere-screenshot.png) 
+![SkillSphere Demo](frontend\readme-assets\skillsphere-screenshot.png) 
 
 ---
 
@@ -162,6 +162,7 @@ npm install
 
 #### --- Google AI Credentials ---
 #### Get this from Google AI Studio: https://aistudio.google.com/
+```
 GEMINI_API_KEY=...
 
 #### --- Firebase Client Credentials ---
@@ -172,6 +173,7 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 NEXT_PUBLIC_FIREBASE_APP_ID=...
+```
 
 ⚠️ Make sure to replace ... with your actual credentials.
 
