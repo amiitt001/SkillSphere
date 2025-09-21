@@ -1,3 +1,8 @@
+/**
+ * This is the main dashboard page for the SkillSphere application.
+ * It handles all user input, fetches AI-powered recommendations, allows users
+ * to select careers for comparison, and displays all results to the user.
+ */
 'use client';
 
 import { useState } from 'react';
@@ -8,32 +13,29 @@ import { Recommendation } from '@/types';
 import ComparisonTable from '@/components/ComparisonTable';
 import { useAuth } from '@/context/AuthContext';
 
-// Define the type for the comparison table data
+// Define the type for the comparison table's data structure
 interface TableRow {
   feature: string;
   career1_details: string;
   career2_details: string;
 }
 
-/**
- * Main dashboard page for SkillSphere. Handles user input, fetches AI recommendations,
- * and displays career comparison results.
- */
 export default function Home() {
   // --- STATE MANAGEMENT ---
 
-  // User input state
   const { user } = useAuth();
+
+  // State for the user's input profile
   const [academicStream, setAcademicStream] = useState('Computer Science');
   const [skills, setSkills] = useState<string[]>(['Python', 'JavaScript', 'SQL']);
   const [interests, setInterests] = useState<string[]>(['AI Ethics', 'Open Source']);
 
-  // UI and Data State
+  // State for managing UI and data fetching for recommendations
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
-  // State for the Career Comparison feature
+  // State specifically for the Career Comparison feature
   const [selectedCareers, setSelectedCareers] = useState<string[]>([]);
   const [isComparing, setIsComparing] = useState(false);
   const [comparisonSummary, setComparisonSummary] = useState('');
@@ -44,6 +46,7 @@ export default function Home() {
   /**
    * Handles both selecting and deselecting career cards for comparison.
    * Allows a maximum of two cards to be selected at a time.
+   * @param title The title of the career card that was clicked.
    */
   const handleSelectCareer = (title: string) => {
     setSelectedCareers(prevSelected => {
@@ -59,6 +62,7 @@ export default function Home() {
 
   /**
    * Main form submission handler to fetch career recommendations from the AI.
+   * It calls the backend API and processes the streamed JSON response.
    */
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -80,7 +84,7 @@ export default function Home() {
         throw new Error(`Server responded with status: ${response.status}`);
       }
 
-      // Read the streamed response from the server
+      // Read the streamed response from the server and assemble the full JSON string
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let fullResponse = '';
@@ -90,7 +94,7 @@ export default function Home() {
         fullResponse += decoder.decode(value);
       }
 
-      // Find and parse the JSON object from the AI's response
+      // Find and parse the JSON object from the AI's potentially messy response
       const jsonMatch = fullResponse.match(/{[\s\S]*}/);
       if (jsonMatch && jsonMatch[0]) {
         const jsonString = jsonMatch[0];
@@ -180,7 +184,7 @@ export default function Home() {
         </button>
       </form>
 
-      {/* Results section */}
+      {/* Results section: Conditionally renders loading spinners, errors, and results */}
       <div className="mt-8">
         {isLoading && <div className="flex justify-center py-10"><LoadingSpinner /></div>}
         {error && <p className="text-red-500 text-center">{error}</p>}
@@ -230,3 +234,4 @@ export default function Home() {
     </div>
   );
 }
+

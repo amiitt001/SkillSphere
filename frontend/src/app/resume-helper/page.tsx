@@ -1,57 +1,74 @@
-// In frontend/src/app/resume-helper/page.tsx
+/**
+ * This file contains the frontend logic and UI for the "AI Resume Co-Pilot" page.
+ * It allows users to input a job description, sends it to a backend API along with
+ * their skills, and streams the AI-generated resume bullet points back to the screen.
+ */
 'use client';
 
 import { useState } from 'react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ReactMarkdown from 'react-markdown';
-import { useAuth } from '@/context/AuthContext';
 
 export default function ResumeHelperPage() {
-  const { user } = useAuth();
-  // We get the user's skills from the main page's state, but for this page, we'll need to fetch them or manage them differently in a real app.
-  // For the hackathon, we can hardcode them or assume they are the same as the main page. Let's assume a default for now.
+  // --- STATE MANAGEMENT ---
+  // Note: For this hackathon prototype, skills are hardcoded. In a full application,
+  // this state would be shared from the main dashboard or a user profile.
   const [skills, setSkills] = useState<string[]>(['Python', 'JavaScript', 'SQL']);
   const [jobDescription, setJobDescription] = useState('');
-  const [isHelping, setIsHelping] = useState(false);
-  const [resumePoints, setResumePoints] = useState('');
+  const [isHelping, setIsHelping] = useState(false); // Tracks the loading state for this feature
+  const [resumePoints, setResumePoints] = useState(''); // Stores the AI-generated response
   const [error, setError] = useState('');
 
+  /**
+   * Handles the form submission for the resume helper feature.
+   * It calls the backend API and streams the response to the UI.
+   */
   const handleResumeHelper = async () => {
-    if (!jobDescription) return;
+    if (!jobDescription) return; // Prevent API call with empty input
+
+    // Reset state for a new request
     setIsHelping(true);
     setResumePoints('');
     setError('');
 
     try {
+      // Call the dedicated backend API for the resume helper
       const response = await fetch('/api/resume-helper', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ skills, jobDescription }),
       });
 
-      if (!response.ok || !response.body) { throw new Error(`Server responded with status: ${response.status}`); }
+      if (!response.ok || !response.body) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
       
+      // Process the streaming response from the server
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) break; // Exit loop when stream is finished
         const decodedChunk = decoder.decode(value);
+        // Append each new piece of text to the state, causing a real-time update on the screen
         setResumePoints((prev) => prev + decodedChunk);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'An unknown error occurred.';
       setError(message);
     } finally {
-      setIsHelping(false);
+      setIsHelping(false); // Ensure loading state is turned off
     }
   };
 
+  // --- RENDER ---
   return (
     <div>
+      {/* Page Header */}
       <h1 className="text-4xl font-bold text-white">AI Resume Co-Pilot</h1>
       <p className="text-slate-400 mt-2 mb-8">Paste a job description below, and the AI will generate powerful resume bullet points based on your skills.</p>
       
+      {/* Input Section */}
       <div className="bg-slate-800 p-6 rounded-lg">
         <textarea
           value={jobDescription}
@@ -68,6 +85,7 @@ export default function ResumeHelperPage() {
           {isHelping ? 'Generating Points...' : 'Generate Resume Points'}
         </button>
         
+        {/* Conditional Rendering for Error, Loading, and Results */}
         {error && <p className="text-red-500 text-center mt-4">{error}</p>}
         
         {isHelping && !resumePoints && <div className="flex justify-center py-6"><LoadingSpinner /></div>}
