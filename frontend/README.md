@@ -4,12 +4,13 @@
 ![SkillSphere Demo](./readme-assets/skillsphere-screenshot.png) 
 ![Dashboard](./readme-assets/dashboard.png) 
 
+
 ![Next.js](https://img.shields.io/badge/Next.js-black?style=flat-square&logo=nextdotjs)
 ![Vercel](https://img.shields.io/badge/Vercel-black?style=flat-square&logo=vercel)
 ![Firebase](https://img.shields.io/badge/Firebase-yellow?style=flat-square&logo=firebase)
 ![TypeScript](https://img.shields.io/badge/TypeScript-blue?style=flat-square&logo=typescript)
 
-🔗 **Live App**: [https://skill-sphere-7szf.vercel.app](https://skill-sphere-7szf.vercel.app)  
+🔗 **Live App**: [SkillSphere Web App](https://skill-sphere-7szf.vercel.app)  
 
 ---
 
