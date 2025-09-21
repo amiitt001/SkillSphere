@@ -17,6 +17,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     // --- 1. PARSE USER INPUT ---
+    // Extract user's academic stream, skills, and interests from the URL query parameters.
     const searchParams = request.nextUrl.searchParams;
     const academicStream = searchParams.get('academicStream') || '';
     const skills = searchParams.get('skills')?.split(',') || [];
@@ -27,6 +28,8 @@ export async function GET(request: NextRequest) {
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
     // --- 3. CONSTRUCT THE DETAILED PROMPT ---
+    // This prompt instructs the AI to act as a career advisor and return a structured
+    // JSON object containing three detailed career recommendations.
     const prompt = `
       You are an expert career and skills advisor. Your task is to provide personalized career path recommendations for a user in India.
       Your entire response MUST be a single, valid JSON object. Do not include any text, markdown formatting, or notes before or after the JSON object.
@@ -50,7 +53,8 @@ export async function GET(request: NextRequest) {
     const result = await model.generateContentStream(prompt);
 
     // --- 5. FORWARD THE STREAM TO THE CLIENT ---
-    // This creates a new stream that we can control and send to the browser.
+    // This creates a new ReadableStream that we can control, allowing us to pipe the
+    // AI's response directly to the browser as it's being generated.
     const stream = new ReadableStream({
       async start(controller) {
         for await (const chunk of result.stream) {
@@ -63,7 +67,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Return the stream as the response to the frontend
+    // Return the stream as the final response to the frontend.
     return new Response(stream, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
@@ -71,7 +75,10 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
+    // Log the error for debugging on the server
     console.error("Error in generate-recommendations API route:", error);
+    // Return a generic error response to the client
     return new Response("Error generating recommendation.", { status: 500 });
   }
 }
+

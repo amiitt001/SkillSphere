@@ -1,21 +1,39 @@
-// In frontend/src/app/api/resume-helper/route.ts
-
+/**
+ * This API endpoint powers the "AI Resume Co-Pilot" feature.
+ * It receives a user's skills and a job description, constructs a prompt
+ * for the Google Gemini AI to generate tailored resume bullet points,
+ * and streams the response back to the client.
+ */
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { type NextRequest, NextResponse } from 'next/server';
 
+// This configuration ensures the function runs on every request.
 export const dynamic = 'force-dynamic';
 
+/**
+ * Handles the POST request to generate resume bullet points.
+ * @param request The incoming Next.js request object.
+ * @returns A streaming response with the AI-generated markdown text.
+ */
 export async function POST(request: NextRequest) {
   try {
+    // --- 1. PARSE USER INPUT ---
+    // Extract the user's skills and the target job description from the request body.
     const { skills, jobDescription } = await request.json();
 
+    // Validate that the required data was provided.
     if (!skills || !jobDescription) {
       return NextResponse.json({ error: 'Missing skills or job description.' }, { status: 400 });
     }
 
+    // --- 2. INITIALIZE THE AI MODEL ---
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
+    // --- 3. CONSTRUCT THE DETAILED PROMPT ---
+    // This prompt instructs the AI to act as a career coach and generate
+    // powerful, action-oriented resume bullet points that connect the user's
+    // skills to the specific requirements of the job description.
     const prompt = `
       Act as an expert career coach. Based on the user's list of skills and the provided job description, generate 3 to 5 powerful, action-oriented bullet points for their resume.
       Each bullet point should directly connect one or more of the user's skills to a requirement or responsibility in the job description.
@@ -30,8 +48,10 @@ export async function POST(request: NextRequest) {
       ---
     `;
 
+    // --- 4. CALL THE AI AND GET A STREAMING RESPONSE ---
     const result = await model.generateContentStream(prompt);
 
+    // --- 5. FORWARD THE STREAM TO THE CLIENT ---
     const stream = new ReadableStream({
       async start(controller) {
         for await (const chunk of result.stream) {
@@ -47,7 +67,9 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
+    // Log the error for debugging on the server
     console.error("Error in resume-helper API route:", error);
+    // Return a generic error response to the client
     return NextResponse.json({ error: 'Failed to generate resume points.' }, { status: 500 });
   }
 }
