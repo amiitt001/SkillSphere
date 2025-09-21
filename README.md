@@ -34,7 +34,7 @@ Confused about your career path? Overwhelmed by too many choices?
   Seamless experience across desktop and mobile devices with Tailwind CSS. 
 ---
 
-## 🖼️ Screenshots  
+## 🖼️ Screenshot 
 ![SkillSphere Demo](./readme-assets/skillsphere-screenshot.png) 
 
 ---
@@ -57,9 +57,7 @@ Confused about your career path? Overwhelmed by too many choices?
 ## 🏗️ Architecture  
   
 
-<p align="center">  
-  <img src="readme-assets/architecture.png" alt="SkillSphere Architecture" width="700"/>  
-</p>  
+![Architecture ](./readme-assets/architecture.jpeg) 
 
 ---
 
