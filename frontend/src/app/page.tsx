@@ -8,35 +8,61 @@ import { Recommendation } from '@/types';
 import ComparisonTable from '@/components/ComparisonTable';
 import { useAuth } from '@/context/AuthContext';
 
+// Define the type for the comparison table data
 interface TableRow {
   feature: string;
   career1_details: string;
   career2_details: string;
 }
 
+/**
+ * Main dashboard page for SkillSphere. Handles user input, fetches AI recommendations,
+ * and displays career comparison results.
+ */
 export default function Home() {
+  // --- STATE MANAGEMENT ---
+
+  // User input state
   const { user } = useAuth();
   const [academicStream, setAcademicStream] = useState('Computer Science');
   const [skills, setSkills] = useState<string[]>(['Python', 'JavaScript', 'SQL']);
   const [interests, setInterests] = useState<string[]>(['AI Ethics', 'Open Source']);
+
+  // UI and Data State
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // State for the Career Comparison feature
   const [selectedCareers, setSelectedCareers] = useState<string[]>([]);
   const [isComparing, setIsComparing] = useState(false);
   const [comparisonSummary, setComparisonSummary] = useState('');
   const [tableData, setTableData] = useState<TableRow[]>([]);
 
+  // --- HANDLER FUNCTIONS ---
+
+  /**
+   * Handles both selecting and deselecting career cards for comparison.
+   * Allows a maximum of two cards to be selected at a time.
+   */
   const handleSelectCareer = (title: string) => {
     setSelectedCareers(prevSelected => {
-      if (prevSelected.includes(title)) { return prevSelected.filter(t => t !== title); }
-      if (prevSelected.length < 2) { return [...prevSelected, title]; }
-      return prevSelected;
+      if (prevSelected.includes(title)) {
+        return prevSelected.filter(t => t !== title); // Deselect if already present
+      }
+      if (prevSelected.length < 2) {
+        return [...prevSelected, title]; // Select if less than 2 are selected
+      }
+      return prevSelected; // Otherwise, do nothing
     });
   };
 
+  /**
+   * Main form submission handler to fetch career recommendations from the AI.
+   */
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    // Reset all states for a new search
     setIsLoading(true);
     setError('');
     setRecommendations([]);
@@ -45,23 +71,31 @@ export default function Home() {
     setTableData([]);
 
     try {
+      // Construct the API URL with user input as search parameters
       const params = new URLSearchParams({ academicStream, skills: skills.join(','), interests: interests.join(',') });
       const url = `/api/generate-recommendations?${params.toString()}`;
+      
       const response = await fetch(url);
-      if (!response.ok || !response.body) { throw new Error(`Server responded with status: ${response.status}`); }
+      if (!response.ok || !response.body) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+
+      // Read the streamed response from the server
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let fullResponse = '';
-      while (true) { const { done, value } = await reader.read(); if (done) break; fullResponse += decoder.decode(value); }
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullResponse += decoder.decode(value);
+      }
+
+      // Find and parse the JSON object from the AI's response
       const jsonMatch = fullResponse.match(/{[\s\S]*}/);
       if (jsonMatch && jsonMatch[0]) {
         const jsonString = jsonMatch[0];
         const resultJson = JSON.parse(jsonString);
         setRecommendations(resultJson.recommendations);
-        if (user && resultJson.recommendations.length > 0) {
-          const userInput = { academicStream, skills, interests };
-        
-        }
       } else {
         throw new Error("No valid JSON object found in the AI response.");
       }
@@ -73,6 +107,9 @@ export default function Home() {
     }
   };
 
+  /**
+   * Fetches the AI-powered comparison for the two selected careers.
+   */
   const handleCompare = async () => {
     if (selectedCareers.length !== 2) return;
     setIsComparing(true);
@@ -83,12 +120,21 @@ export default function Home() {
     try {
       const params = new URLSearchParams({ career1: selectedCareers[0], career2: selectedCareers[1] });
       const url = `/api/compare-careers?${params.toString()}`;
+      
       const response = await fetch(url);
-      if (!response.ok || !response.body) { throw new Error(`Server responded with status: ${response.status}`); }
+      if (!response.ok || !response.body) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let fullResponse = '';
-      while (true) { const { done, value } = await reader.read(); if (done) break; fullResponse += decoder.decode(value); }
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullResponse += decoder.decode(value);
+      }
+      
       const jsonMatch = fullResponse.match(/{[\s\S]*}/);
       if (jsonMatch && jsonMatch[0]) {
         const jsonString = jsonMatch[0];
@@ -106,11 +152,14 @@ export default function Home() {
     }
   };
 
+  // --- RENDER ---
+
   return (
     <div>
       <h1 className="text-4xl font-bold text-white">Personalized Recommendations</h1>
       <p className="text-slate-400 mt-2 mb-8">Powered by Google Gemini AI</p>
 
+      {/* Input form for user's profile */}
       <form onSubmit={handleSubmit} className="bg-slate-800 p-6 rounded-lg mb-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
@@ -131,10 +180,12 @@ export default function Home() {
         </button>
       </form>
 
+      {/* Results section */}
       <div className="mt-8">
         {isLoading && <div className="flex justify-center py-10"><LoadingSpinner /></div>}
         {error && <p className="text-red-500 text-center">{error}</p>}
         
+        {/* Compare button appears only when recommendations are visible */}
         {recommendations.length > 0 && (
           <div className="flex justify-center mb-6">
             <button 
@@ -149,6 +200,7 @@ export default function Home() {
 
         {isComparing && <div className="flex justify-center py-10"><LoadingSpinner /></div>}
 
+        {/* Comparison results are displayed here */}
         {!isComparing && (comparisonSummary || tableData.length > 0) && (
           <div className="bg-slate-900 p-6 rounded-lg text-white mb-8">
             <h2 className="text-2xl font-bold text-green-400 mb-4">Career Comparison</h2>
@@ -161,6 +213,7 @@ export default function Home() {
           </div>
         )}
 
+        {/* Recommendation cards are displayed here */}
         {!isLoading && !error && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {recommendations.map((rec) => (
