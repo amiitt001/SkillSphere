@@ -59,7 +59,7 @@ Confused about your career path? Overwhelmed by too many choices?
 The application follows a modern, unified architecture where the frontend and backend are part of a single Next.js project deployed on Vercel. This approach simplifies development and ensures scalability.
 
 <p align="center">
-  <img src="./readme-assets/architecture.jpeg" alt="SkillSphere Architecture Diagram" width="700"/>
+  <img src="./readme-assets/architecture.jpeg" alt="SkillSphere Architecture Diagram" width="600"/>
 </p>
 
 
