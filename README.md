@@ -154,15 +154,15 @@ cd SkillSphere/frontend
 npm install
 
 #### 3️⃣ Configure Environment Variables
-## 1. In the frontend directory, create a new file named .env.local.
-## 2. Copy the content of the .env.example file (or use the template below) into your new .env.local file:
+#### 1. In the frontend directory, create a new file named .env.local.
+#### 2. Copy the content of the .env.example file (or use the template below) into your new .env.local file:
 
-# --- Google AI Credentials ---
-# Get this from Google AI Studio: https://aistudio.google.com/
+#### --- Google AI Credentials ---
+#### Get this from Google AI Studio: https://aistudio.google.com/
 GEMINI_API_KEY=...
 
-# --- Firebase Client Credentials ---
-# Get these from your Firebase Console -> Project Settings -> General -> Your Apps -> Web App Config
+#### --- Firebase Client Credentials ---
+#### Get these from your Firebase Console -> Project Settings -> General -> Your Apps -> Web App Config
 NEXT_PUBLIC_FIREBASE_API_KEY=...
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
