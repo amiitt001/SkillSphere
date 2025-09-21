@@ -5,7 +5,7 @@
 [![Next.js](https://img.shields.io/badge/Frontend-Next.js-black)]()  
 [![Tailwind CSS](https://img.shields.io/badge/Style-TailwindCSS-teal)]()  
 
-👉 **Live Demo:** [SkillSphere Web App](https://skillsphere-app.web.app)  
+👉 **Live Demo:** [SkillSphere Web App](https://skill-sphere-7szf.vercel.app)  
 
 ---
 
@@ -14,47 +14,46 @@ Confused about your career path? Overwhelmed by too many choices?
 **SkillSphere** uses Google’s **Gemini AI** to turn your academic background, existing skills, and personal interests into **personalized career roadmaps**. No more guesswork — get **AI-powered guidance** that actually makes sense.  
 
 ---
+## ✨ Key Features  
 
-## ✨ Features  
-- 🤖 **AI-Powered Recommendations** — Generates 3 tailored career paths with justifications.  
-- 🗺️ **Detailed Roadmaps** — Actionable steps to follow, not just vague advice.  
-- 🔒 **Secure Authentication** — Sign in with Google via Firebase Auth.  
-- 📜 **Persistent History** — Past recommendations saved in Firestore for each user.  
-- 📱 **Responsive UI** — Next.js + Tailwind ensures smooth use across devices.  
-- ☁️ **Cloud-Native** — Backend on Cloud Run, frontend on Firebase Hosting.  
+- 🤖 **AI-Powered Career Recommendations**  
+  Generates 3 tailored career paths using Google Gemini 1.5 Flash, based on a user’s academic stream, skills, and interests. Displayed in a clean, card-based UI.  
 
+- ⚖️ **Interactive Career Comparison**  
+  Select any two careers and get a side-by-side AI-generated comparison table.  
+
+- 📝 **AI Resume Co-Pilot**  
+  Paste a job description, and get customized, powerful resume bullet points based on your skills.  
+
+- 🔐 **Secure User Authentication**  
+  Sign in safely with Google accounts via Firebase Authentication.  
+
+- 📱 **Fully Responsive UI**  
+  Seamless experience across desktop and mobile devices with Tailwind CSS. 
 ---
 
 ## 🖼️ Screenshots  
-👉 Place screenshots in `readme-assets/` folder.  
-
-<p align="center">  
-  <img src="readme-assets/skillsphere-screenshot.jpg" alt="SkillSphere Screenshot" width="700"/>  
-</p>  
+![SkillSphere Demo](./readme-assets/skillsphere-screenshot.png) 
 
 ---
 
-## 🛠️ Tech Stack  
+## 🛠️ Tech Stack
 
-**Frontend**  
-- ⚡ Next.js (App Router)  
-- 🎨 Tailwind CSS  
-- 🔑 Firebase Authentication  
+| Category         | Technology |
+|------------------|------------|
+| **Framework**    | Next.js (App Router) |
+| **Language**     | TypeScript |
+| **Styling**      | Tailwind CSS |
+| **Auth**         | Firebase Authentication |
+| **Backend**      | Next.js API Routes (Serverless Functions on Vercel) |
+| **AI Model**     | Google Gemini 1.5 Flash |
+| **Deployment**   | Vercel |
 
-**Backend**  
-- 🚀 Node.js + Express.js  
-- 🤖 Google Vertex AI (Gemini Pro model)  
-- 🔒 Cloud Firestore  
-
-**Deployment**  
-- 🐳 Docker + Google Cloud Run (backend)  
-- 🌍 Firebase Hosting (frontend)  
 
 ---
 
 ## 🏗️ Architecture  
-
-👉 Save an architecture diagram in `readme-assets/architecture.png`.  
+  
 
 <p align="center">  
   <img src="readme-assets/architecture.png" alt="SkillSphere Architecture" width="700"/>  
@@ -64,7 +63,6 @@ Confused about your career path? Overwhelmed by too many choices?
 
 ## 📂 Project Structure  
 
-```bash
 SkillSphere/
 ├── backend/           # Node.js backend service
 =======
@@ -73,121 +71,112 @@ SkillSphere is a modern, full-stack web application designed to provide personal
 
 The application is fully deployed to the cloud, featuring a responsive user interface, user authentication, and a persistent history of recommendations.
 
-Live Application URL: https://skillsphere-app.web.app
+Live Application URL: https://skill-sphere-7szf.vercel.app/
 
-(Suggestion: Create a folder named readme-assets in your root directory and add a nice screenshot of your app named skillsphere-screenshot.jpg)
 
-✨ Core Features
-Personalized AI Recommendations: Utilizes Google's Gemini Pro model to generate three distinct career paths based on user inputs.
+## 🚀 Future Scope  
 
-Detailed Career Roadmaps: Each recommendation includes a clear justification and actionable steps for the user to follow.
+SkillSphere has huge potential to evolve into a **full-fledged career development platform**. Planned enhancements include:  
 
-Secure User Authentication: Users can sign in securely with their Google accounts via Firebase Authentication.
+- 🌐 **Actionable Job & Learning Links**  
+  Direct users to relevant job openings or top-rated courses based on their eligibility and skill gaps.  
 
-Persistent History: Logged-in users have their recommendation history automatically saved to a private collection in Cloud Firestore.
+- 🧩 **AI-Powered Skill Assessment Quizzes**  
+  Personalized quizzes to assess skill proficiency and identify knowledge gaps.  
 
-Fully Responsive UI: The user interface is built with Next.js and Tailwind CSS, providing a seamless experience on both desktop and mobile devices.
+- 📄 **AI Resume Enhancement**  
+  Upload full resumes for a comprehensive AI-driven analysis with actionable suggestions for projects and skill upgrades.  
 
-Professional Architecture: The codebase is organized into a scalable monorepo structure, with a clear separation between the frontend and a service-oriented backend.
+- 🛠️ **AI Project Generator**  
+  Generate bespoke portfolio projects aligned with user skills and target careers.  
 
-Cloud-Native Deployment: The entire application is deployed on Google Cloud Platform, with the backend running on Cloud Run and the frontend on Firebase Hosting.
+- 🎤 **AI-Powered Interview Prep**  
+  Generate common interview questions for recommended careers with AI-driven feedback on responses.  
 
-🛠️ Tech Stack & Architecture
-This project is a full-stack application built with a modern, cloud-native architecture.
+- 💬 **Personalized Chatbot**  
+  Ask conversational questions about careers, skills, or the job market.  
 
-Frontend
-Framework: Next.js (with App Router)
+- 📚 **Hyper-Localized Learning Paths**  
+  Integrate Indian educational resources (like NPTEL) and tutorials in regional languages for tailored learning.  
 
-Language: TypeScript
 
-Styling: Tailwind CSS
-
-Authentication: Firebase Authentication
-
-Database (Client): Cloud Firestore
-
-Deployment: Firebase Hosting
-
-Backend
-Framework: Node.js with Express.js
-
-Language: JavaScript
-
-AI Integration: Google Vertex AI SDK for the Gemini Pro model.
-
-Containerization: Docker
-
-Deployment: Google Cloud Run
 
 Project Structure
 The project is organized as a monorepo with two main packages: frontend and backend.
 
 SkillSphere/
-├── backend/
->>>>>>> 6f9f51ae33da0aa6d724bda38432ad158394c9de
-│   ├── src/
-│   │   ├── controllers/
-│   │   ├── routes/
-│   │   └── services/
-│   ├── Dockerfile
-│   └── ...
-├── frontend/          # Next.js frontend application
-│   ├── src/
-│   │   ├── app/
-│   │   ├── components/
-│   │   ├── context/
-│   │   ├── lib/
-│   │   └── types/
-│   └── ...
-└── README.md
+└── frontend/                  <-- Root of the Vercel Project
+    ├── public/                <-- Static assets (images, fonts)
+    ├── src/
+    │   ├── app/               <-- Core application (UI Pages & Backend API)
+    │   │   ├── api/           <-- BACKEND: All server-side API routes
+    │   │   │   ├── compare-careers/
+    │   │   │   ├── generate-recommendations/
+    │   │   │   └── resume-helper/
+    │   │   │
+    │   │   ├── resume-helper/ <-- FRONTEND: The UI for the Resume Co-Pilot page
+    │   │   │   └── page.tsx
+    │   │   │
+    │   │   ├── layout.tsx     <-- Main application layout
+    │   │   └── page.tsx       <-- Main dashboard page UI
+    │   │
+    │   ├── components/        <-- Reusable React components (Cards, Inputs, etc.)
+    │   ├── context/           <-- Global state management (Authentication)
+    │   ├── lib/               <-- Helper libraries (Firebase client)
+    │   └── types/             <-- Shared TypeScript type definitions
+    │
+    ├── next.config.ts         <-- Next.js configuration
+    └── package.json           <-- Project dependencies
 
-🚀 Getting Started Locally
-Prerequisites
-Node.js (v18 or later)
 
-Docker Desktop
 
-Google Cloud SDK (gcloud)
+## 🚀 Getting Started Locally
 
-Firebase CLI (firebase-tools)
+Follow these instructions to set up and run the project on your local machine.
 
-Setup Instructions
-Clone the repository:
+---
 
-git clone [https://github.com/your-username/your-repo-name.git](https://github.com/your-username/your-repo-name.git)
-cd your-repo-name
+### Prerequisites
+- Node.js (v18 or later)
+- A Google Account to create Firebase and Google AI credentials
 
-Configure Backend:
+---
 
-Navigate to the backend directory: cd backend
+### Setup Instructions
 
-Create a .env file and add your Google Cloud PROJECT_ID and REGION.
+#### 1️⃣ Clone the Repository
 
-Install dependencies: npm install
+git clone https://github.com/amiitt001/SkillSphere.git
+cd SkillSphere/frontend
 
-Authenticate for local development: gcloud auth application-default login
+#### 2️⃣ Install Dependencies
 
-Configure Frontend:
+npm install
 
-Navigate to the frontend directory: cd frontend
+#### 3️⃣ Configure Environment Variables
+## 1. In the frontend directory, create a new file named .env.local.
+## 2. Copy the content of the .env.example file (or use the template below) into your new .env.local file:
 
-In src/lib/firebase.ts, replace the placeholder firebaseConfig with your actual Firebase web app configuration keys.
+# --- Google AI Credentials ---
+# Get this from Google AI Studio: https://aistudio.google.com/
+GEMINI_API_KEY=...
 
-Install dependencies: npm install
+# --- Firebase Client Credentials ---
+# Get these from your Firebase Console -> Project Settings -> General -> Your Apps -> Web App Config
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
 
-Authenticate with Firebase: firebase login
+⚠️ Make sure to replace ... with your actual credentials.
 
-Run the Application:
+#### 4️⃣ Run the Application
+Start the Next.js development server:
 
-Start the backend server (from the backend folder): npm start
+npm run dev
 
-Start the frontend server (from the frontend folder): npm run dev
+Your application will be available at: http://localhost:3000
 
-The application will then be available at http://localhost:3000.
 
-☁️ Deployment
-The application is designed for a full cloud deployment on Google Cloud Platform.
-
-Backend (Cloud Run): The backend is containerized using Docker and deployed as a serverless service on Cloud Run. It is configured to run with a dedicated service account and has a minimum of 1 instance to prevent cold starts.
-
-Frontend (Firebase Hosting): The frontend is a static Next.js application deployed to Firebase Hosting, which provides a global CDN for fast delivery.
