@@ -35,7 +35,7 @@ Confused about your career path? Overwhelmed by too many choices?
 ---
 
 ## 🖼️ Screenshots  
-![SkillSphere Demo](frontend\readme-assets\skillsphere-screenshot.png) 
+![SkillSphere Demo](./readme-assets/skillsphere-screenshot.png) 
 
 ---
 
