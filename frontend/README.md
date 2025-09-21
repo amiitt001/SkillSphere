@@ -5,10 +5,12 @@
 ![Dashboard](./readme-assets/dashboard.png) 
 
 
-![Next.js](https://img.shields.io/badge/Next.js-black?style=flat-square&logo=nextdotjs)
-![Vercel](https://img.shields.io/badge/Vercel-black?style=flat-square&logo=vercel)
-![Firebase](https://img.shields.io/badge/Firebase-yellow?style=flat-square&logo=firebase)
-![TypeScript](https://img.shields.io/badge/TypeScript-blue?style=flat-square&logo=typescript)
+[![Vercel](https://img.shields.io/badge/Deployment-Vercel-black?style=flat&logo=vercel)](https://skill-sphere-7szf.vercel.app/)
+[![Next.js](https://img.shields.io/badge/Framework-Next.js-blue?style=flat&logo=next.js)](https://nextjs.org/)
+[![Google Gemini](https://img.shields.io/badge/AI-Google%20Gemini-blueviolet?style=flat&logo=google-gemini)](https://ai.google.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind%20CSS-teal?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
+[![TypeScript](https://img.shields.io/badge/Language-TypeScript-blue?style=flat&logo=typescript)](https://www.typescriptlang.org/)
+
 
 🔗 **Live App**: [SkillSphere Web App](https://skill-sphere-7szf.vercel.app)  
 

@@ -1,9 +1,11 @@
 # 🚀 SkillSphere: AI-Powered Skill & Career Advisor  
 
-[![Firebase Hosting](https://img.shields.io/badge/Hosting-Firebase-orange)]()  
-[![Cloud Run](https://img.shields.io/badge/Backend-GCP%20Cloud%20Run-blue)]()  
-[![Next.js](https://img.shields.io/badge/Frontend-Next.js-black)]()  
-[![Tailwind CSS](https://img.shields.io/badge/Style-TailwindCSS-teal)]()  
+[![Vercel](https://img.shields.io/badge/Deployment-Vercel-black?style=flat&logo=vercel)](https://skill-sphere-7szf.vercel.app/)
+[![Next.js](https://img.shields.io/badge/Framework-Next.js-blue?style=flat&logo=next.js)](https://nextjs.org/)
+[![Google Gemini](https://img.shields.io/badge/AI-Google%20Gemini-blueviolet?style=flat&logo=google-gemini)](https://ai.google.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind%20CSS-teal?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
+[![TypeScript](https://img.shields.io/badge/Language-TypeScript-blue?style=flat&logo=typescript)](https://www.typescriptlang.org/)
+
 
 👉 **Live Demo:** [SkillSphere Web App](https://skill-sphere-7szf.vercel.app)  
 
@@ -64,7 +66,7 @@ Confused about your career path? Overwhelmed by too many choices?
 ## 📂 Project Structure  
 
 ## SkillSphere/├── backend/           # Node.js backend service
-=======
+
 SkillSphere: AI-Powered Skill & Career Advisor
 SkillSphere is a modern, full-stack web application designed to provide personalized career and skill recommendations. Leveraging the power of Google's Gemini AI, this application offers tailored advice to help guide users on their professional journey.
 
