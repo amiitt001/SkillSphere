@@ -54,10 +54,21 @@ Confused about your career path? Overwhelmed by too many choices?
 
 ---
 
-## 🏗️ Architecture  
+## 🏗️ System Architecture  
   
+The application follows a modern, unified architecture where the frontend and backend are part of a single Next.js project deployed on Vercel. This approach simplifies development and ensures scalability.
 
-![Architecture ](./readme-assets/architecture.jpeg) 
+<p align="center">
+  <img src="./readme-assets/architecture.jpeg" alt="SkillSphere Architecture Diagram" width="700"/>
+</p>
+
+
+**Data Flow:**
+1.  The user interacts with the **Next.js Frontend** (React Components) in their browser.
+2.  User actions (like requesting recommendations) trigger an API call to a **Next.js API Route**.
+3.  This API Route (the **Backend Logic**) securely calls the **Google Gemini AI** with a structured prompt.
+4.  The AI's response is **streamed** back through the API route directly to the user's browser for a real-time experience.
+5.  **Firebase Authentication** handles all user sign-in and session management.
 
 ---
 
