@@ -9,6 +9,10 @@ import { type NextRequest } from 'next/server';
 // This configuration ensures the function runs on every request, not just once at build time.
 export const dynamic = 'force-dynamic';
 
+// --- FIX ---
+// Add this line to specify the Node.js runtime
+export const runtime = 'nodejs';
+
 /**
  * Handles the GET request to generate career recommendations.
  * @param request The incoming Next.js request object, containing user input in the URL.
@@ -25,27 +29,27 @@ export async function GET(request: NextRequest) {
 
     // --- 2. INITIALIZE THE AI MODEL ---
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-   const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash-latest",
-  safetySettings: [
-    {
-      category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-      threshold: HarmBlockThreshold.BLOCK_NONE,
-    },
-    {
-      category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-      threshold: HarmBlockThreshold.BLOCK_NONE,
-    },
-    {
-      category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-      threshold: HarmBlockThreshold.BLOCK_NONE,
-    },
-    {
-      category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-      threshold: HarmBlockThreshold.BLOCK_NONE,
-    },
-  ],
-});
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash-latest",
+      safetySettings: [
+        {
+          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+      ],
+    });
     // --- 3. CONSTRUCT THE DETAILED PROMPT ---
     // This prompt instructs the AI to act as a career advisor and return a structured
     // JSON object containing three detailed career recommendations.
@@ -100,4 +104,3 @@ export async function GET(request: NextRequest) {
     return new Response("Error generating recommendation.", { status: 500 });
   }
 }
-
