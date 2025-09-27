@@ -1,7 +1,8 @@
 {
   "functions": {
-    "pages/api/generate-recommendations.ts": {
+    "api/generate-recommendations": {
       "regions": ["iad1"]
     }
   }
 }
+
