@@ -4,7 +4,7 @@
  * for the Google Gemini AI to generate tailored resume bullet points,
  * and streams the response back to the client.
  */
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { type NextRequest, NextResponse } from 'next/server';
 
 // This configuration ensures the function runs on every request.
@@ -28,7 +28,27 @@ export async function POST(request: NextRequest) {
 
     // --- 2. INITIALIZE THE AI MODEL ---
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    const model = genAI.getGenerativeModel({
+  model: "gemini-1.5-flash-latest",
+  safetySettings: [
+    {
+      category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+      threshold: HarmBlockThreshold.BLOCK_NONE,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+      threshold: HarmBlockThreshold.BLOCK_NONE,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+      threshold: HarmBlockThreshold.BLOCK_NONE,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+      threshold: HarmBlockThreshold.BLOCK_NONE,
+    },
+  ],
+});
 
     // --- 3. CONSTRUCT THE DETAILED PROMPT ---
     // This prompt instructs the AI to act as a career coach and generate
