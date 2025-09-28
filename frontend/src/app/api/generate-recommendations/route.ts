@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 
 /**
  * Handles the GET request to generate career recommendations by calling the Google AI API directly.
- * This version uses the standard, non-streaming endpoint for maximum compatibility.
+ * This version uses the standard, non-streaming endpoint and the correct, versioned model name.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -40,8 +40,8 @@ export async function GET(request: NextRequest) {
       - Interests: ${interests.join(', ')}
     `;
 
-    // --- FIX: Use the standard non-streaming endpoint ---
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
+    // --- FINAL FIX: Use the full, versioned model name ---
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${GEMINI_API_KEY}`;
 
     const requestBody = {
       contents: [{ parts: [{ text: prompt }] }],
@@ -56,17 +56,12 @@ export async function GET(request: NextRequest) {
     if (!apiResponse.ok) {
       const errorText = await apiResponse.text();
       console.error("Error from Google AI API:", errorText);
-      // Forward the exact error status and message from Google
       return new Response(errorText, { status: apiResponse.status });
     }
 
-    // --- FIX: Handle the non-streaming JSON response ---
     const responseJson = await apiResponse.json();
-    
-    // Extract the text content from the AI's response
     const aiResponseText = responseJson.candidates[0].content.parts[0].text;
     
-    // Return the clean JSON text to the client
     return new Response(aiResponseText, {
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
     });
