@@ -3,7 +3,7 @@
  * It receives user input, constructs a detailed prompt, and streams the response
  * from the Google Gemini AI back to the client.
  */
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { type NextRequest } from 'next/server';
 
 // This configuration ensures the function runs on every request, not just once at build time.
@@ -28,29 +28,10 @@ export async function GET(request: NextRequest) {
     // --- 2. INITIALIZE THE AI MODEL ---
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-    // --- FIX: Remove safetySettings for debugging ---
-    // The model will use its default safety settings. This is the most likely
-    // cause of the crash due to potential SDK version mismatches or API rejection.
+    // --- FINAL FIX: Change to the stable 'gemini-pro' model ---
+    // This resolves potential access issues with the newer 'gemini-1.5-flash' model.
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-latest",
-      // safetySettings: [
-      //   {
-      //     category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-      //     threshold: HarmBlockThreshold.BLOCK_NONE,
-      //   },
-      //   {
-      //     category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-      //     threshold: HarmBlockThreshold.BLOCK_NONE,
-      //   },
-      //   {
-      //     category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-      //     threshold: HarmBlockThreshold.BLOCK_NONE,
-      //   },
-      //   {
-      //     category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-      //     threshold: HarmBlockThreshold.BLOCK_NONE,
-      //   },
-      // ],
+      model: "gemini-pro",
     });
 
     // --- 3. CONSTRUCT THE DETAILED PROMPT ---
