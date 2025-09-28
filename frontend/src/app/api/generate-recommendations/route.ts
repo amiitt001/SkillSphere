@@ -9,6 +9,7 @@ import { type NextRequest } from 'next/server';
 // This configuration ensures the function runs on every request, not just once at build time.
 export const dynamic = 'force-dynamic';
 
+// Ensures the function runs in a Node.js environment on Vercel
 export const runtime = 'nodejs';
 
 /**
@@ -19,7 +20,6 @@ export const runtime = 'nodejs';
 export async function GET(request: NextRequest) {
   try {
     // --- 1. PARSE USER INPUT ---
-    // Extract user's academic stream, skills, and interests from the URL query parameters.
     const searchParams = request.nextUrl.searchParams;
     const academicStream = searchParams.get('academicStream') || '';
     const skills = searchParams.get('skills')?.split(',') || [];
@@ -27,30 +27,33 @@ export async function GET(request: NextRequest) {
 
     // --- 2. INITIALIZE THE AI MODEL ---
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+
+    // --- FIX: Remove safetySettings for debugging ---
+    // The model will use its default safety settings. This is the most likely
+    // cause of the crash due to potential SDK version mismatches or API rejection.
     const model = genAI.getGenerativeModel({
       model: "gemini-1.5-flash-latest",
-      safetySettings: [
-        {
-          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-      ],
+      // safetySettings: [
+      //   {
+      //     category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+      //     threshold: HarmBlockThreshold.BLOCK_NONE,
+      //   },
+      //   {
+      //     category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+      //     threshold: HarmBlockThreshold.BLOCK_NONE,
+      //   },
+      //   {
+      //     category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+      //     threshold: HarmBlockThreshold.BLOCK_NONE,
+      //   },
+      //   {
+      //     category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+      //     threshold: HarmBlockThreshold.BLOCK_NONE,
+      //   },
+      // ],
     });
+
     // --- 3. CONSTRUCT THE DETAILED PROMPT ---
-    // This prompt instructs the AI to act as a career advisor and return a structured
-    // JSON object containing three detailed career recommendations.
     const prompt = `
       You are an expert career and skills advisor. Your task is to provide personalized career path recommendations for a user in India.
       Your entire response MUST be a single, valid JSON object. Do not include any text, markdown formatting, or notes before or after the JSON object.
@@ -74,21 +77,16 @@ export async function GET(request: NextRequest) {
     const result = await model.generateContentStream(prompt);
 
     // --- 5. FORWARD THE STREAM TO THE CLIENT ---
-    // This creates a new ReadableStream that we can control, allowing us to pipe the
-    // AI's response directly to the browser as it's being generated.
     const stream = new ReadableStream({
       async start(controller) {
         for await (const chunk of result.stream) {
           const chunkText = chunk.text();
-          // Add each piece of text from the AI to our new stream
           controller.enqueue(new TextEncoder().encode(chunkText));
         }
-        // Signal that we're finished sending data
         controller.close();
       },
     });
 
-    // Return the stream as the final response to the frontend.
     return new Response(stream, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
@@ -96,9 +94,8 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    // Log the error for debugging on the server
     console.error("Error in generate-recommendations API route:", error);
-    // Return a generic error response to the client
     return new Response("Error generating recommendation.", { status: 500 });
   }
 }
+
