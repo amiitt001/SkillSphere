@@ -1,8 +1,4 @@
 {
-  "functions": {
-    "api/generate-recommendations": {
-      "regions": ["iad1"]
-    }
-  }
+  "regions": ["iad1"]
 }
 
