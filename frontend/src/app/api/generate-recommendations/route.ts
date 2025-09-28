@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 
 /**
  * Handles the GET request to generate career recommendations by calling the Google AI API directly.
- * This is the definitive version, using the primary 'gemini-1.5-pro-latest' model.
+ * This is the definitive, final version, using the stable v1 endpoint and the standard gemini-pro model.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -40,8 +40,8 @@ export async function GET(request: NextRequest) {
       - Interests: ${interests.join(', ')}
     `;
 
-    // --- FINAL FIX: Use the 'gemini-1.5-pro-latest' model name ---
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${GEMINI_API_KEY}`;
+    // --- FINAL FIX: Use the stable v1 endpoint and gemini-pro model ---
+    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
 
     const requestBody = {
       contents: [{ parts: [{ text: prompt }] }],
