@@ -9,8 +9,6 @@ import { type NextRequest } from 'next/server';
 // This configuration ensures the function runs on every request, not just once at build time.
 export const dynamic = 'force-dynamic';
 
-// --- FIX ---
-// Add this line to specify the Node.js runtime
 export const runtime = 'nodejs';
 
 /**
