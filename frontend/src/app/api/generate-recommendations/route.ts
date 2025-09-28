@@ -1,9 +1,3 @@
-/**
- * This is the core backend API endpoint for generating personalized career recommendations.
- * It receives user input, constructs a detailed prompt, and streams the response
- * from the Google Gemini AI back to the client.
- */
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { type NextRequest } from 'next/server';
 
 // This configuration ensures the function runs on every request, not just once at build time.
@@ -13,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /**
- * Handles the GET request to generate career recommendations.
+ * Handles the GET request to generate career recommendations by calling the Google AI API directly.
  * @param request The incoming Next.js request object, containing user input in the URL.
  * @returns A streaming response with the AI-generated JSON.
  */
@@ -24,17 +18,13 @@ export async function GET(request: NextRequest) {
     const academicStream = searchParams.get('academicStream') || '';
     const skills = searchParams.get('skills')?.split(',') || [];
     const interests = searchParams.get('interests')?.split(',') || [];
+    const apiKey = process.env.GEMINI_API_KEY;
 
-    // --- 2. INITIALIZE THE AI MODEL ---
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY environment variable not set");
+    }
 
-    // --- FINAL FIX: Change to the stable 'gemini-pro' model ---
-    // This resolves potential access issues with the newer 'gemini-1.5-flash' model.
-    const model = genAI.getGenerativeModel({
-      model: "gemini-pro",
-    });
-
-    // --- 3. CONSTRUCT THE DETAILED PROMPT ---
+    // --- 2. CONSTRUCT THE PROMPT AND REQUEST BODY ---
     const prompt = `
       You are an expert career and skills advisor. Your task is to provide personalized career path recommendations for a user in India.
       Your entire response MUST be a single, valid JSON object. Do not include any text, markdown formatting, or notes before or after the JSON object.
@@ -54,21 +44,32 @@ export async function GET(request: NextRequest) {
       - Interests: ${interests.join(', ')}
     `;
 
-    // --- 4. CALL THE AI AND GET A STREAMING RESPONSE ---
-    const result = await model.generateContentStream(prompt);
+    const requestBody = {
+      contents: [{
+        parts: [{ text: prompt }]
+      }],
+    };
 
-    // --- 5. FORWARD THE STREAM TO THE CLIENT ---
-    const stream = new ReadableStream({
-      async start(controller) {
-        for await (const chunk of result.stream) {
-          const chunkText = chunk.text();
-          controller.enqueue(new TextEncoder().encode(chunkText));
-        }
-        controller.close();
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:streamGenerateContent?key=${apiKey}`;
+
+    // --- 3. CALL THE API DIRECTLY USING FETCH ---
+    const apiResponse = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify(requestBody),
     });
 
-    return new Response(stream, {
+    if (!apiResponse.ok) {
+        const errorBody = await apiResponse.text();
+        console.error("Google API Error:", errorBody);
+        throw new Error(`API request failed with status ${apiResponse.status}: ${errorBody}`);
+    }
+
+    // --- 4. FORWARD THE STREAM TO THE CLIENT ---
+    // The native fetch response body is already a ReadableStream, so we can return it directly.
+    return new Response(apiResponse.body, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
       },
