@@ -1,11 +1,10 @@
 import { type NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
 
 /**
- * Handles the GET request to generate career recommendations by calling the Google AI API directly.
- * This is the definitive, final version, using the stable v1 endpoint and the standard gemini-pro model.
+ * Handles the GET request to generate career recommendations in a Next.js App Router environment.
+ * This is the definitive, final version.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -40,8 +39,7 @@ export async function GET(request: NextRequest) {
       - Interests: ${interests.join(', ')}
     `;
 
-    // --- FINAL FIX: Use the stable v1 endpoint and gemini-pro model ---
-    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
+    const API_URL = `https://generativelace.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
 
     const requestBody = {
       contents: [{ parts: [{ text: prompt }] }],
@@ -71,4 +69,3 @@ export async function GET(request: NextRequest) {
     return new Response("A critical error occurred on the server.", { status: 500 });
   }
 }
-
