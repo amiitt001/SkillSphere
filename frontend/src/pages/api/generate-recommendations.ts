@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 /**
  * Handles the GET request to generate career recommendations in a Next.js Pages Router environment.
- * This is the definitive, final version with the corrected Google API hostname.
+ * This is the definitive, final version, using the v1beta endpoint as directed by Google's error logs.
  */
 export default async function handler(
   req: NextApiRequest,
@@ -41,8 +41,8 @@ export default async function handler(
       - Interests: ${String(interests || '')}
     `;
 
-    // --- THE FINAL FIX IS HERE ---
-    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
+    // --- THE FINAL FIX IS HERE: Using the v1beta endpoint ---
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
 
     const requestBody = {
       contents: [{ parts: [{ text: prompt }] }],
@@ -57,10 +57,18 @@ export default async function handler(
     if (!apiResponse.ok) {
       const errorText = await apiResponse.text();
       console.error("Error from Google AI API:", errorText);
-      return res.status(apiResponse.status).json({ error: errorText });
+      // The response from a failed API call might not be JSON, so we send it as text
+      return res.status(apiResponse.status).json({ error: `Google API Error: ${errorText}` });
     }
 
     const responseJson = await apiResponse.json();
+    
+    // Check if the response structure is as expected before accessing parts
+    if (!responseJson.candidates || !responseJson.candidates[0] || !responseJson.candidates[0].content || !responseJson.candidates[0].content.parts || !responseJson.candidates[0].content.parts[0]) {
+      console.error("Unexpected response structure from Google AI API:", responseJson);
+      return res.status(500).json({ error: "Unexpected response structure from the AI service." });
+    }
+
     const aiResponseText = responseJson.candidates[0].content.parts[0].text;
     
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
