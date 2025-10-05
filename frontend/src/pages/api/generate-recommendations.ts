@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 /**
  * Handles the GET request to generate career recommendations in a Next.js Pages Router environment.
- * This is the definitive, final version, in the correct project location.
+ * This is the definitive, final version with the corrected Google API hostname.
  */
 export default async function handler(
   req: NextApiRequest,
@@ -41,7 +41,8 @@ export default async function handler(
       - Interests: ${String(interests || '')}
     `;
 
-    const API_URL = `https://generativelace.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
+    // --- THE FINAL FIX IS HERE ---
+    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
 
     const requestBody = {
       contents: [{ parts: [{ text: prompt }] }],
@@ -70,3 +71,4 @@ export default async function handler(
     return res.status(500).json({ error: "A critical error occurred on the server." });
   }
 }
+
