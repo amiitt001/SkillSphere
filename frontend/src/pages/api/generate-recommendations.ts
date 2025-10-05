@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 /**
  * Handles the GET request to generate career recommendations in a Next.js Pages Router environment.
- * This is the definitive, final version.
+ * This is the definitive, final version, in the correct project location.
  */
 export default async function handler(
   req: NextApiRequest,
@@ -20,7 +20,6 @@ export default async function handler(
       return res.status(500).json({ error: "Server is missing the required GEMINI API KEY." });
     }
 
-    // In Pages Router, query parameters are directly on req.query
     const { academicStream, skills, interests } = req.query;
 
     const prompt = `
@@ -37,12 +36,12 @@ export default async function handler(
       - "keyCompanies": An array of 2-3 notable companies in India that hire for this role.
 
       User's Profile:
-      - Academic Stream: ${academicStream || ''}
-      - Skills: ${skills || ''}
-      - Interests: ${interests || ''}
+      - Academic Stream: ${String(academicStream || '')}
+      - Skills: ${String(skills || '')}
+      - Interests: ${String(interests || '')}
     `;
 
-    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
+    const API_URL = `https://generativelace.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
 
     const requestBody = {
       contents: [{ parts: [{ text: prompt }] }],
@@ -63,7 +62,6 @@ export default async function handler(
     const responseJson = await apiResponse.json();
     const aiResponseText = responseJson.candidates[0].content.parts[0].text;
     
-    // Set the header and send the successful response
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(200).send(aiResponseText);
 
@@ -72,4 +70,3 @@ export default async function handler(
     return res.status(500).json({ error: "A critical error occurred on the server." });
   }
 }
-
