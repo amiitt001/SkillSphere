@@ -2,6 +2,14 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import Auth from '../Auth';
 
+// Mock firebase/auth to prevent errors during testing
+jest.mock('firebase/auth', () => ({
+  getAuth: jest.fn(),
+  GoogleAuthProvider: jest.fn(),
+  signInWithPopup: jest.fn(),
+  signOut: jest.fn(),
+}));
+
 // We need to mock the useAuth hook that the Auth component depends on.
 // This tells Jest: "Whenever any component tries to call useAuth,
 // give them this fake data instead of trying to connect to Firebase."
