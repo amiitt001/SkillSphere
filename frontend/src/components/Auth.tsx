@@ -5,7 +5,7 @@
  */
 'use client';
 
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 
@@ -26,6 +26,17 @@ const Auth = () => {
     }
   };
 
+  /**
+   * Signs the current user out of the application.
+   */
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Error signing out", error);
+    }
+  };
+
   // --- RENDER ---
 
   // Display a loading skeleton while the authentication state is being determined.
@@ -37,7 +48,7 @@ const Auth = () => {
   return (
     <div>
       {user ? (
-        // If the user is logged in, display their avatar and name.
+        // If the user is logged in, display their avatar, name, and a sign-out button.
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0 w-10 h-10">
             <img
@@ -49,6 +60,12 @@ const Auth = () => {
             />
           </div>
           <span className="text-white font-medium hidden sm:block">{user.displayName}</span>
+          <button
+            onClick={handleSignOut}
+            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-2 rounded-md"
+          >
+            Sign Out
+          </button>
         </div>
       ) : (
         // If the user is logged out, display the "Sign in" button.
