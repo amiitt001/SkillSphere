@@ -11,14 +11,14 @@ jest.mock('@/context/AuthContext', () => ({
 
 // We also need to mock the next/image component for testing
 jest.mock('next/image', () => ({
-    __esModule: true,
-    // @ts-ignore
-    default: (props: any) => {
-      // eslint-disable-next-line @next/next/no-img-element
-      return <img {...props} />;
-    },
-}));
+  __esModule: true,
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  default: (props: any) => {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img {...props} alt={props.alt || 'mocked image'} />;
+  },
+}));
 
 // Import the hook *after* mocking it
 import { useAuth } from '@/context/AuthContext';

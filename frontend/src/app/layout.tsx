@@ -3,14 +3,16 @@
  * It sets up the main HTML structure, global styles, fonts, and providers
  * that are shared across all pages.
  */
-'use client'; // This component uses state for the mobile sidebar, so it must be a client component.
+'use client'; 
 
 import { useState } from 'react';
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
-import { AuthProvider } from "@/context/AuthContext";
-import Header from '@/components/Header';
+
+// --- FIX: Using relative paths for all component imports ---
+import { AuthProvider } from '../context/AuthContext';
+import Sidebar from '../components/Sidebar';
+import Header from '../components/Header';
 
 // Initialize the Inter font for the application
 const inter = Inter({ subsets: ["latin"] });
@@ -20,15 +22,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // --- STATE MANAGEMENT ---
   // This state controls the visibility of the sidebar on mobile devices.
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // --- RENDER ---
   return (
+    // --- FIX: Restoring the required <html> and <body> tags ---
     <html lang="en">
       <head>
-        {/* It's best practice to add a title and meta description here for SEO and clarity */}
         <title>SkillSphere - AI Career Advisor</title>
         <meta name="description" content="Personalized Career and Skills Advisor powered by Google Gemini AI." />
       </head>

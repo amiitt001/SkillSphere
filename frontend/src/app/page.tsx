@@ -23,7 +23,7 @@ interface TableRow {
 export default function Home() {
   // --- STATE MANAGEMENT ---
 
-  const { user } = useAuth();
+  const { } = useAuth();
 
   // State for the user's input profile
   const [academicStream, setAcademicStream] = useState('Computer Science');
@@ -34,7 +34,7 @@ export default function Home() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   // State specifically for the Career Comparison feature
   const [selectedCareers, setSelectedCareers] = useState<string[]>([]);
   const [isComparing, setIsComparing] = useState(false);
@@ -78,7 +78,7 @@ export default function Home() {
       // Construct the API URL with user input as search parameters
       const params = new URLSearchParams({ academicStream, skills: skills.join(','), interests: interests.join(',') });
       const url = `/api/generate-recommendations?${params.toString()}`;
-      
+
       const response = await fetch(url);
       if (!response.ok || !response.body) {
         throw new Error(`Server responded with status: ${response.status}`);
@@ -124,7 +124,7 @@ export default function Home() {
     try {
       const params = new URLSearchParams({ career1: selectedCareers[0], career2: selectedCareers[1] });
       const url = `/api/compare-careers?${params.toString()}`;
-      
+
       const response = await fetch(url);
       if (!response.ok || !response.body) {
         throw new Error(`Server responded with status: ${response.status}`);
@@ -138,7 +138,7 @@ export default function Home() {
         if (done) break;
         fullResponse += decoder.decode(value);
       }
-      
+
       const jsonMatch = fullResponse.match(/{[\s\S]*}/);
       if (jsonMatch && jsonMatch[0]) {
         const jsonString = jsonMatch[0];
@@ -168,7 +168,7 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Academic Stream</label>
-            <input type="text" value={academicStream} onChange={(e) => setAcademicStream(e.target.value)} className="w-full bg-slate-700 text-white rounded-md p-2 border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none min-h-[44px]"/>
+            <input type="text" value={academicStream} onChange={(e) => setAcademicStream(e.target.value)} className="w-full bg-slate-700 text-white rounded-md p-2 border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none min-h-[44px]" />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Skills</label>
@@ -188,11 +188,11 @@ export default function Home() {
       <div className="mt-8">
         {isLoading && <div className="flex justify-center py-10"><LoadingSpinner /></div>}
         {error && <p className="text-red-500 text-center">{error}</p>}
-        
+
         {/* Compare button appears only when recommendations are visible */}
         {recommendations.length > 0 && (
           <div className="flex justify-center mb-6">
-            <button 
+            <button
               onClick={handleCompare}
               disabled={selectedCareers.length !== 2 || isComparing}
               className="px-6 py-2 bg-green-600 text-white font-bold rounded-md disabled:bg-slate-600 disabled:cursor-not-allowed hover:bg-green-700 transition-colors"
@@ -209,8 +209,8 @@ export default function Home() {
           <div className="bg-slate-900 p-6 rounded-lg text-white mb-8">
             <h2 className="text-2xl font-bold text-green-400 mb-4">Career Comparison</h2>
             <p className="text-slate-300 mb-6">{comparisonSummary}</p>
-            <ComparisonTable 
-              data={tableData} 
+            <ComparisonTable
+              data={tableData}
               career1Title={selectedCareers[0]}
               career2Title={selectedCareers[1]}
             />

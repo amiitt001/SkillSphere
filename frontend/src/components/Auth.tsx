@@ -8,6 +8,7 @@
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
+import Image from 'next/image';
 
 const Auth = () => {
   // --- STATE & CONTEXT ---
@@ -40,11 +41,11 @@ const Auth = () => {
         // If the user is logged in, display their avatar and name.
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0 w-10 h-10">
-            <img
+            <Image
               src={user.photoURL || '/logo.png'} // Use a fallback image if no photo is available
               alt={user.displayName || 'User'}
-              width="40"
-              height="40"
+              width={40}
+              height={40}
               className="w-full h-full rounded-full object-cover"
             />
           </div>
