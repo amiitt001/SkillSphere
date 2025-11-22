@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     }
 
     // THE FIX: Using the v1beta endpoint and the most compatible 'latest' model.
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
     const response = await fetch(API_URL, {
       method: 'POST',
@@ -60,15 +60,15 @@ export async function GET(request: NextRequest) {
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!text) {
-        throw new Error("Invalid response structure from AI API");
+      throw new Error("Invalid response structure from AI API");
     }
-    
+
     // Clean the response to ensure it's valid JSON
     const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
 
-    return new Response(cleanedText, { 
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
+    return new Response(cleanedText, {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
     });
 
   } catch (error: unknown) {
