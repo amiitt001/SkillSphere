@@ -29,26 +29,26 @@ export async function GET(request: NextRequest) {
     // --- 2. INITIALIZE THE AI MODEL ---
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
     const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash-latest",
-  safetySettings: [
-    {
-      category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-      threshold: HarmBlockThreshold.BLOCK_NONE,
-    },
-    {
-      category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-      threshold: HarmBlockThreshold.BLOCK_NONE,
-    },
-    {
-      category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-      threshold: HarmBlockThreshold.BLOCK_NONE,
-    },
-    {
-      category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-      threshold: HarmBlockThreshold.BLOCK_NONE,
-    },
-  ],
-});
+      model: "gemini-1.5-flash",
+      safetySettings: [
+        {
+          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+      ],
+    });
 
     // --- 3. CONSTRUCT THE DETAILED PROMPT ---
     // This prompt instructs the AI to return a structured JSON object containing
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
 
       Generate at least 4-5 feature comparison rows.
     `;
-    
+
     // --- 4. CALL THE AI AND GET A STREAMING RESPONSE ---
     const result = await model.generateContentStream(prompt);
 

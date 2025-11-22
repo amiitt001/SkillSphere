@@ -1,5 +1,5 @@
 
-const fetch = require('node-fetch'); // You might need to install node-fetch or use built-in fetch in Node 18+
+// const fetch = require('node-fetch'); // Native fetch is available in Node 18+
 
 async function testApi() {
     try {
