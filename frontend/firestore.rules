@@ -2,26 +2,67 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Block all access by default
+
+    // ─────────────────────────────────────────────
+    // USERS COLLECTION
+    // /users/{uid}
+    // ─────────────────────────────────────────────
+    match /users/{uid} {
+
+      // Only the authenticated user can access their own document
+      allow read, update, delete: if isSignedIn() && request.auth.uid == uid;
+
+      // Create allowed only by the same authenticated user
+      allow create: if isSignedIn() && request.auth.uid == uid
+                    && validUserProfile(request.resource.data);
+    }
+
+    // ─────────────────────────────────────────────
+    // HISTORY COLLECTION
+    // /history/{uid}/entries/{entryId}
+    // ─────────────────────────────────────────────
+    match /history/{uid}/entries/{entryId} {
+
+      allow read, write: if isSignedIn() && request.auth.uid == uid
+                          && validHistoryEntry(request.resource.data);
+    }
+
+    // ─────────────────────────────────────────────
+    // DEFAULT DENY — MUST BE LAST
+    // ─────────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
     }
-    
-    // User profiles - users can only read/write their own data
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+    // ─────────────────────────────────────────────
+    // 🔧 HELPER FUNCTIONS
+    // ─────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
     }
-    
-    // History collection - users can only access their own history
-    match /history/{userId}/entries/{entryId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+    // Validate user profile schema
+    function validUserProfile(data) {
+      return data.keys().hasOnly([
+        'name',
+        'email',
+        'createdAt'
+      ])
+      && data.name is string
+      && data.email is string
+      && data.createdAt is timestamp;
     }
-    
-    // Add any other collections with appropriate rules
-    // Example for a shared collection:
-    // match /shared/{document} {
-    //   allow read: if request.auth != null;
-    //   allow write: if request.auth != null && request.auth.uid == resource.data.ownerId;
-    // }
+
+    // Validate history schema
+    function validHistoryEntry(data) {
+      return data.keys().hasOnly([
+        'title',
+        'content',
+        'createdAt'
+      ])
+      && data.title is string
+      && data.content is string
+      && data.createdAt is timestamp;
+    }
   }
 }
