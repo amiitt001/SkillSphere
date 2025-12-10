@@ -8,8 +8,10 @@
 import { useState } from 'react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ReactMarkdown from 'react-markdown';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import SimpleCaptcha from '@/components/SimpleCaptcha';
 
-export default function ResumeHelperPage() {
+function ResumeHelperContent() {
   // --- STATE MANAGEMENT ---
   // Note: For this hackathon prototype, skills are hardcoded. In a full application,
   // this state would be shared from the main dashboard or a user profile.
@@ -18,6 +20,8 @@ export default function ResumeHelperPage() {
   const [isHelping, setIsHelping] = useState(false); // Tracks the loading state for this feature
   const [resumePoints, setResumePoints] = useState(''); // Stores the AI-generated response
   const [error, setError] = useState('');
+  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
+  const [showCaptchaModal, setShowCaptchaModal] = useState(false);
 
   /**
    * Handles the form submission for the resume helper feature.
@@ -25,6 +29,12 @@ export default function ResumeHelperPage() {
    */
   const handleResumeHelper = async () => {
     if (!jobDescription) return; // Prevent API call with empty input
+    
+    // Show CAPTCHA modal if not verified
+    if (!isCaptchaVerified) {
+      setShowCaptchaModal(true);
+      return;
+    }
 
     // Reset state for a new request
     setIsHelping(true);
@@ -53,11 +63,26 @@ export default function ResumeHelperPage() {
         // Append each new piece of text to the state, causing a real-time update on the screen
         setResumePoints((prev) => prev + decodedChunk);
       }
+      setIsCaptchaVerified(false); // Reset captcha after successful API call
     } catch (err) {
       const message = err instanceof Error ? err.message : 'An unknown error occurred.';
       setError(message);
     } finally {
       setIsHelping(false); // Ensure loading state is turned off
+    }
+  };
+
+  /**
+   * Handle CAPTCHA verification from modal
+   */
+  const handleCaptchaVerify = (verified: boolean) => {
+    if (verified) {
+      setIsCaptchaVerified(true);
+      setShowCaptchaModal(false);
+      // Trigger resume generation after verification
+      setTimeout(() => {
+        handleResumeHelper();
+      }, 100);
     }
   };
 
@@ -77,6 +102,7 @@ export default function ResumeHelperPage() {
           rows={10}
           placeholder="Paste the job description here..."
         />
+        
         <button
           onClick={handleResumeHelper}
           disabled={isHelping || !jobDescription}
@@ -101,6 +127,35 @@ export default function ResumeHelperPage() {
           </div>
         )}
       </div>
+
+      {/* CAPTCHA Modal */}
+      {showCaptchaModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 max-w-md w-full p-8 relative">
+            <button
+              onClick={() => setShowCaptchaModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            <h3 className="text-2xl font-bold text-white mb-2">Security Verification</h3>
+            <p className="text-slate-400 mb-6">Please verify you're human before generating resume points</p>
+            
+            <SimpleCaptcha onVerify={handleCaptchaVerify} isModal={true} />
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+export default function ResumeHelperPage() {
+  return (
+    <ProtectedRoute>
+      <ResumeHelperContent />
+    </ProtectedRoute>
   );
 }

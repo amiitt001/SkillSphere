@@ -61,16 +61,16 @@
     // --- RENDER ---
     return (
         <div>
-        <div className="w-full bg-slate-700 text-white rounded-md p-2 border border-slate-600 focus-within:ring-2 focus-within:ring-sky-500 flex flex-wrap gap-2 items-center min-h-[44px]">
+        <div className="w-full bg-gradient-to-r from-slate-700/40 to-slate-700/20 text-white rounded-lg p-3 border border-slate-600/50 focus-within:ring-2 focus-within:ring-sky-500 focus-within:border-sky-500/50 flex flex-wrap gap-2 items-center min-h-[50px] transition-all duration-300 shadow-sm">
             
             {/* Render a badge for each existing tag */}
             {tags.map((tag, index) => (
-            <span key={index} className="bg-sky-600 text-white text-sm font-medium px-2.5 py-1 rounded-md flex items-center gap-2">
+            <span key={index} className="bg-gradient-to-r from-sky-600 to-blue-600 text-white text-sm font-medium px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-md hover:shadow-sky-500/50 transition-all duration-200">
                 {tag}
                 <button
                 type="button"
                 onClick={() => removeTag(tag)}
-                className="text-sky-200 hover:text-white"
+                className="text-sky-100 hover:text-white transition-colors"
                 aria-label={`Remove ${tag}`}
                 >
                 <XIcon />
@@ -85,7 +85,7 @@
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={tags.length === 0 ? placeholder : ''} // Only show placeholder when empty
-            className="bg-transparent flex-grow outline-none text-sm"
+            className="bg-transparent flex-grow outline-none text-sm placeholder-slate-400"
             />
         </div>
         </div>

@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
       throw new Error('GEMINI_API_KEY is not defined');
     }
 
-    // THE FIX: Using the v1beta endpoint and the most compatible 'latest' model.
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    // THE FIX: Using gemini-2.0-flash which is the latest stable model
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`;
 
     const response = await fetch(API_URL, {
       method: 'POST',

@@ -36,33 +36,43 @@ export default function ComparisonTable({ data, career1Title, career2Title }: Co
 
   // --- RENDER ---
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-700">
-      <table className="min-w-full divide-y-2 divide-slate-700 bg-slate-800 text-sm">
+    <div className="overflow-x-auto rounded-xl border border-slate-700/50 shadow-lg shadow-slate-900/50">
+      <table className="min-w-full divide-y divide-slate-700/50 bg-gradient-to-b from-slate-800/50 to-slate-800/30 text-sm">
         {/* Table Header */}
-        <thead className="text-left">
+        <thead className="text-left bg-gradient-to-r from-slate-900/80 to-slate-800/80 backdrop-blur">
           <tr>
-            <th className="whitespace-nowrap px-4 py-3 font-medium text-white bg-slate-900 w-1/4">
-              Feature
+            <th className="whitespace-nowrap px-6 py-4 font-bold text-slate-200 w-1/4 border-r border-slate-700/50">
+              🎯 Feature
             </th>
-            <th className="whitespace-nowrap px-4 py-3 font-medium text-white bg-slate-900">
+            <th className="whitespace-nowrap px-6 py-4 font-bold text-sky-300 border-r border-slate-700/50">
               {career1Title}
             </th>
-            <th className="whitespace-nowrap px-4 py-3 font-medium text-white bg-slate-900">
+            <th className="whitespace-nowrap px-6 py-4 font-bold text-blue-300">
               {career2Title}
             </th>
           </tr>
         </thead>
 
         {/* Table Body */}
-        <tbody className="divide-y divide-slate-700">
+        <tbody className="divide-y divide-slate-700/30">
           {/* Map over the data array to create a new row for each feature comparison. */}
           {data.map((row, index) => (
-            <tr key={index}>
-              <td className="whitespace-nowrap px-4 py-3 font-medium text-white">
+            <tr key={index} className="hover:bg-slate-700/20 transition-colors duration-200">
+              <td className="whitespace-nowrap px-6 py-4 font-semibold text-slate-300 bg-gradient-to-r from-slate-800/50 to-transparent border-r border-slate-700/50">
                 {row.feature}
               </td>
-              <td className="px-4 py-3 text-slate-400">{row.career1_details}</td>
-              <td className="px-4 py-3 text-slate-400">{row.career2_details}</td>
+              <td className="px-6 py-4 text-slate-300 border-r border-slate-700/50">
+                <div className="flex items-start gap-2">
+                  <span className="text-sky-400 font-bold">✓</span>
+                  <span>{row.career1_details}</span>
+                </div>
+              </td>
+              <td className="px-6 py-4 text-slate-300">
+                <div className="flex items-start gap-2">
+                  <span className="text-blue-400 font-bold">✓</span>
+                  <span>{row.career2_details}</span>
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

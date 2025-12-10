@@ -3,7 +3,7 @@
  */
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore, CACHE_SIZE_UNLIMITED } from "firebase/firestore";
 
 // This is your public, client-side configuration.
 const firebaseConfig = {
@@ -24,7 +24,17 @@ if (!getApps().length) {
 }
 
 const auth = getAuth(app);
-const db = getFirestore(app);
+
+// Initialize Firestore with better settings
+let db;
+try {
+  db = initializeFirestore(app, {
+    cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+    experimentalForceLongPolling: true,
+  });
+} catch (error) {
+  db = getFirestore(app);
+}
 
 // Export the client-side services
 export { app, auth, db };

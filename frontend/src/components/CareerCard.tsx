@@ -34,10 +34,10 @@ const CareerCard = ({ title, justification, roadmap, estimatedSalary, suggestedC
   // Dynamically constructs the card's class names based on its selection state.
   // This is a clean way to handle conditional styling in React.
   const cardClasses = `
-    bg-slate-800 p-6 rounded-lg shadow-lg flex flex-col h-full
-    border-2
-    ${isSelected ? 'border-sky-500' : 'border-slate-700'}
-    cursor-pointer hover:border-sky-600 transition-colors
+    bg-gradient-to-br from-slate-800 to-slate-800/50 p-6 rounded-xl shadow-lg flex flex-col h-full
+    border-2 transition-all duration-300
+    ${isSelected ? 'border-sky-500 shadow-sky-500/20 scale-105' : 'border-slate-700 hover:border-sky-400'}
+    cursor-pointer hover:shadow-xl
   `;
 
   // --- RENDER ---
@@ -45,45 +45,52 @@ const CareerCard = ({ title, justification, roadmap, estimatedSalary, suggestedC
     <div className={cardClasses} onClick={() => onSelect(title)}>
       
       {/* Card Header Section */}
-      <h3 className="text-xl font-bold text-sky-400 mb-2">{title}</h3>
-      <p className="text-slate-400 mb-4 text-sm">{justification}</p>
+      <div className="mb-4">
+        <h3 className="text-2xl font-bold bg-gradient-to-r from-sky-400 to-blue-400 bg-clip-text text-transparent mb-2">{title}</h3>
+        <p className="text-slate-400 text-sm leading-relaxed">{justification}</p>
+      </div>
       
       {/* Card Body Section with Detailed Information */}
-      <div className="border-t border-slate-700 pt-4 mt-auto">
-        <h4 className="font-semibold text-white mb-2 text-sm">Roadmap:</h4>
-        <ul className="list-disc list-inside space-y-2 text-slate-400 text-sm mb-4">
-          {roadmap.map((step, index) => (
-            <li key={index}>{step}</li>
-          ))}
-        </ul>
+      <div className="border-t border-slate-700/50 pt-4 mt-auto flex-grow flex flex-col">
+        <div className="mb-4">
+          <h4 className="font-semibold text-sky-300 mb-3 text-sm uppercase tracking-wider">📍 Roadmap:</h4>
+          <ul className="space-y-2">
+            {roadmap.map((step, index) => (
+              <li key={index} className="text-slate-300 text-sm flex gap-2">
+                <span className="text-sky-400 font-bold flex-shrink-0">{index + 1}.</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         {/* The following sections are rendered conditionally, only if the AI provides the data. */}
         {estimatedSalary && (
-          <div className="flex items-start gap-3 mt-4">
+          <div className="flex items-start gap-3 mt-4 p-3 bg-slate-700/30 rounded-lg">
             <SalaryIcon />
             <div>
-              <h5 className="font-semibold text-white text-sm">Salary</h5>
-              <p className="text-slate-400 text-sm">{estimatedSalary}</p>
+              <h5 className="font-semibold text-white text-sm">💰 Salary Range</h5>
+              <p className="text-sky-300 text-sm font-medium">{estimatedSalary}</p>
             </div>
           </div>
         )}
 
         {suggestedCertifications && suggestedCertifications.length > 0 && (
-          <div className="flex items-start gap-3 mt-4">
+          <div className="flex items-start gap-3 mt-3 p-3 bg-slate-700/30 rounded-lg">
             <CertificationIcon />
             <div>
-              <h5 className="font-semibold text-white text-sm">Certifications</h5>
-              <p className="text-slate-400 text-sm">{suggestedCertifications.join(', ')}</p>
+              <h5 className="font-semibold text-white text-sm">🎓 Certifications</h5>
+              <p className="text-slate-300 text-sm">{suggestedCertifications.join(', ')}</p>
             </div>
           </div>
         )}
 
         {keyCompanies && keyCompanies.length > 0 && (
-          <div className="flex items-start gap-3 mt-4">
+          <div className="flex items-start gap-3 mt-3 p-3 bg-slate-700/30 rounded-lg">
             <CompanyIcon />
             <div>
-              <h5 className="font-semibold text-white text-sm">Key Companies</h5>
-              <p className="text-slate-400 text-sm">{keyCompanies.join(', ')}</p>
+              <h5 className="font-semibold text-white text-sm">🏢 Top Companies</h5>
+              <p className="text-slate-300 text-sm">{keyCompanies.join(', ')}</p>
             </div>
           </div>
         )}

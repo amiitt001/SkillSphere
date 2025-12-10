@@ -28,11 +28,33 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Environment variables - NEVER COMMIT SENSITIVE DATA
+.env
+.env.local
+.env.*.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Security
+*.key
+*.pem
+.env.*.key
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
 .env*
-
+.env.local
 # vercel
 .vercel
 
