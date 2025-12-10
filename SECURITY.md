@@ -103,7 +103,7 @@ Next.js security headers are configured in `next.config.ts`:
 ```javascript
 // These are PUBLIC and SAFE to expose:
 {
-  apiKey: "AIzaSyBFQ2MezQGWreJPz8ypNHaUf9UzWD9VX88",
+  apiKey: "AIzaSyBFQ...........",
   authDomain: "skillsphere-web.firebaseapp.com",
   projectId: "skillsphere-web",
   // ... other Firebase config
@@ -113,7 +113,7 @@ Next.js security headers are configured in `next.config.ts`:
 ### Never Exposed (Protected):
 ```bash
 # These are SERVER-SIDE ONLY:
-GEMINI_API_KEY=AIzaSyB_kcrGMy-u0c2SyXNMRCXpxvq-SeMeqyg  # ✅ Never in browser
+GEMINI_API_KEY=AIzaSyB_kcrGMy-u0c..........  # ✅ Never in browser
 ```
 
 ## 🔍 Verification
