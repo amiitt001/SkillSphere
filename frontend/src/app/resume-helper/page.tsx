@@ -6,43 +6,33 @@
 'use client';
 
 import { useState } from 'react';
-import LoadingSpinner from '@/components/LoadingSpinner';
 import ReactMarkdown from 'react-markdown';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import SimpleCaptcha from '@/components/SimpleCaptcha';
 
 function ResumeHelperContent() {
   // --- STATE MANAGEMENT ---
-  // Note: For this hackathon prototype, skills are hardcoded. In a full application,
-  // this state would be shared from the main dashboard or a user profile.
   const [skills] = useState<string[]>(['Python', 'JavaScript', 'SQL']);
   const [jobDescription, setJobDescription] = useState('');
-  const [isHelping, setIsHelping] = useState(false); // Tracks the loading state for this feature
-  const [resumePoints, setResumePoints] = useState(''); // Stores the AI-generated response
+  const [isHelping, setIsHelping] = useState(false);
+  const [resumePoints, setResumePoints] = useState('');
   const [error, setError] = useState('');
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
   const [showCaptchaModal, setShowCaptchaModal] = useState(false);
 
-  /**
-   * Handles the form submission for the resume helper feature.
-   * It calls the backend API and streams the response to the UI.
-   */
   const handleResumeHelper = async () => {
-    if (!jobDescription) return; // Prevent API call with empty input
-    
-    // Show CAPTCHA modal if not verified
+    if (!jobDescription) return;
+
     if (!isCaptchaVerified) {
       setShowCaptchaModal(true);
       return;
     }
 
-    // Reset state for a new request
     setIsHelping(true);
     setResumePoints('');
     setError('');
 
     try {
-      // Call the dedicated backend API for the resume helper
       const response = await fetch('/api/resume-helper', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -53,33 +43,27 @@ function ResumeHelperContent() {
         throw new Error(`Server responded with status: ${response.status}`);
       }
 
-      // Process the streaming response from the server
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break; // Exit loop when stream is finished
+        if (done) break;
         const decodedChunk = decoder.decode(value);
-        // Append each new piece of text to the state, causing a real-time update on the screen
         setResumePoints((prev) => prev + decodedChunk);
       }
-      setIsCaptchaVerified(false); // Reset captcha after successful API call
+      setIsCaptchaVerified(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'An unknown error occurred.';
       setError(message);
     } finally {
-      setIsHelping(false); // Ensure loading state is turned off
+      setIsHelping(false);
     }
   };
 
-  /**
-   * Handle CAPTCHA verification from modal
-   */
   const handleCaptchaVerify = (verified: boolean) => {
     if (verified) {
       setIsCaptchaVerified(true);
       setShowCaptchaModal(false);
-      // Trigger resume generation after verification
       setTimeout(() => {
         handleResumeHelper();
       }, 100);
@@ -88,41 +72,82 @@ function ResumeHelperContent() {
 
   // --- RENDER ---
   return (
-    <div>
-      {/* Page Header */}
-      <h1 className="text-4xl font-bold text-white">AI Resume Co-Pilot</h1>
-      <p className="text-slate-400 mt-2 mb-8">Paste a job description below, and the AI will generate powerful resume bullet points based on your skills.</p>
+    <div className="max-w-4xl mx-auto py-8 lg:py-12">
+      <div className="mb-10 animate-fade-in">
+        <div className="section-label mb-2">Resume Co-pilot</div>
+        <h1 className="text-4xl font-display font-bold text-primary leading-tight">
+          Optimization <span className="text-teal">Assistant</span>
+        </h1>
+        <p className="text-secondary mt-3">
+          Paste a job description below. SkillSphere AI will analyze your profile and generate high-impact, ATS-friendly bullet points tailored for the role.
+        </p>
+      </div>
 
-      {/* Input Section */}
-      <div className="bg-slate-800 p-6 rounded-lg">
-        <textarea
-          value={jobDescription}
-          onChange={(e) => setJobDescription(e.target.value)}
-          className="w-full bg-slate-700 text-white rounded-md p-2 border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none"
-          rows={10}
-          placeholder="Paste the job description here..."
-        />
-        
-        <button
-          onClick={handleResumeHelper}
-          disabled={isHelping || !jobDescription}
-          className="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md disabled:bg-slate-600 disabled:cursor-not-allowed"
-        >
-          {isHelping ? 'Generating Points...' : 'Generate Resume Points'}
-        </button>
+      <div className="form-container">
+        <form onSubmit={(e) => e.preventDefault()}>
+          <div className="form-group">
+            <label>Job Description</label>
+            <textarea
+              value={jobDescription}
+              onChange={(e) => setJobDescription(e.target.value)}
+              className="min-h-[300px]"
+              placeholder="E.g. 'We are looking for a Software Engineer with experience in Python and cloud infrastructure...'"
+            />
+          </div>
 
-        {/* Conditional Rendering for Error, Loading, and Results */}
-        {error && <p className="text-red-500 text-center mt-4">{error}</p>}
+          <div className="form-footer">
+            <button
+              onClick={handleResumeHelper}
+              disabled={isHelping || !jobDescription}
+              className="btn-primary py-3 px-10 shadow-glow-teal"
+            >
+              {isHelping ? '⟳ Generating Impact Points...' : 'Generate AI Resume Points →'}
+            </button>
+          </div>
+        </form>
+      </div>
 
-        {isHelping && !resumePoints && <div className="flex justify-center py-6"><LoadingSpinner /></div>}
+      <div className="mt-16">
+        {isHelping && !resumePoints && (
+          <div className="loader">
+            <div className="loader-dots">
+              <div className="loader-dot"></div>
+              <div className="loader-dot"></div>
+              <div className="loader-dot"></div>
+            </div>
+            <span className="ml-2 text-secondary">Analyzing job description and mapping skills...</span>
+          </div>
+        )}
+
+        {error && (
+          <div className="glass p-8 border-rose/30 text-rose text-center mb-10">
+            <p className="text-lg font-semibold">{error}</p>
+          </div>
+        )}
 
         {resumePoints && (
-          <div className="mt-6">
-            <h3 className="text-xl font-bold text-white mb-2">Suggested Resume Points:</h3>
-            <div className="bg-slate-900 p-4 rounded-md">
-              <div className="prose prose-invert prose-sm max-w-none">
+          <div className="animate-fade-up">
+            <div className="results-header mb-8">
+              <div className="section-label">AI Impact Points</div>
+              <h2 className="text-2xl font-display font-bold">Recommended Bullet Points</h2>
+            </div>
+            <div className="glass p-8 border-teal/10 relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-1 h-full bg-teal opacity-50"></div>
+              <div className="prose prose-invert prose-emerald max-w-none prose-p:leading-relaxed prose-li:my-2">
                 <ReactMarkdown>{resumePoints}</ReactMarkdown>
               </div>
+              <button
+                className="mt-8 text-xs font-bold uppercase tracking-widest text-teal hover:text-primary transition-colors flex items-center gap-2"
+                onClick={() => {
+                  navigator.clipboard.writeText(resumePoints);
+                  alert('Copied to clipboard!');
+                }}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3" />
+                </svg>
+                Copy to Clipboard
+              </button>
             </div>
           </div>
         )}
@@ -130,20 +155,19 @@ function ResumeHelperContent() {
 
       {/* CAPTCHA Modal */}
       {showCaptchaModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 max-w-md w-full p-8 relative">
+        <div className="modal-overlay open">
+          <div className="modal">
             <button
               onClick={() => setShowCaptchaModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+              className="modal-close"
             >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              ✕
             </button>
-            
-            <h3 className="text-2xl font-bold text-white mb-2">Security Verification</h3>
-            <p className="text-slate-400 mb-6">Please verify you're human before generating resume points</p>
-            
+
+            <div className="text-3xl mb-4">✍️</div>
+            <h3 className="modal-title">Security Verification</h3>
+            <p className="modal-sub">Please verify you&apos;re human before generating resume points</p>
+
             <SimpleCaptcha onVerify={handleCaptchaVerify} isModal={true} />
           </div>
         </div>

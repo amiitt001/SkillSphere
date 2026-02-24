@@ -24,13 +24,13 @@ interface TableRow {
 
 function DashboardContent() {
   // --- STATE MANAGEMENT ---
-
-  const { } = useAuth();
+  const { user } = useAuth();
 
   // State for the user's input profile
-  const [academicStream, setAcademicStream] = useState('Computer Science');
+  const [academicStream, setAcademicStream] = useState('Engineering / Tech');
   const [skills, setSkills] = useState<string[]>(['Python', 'JavaScript', 'SQL']);
   const [interests, setInterests] = useState<string[]>(['AI Ethics', 'Open Source']);
+  const [additionalContext, setAdditionalContext] = useState('');
 
   // State for managing UI and data fetching for recommendations
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
@@ -47,31 +47,22 @@ function DashboardContent() {
 
   // --- HANDLER FUNCTIONS ---
 
-  /**
-   * Handles both selecting and deselecting career cards for comparison.
-   * Allows a maximum of two cards to be selected at a time.
-   * @param title The title of the career card that was clicked.
-   */
   const handleSelectCareer = (title: string) => {
     setSelectedCareers(prevSelected => {
       if (prevSelected.includes(title)) {
-        return prevSelected.filter(t => t !== title); // Deselect if already present
+        return prevSelected.filter(t => t !== title);
       }
       if (prevSelected.length < 2) {
-        return [...prevSelected, title]; // Select if less than 2 are selected
+        return [...prevSelected, title];
       }
-      return prevSelected; // Otherwise, do nothing
-    });  
+      return prevSelected;
+    });
   };
 
-  /**
-   * Handle CAPTCHA verification from modal
-   */
   const handleCaptchaVerify = (verified: boolean) => {
     if (verified) {
       setIsCaptchaVerified(true);
       setShowCaptchaModal(false);
-      // Trigger form submission after verification
       setTimeout(() => {
         const form = document.querySelector('form');
         if (form) form.requestSubmit();
@@ -79,20 +70,14 @@ function DashboardContent() {
     }
   };
 
-  /**
-   * Main form submission handler to fetch career recommendations from the AI.
-   * It calls the backend API and processes the streamed JSON response.
-   */
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    
-    // Show CAPTCHA modal if not verified
+
     if (!isCaptchaVerified) {
       setShowCaptchaModal(true);
       return;
     }
-    
-    // Reset all states for a new search
+
     setIsLoading(true);
     setError('');
     setRecommendations([]);
@@ -101,8 +86,12 @@ function DashboardContent() {
     setTableData([]);
 
     try {
-      // Construct the API URL with user input as search parameters
-      const params = new URLSearchParams({ academicStream, skills: skills.join(','), interests: interests.join(',') });
+      const params = new URLSearchParams({
+        academicStream,
+        skills: skills.join(','),
+        interests: interests.join(','),
+        additionalContext
+      });
       const url = `/api/generate-recommendations?${params.toString()}`;
 
       const response = await fetch(url);
@@ -110,7 +99,6 @@ function DashboardContent() {
         throw new Error(`Server responded with status: ${response.status}`);
       }
 
-      // Read the streamed response from the server and assemble the full JSON string
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let fullResponse = '';
@@ -120,12 +108,15 @@ function DashboardContent() {
         fullResponse += decoder.decode(value);
       }
 
-      // Find and parse the JSON object from the AI's potentially messy response
       const jsonMatch = fullResponse.match(/{[\s\S]*}/);
       if (jsonMatch && jsonMatch[0]) {
         const jsonString = jsonMatch[0];
         const resultJson = JSON.parse(jsonString);
         setRecommendations(resultJson.recommendations);
+        // Scroll to results
+        setTimeout(() => {
+          document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
       } else {
         throw new Error("No valid JSON object found in the AI response.");
       }
@@ -137,9 +128,6 @@ function DashboardContent() {
     }
   };
 
-  /**
-   * Fetches the AI-powered comparison for the two selected careers.
-   */
   const handleCompare = async () => {
     if (selectedCareers.length !== 2) return;
     setIsComparing(true);
@@ -185,131 +173,186 @@ function DashboardContent() {
   // --- RENDER ---
 
   return (
-    <div className="max-w-7xl mx-auto">
-      {/* Header Section */}
-      <div className="mb-10">
-        <h1 className="text-5xl font-bold text-white mb-2 bg-gradient-to-r from-sky-400 to-blue-500 bg-clip-text text-transparent">
-          Personalized Recommendations
-        </h1>
-        <p className="text-slate-400 text-lg">Powered by Google Gemini AI</p>
+    <div className="max-w-5xl mx-auto py-8 lg:py-12">
+      {/* ══ STEPS INDICATOR ══ */}
+      <div className="steps mb-10">
+        <div className="step done">
+          <div className="step-circle">✓</div>
+          <div className="step-label">Background</div>
+        </div>
+        <div className="step-line done"></div>
+        <div className="step current">
+          <div className="step-circle">2</div>
+          <div className="step-label">Profile</div>
+        </div>
+        <div className="step-line"></div>
+        <div className="step">
+          <div className="step-circle">3</div>
+          <div className="step-label">Results</div>
+        </div>
       </div>
 
-      {/* Input form for user's profile */}
-      <form onSubmit={handleSubmit} className="bg-gradient-to-br from-slate-800 to-slate-800/50 p-8 rounded-xl mb-10 border border-slate-700/50 shadow-lg hover:border-slate-600/50 transition-colors">
-        <h2 className="text-xl font-bold text-white mb-6">Tell Us About Yourself</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div>
-            <label className="block text-sm font-semibold text-slate-300 mb-3">Academic Stream</label>
-            <input 
-              type="text" 
-              value={academicStream} 
-              onChange={(e) => setAcademicStream(e.target.value)} 
-              className="w-full bg-slate-700/50 text-white rounded-lg p-3 border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none focus:border-transparent transition-all min-h-[44px] placeholder-slate-500" 
-              placeholder="e.g., Computer Science"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-300 mb-3">Skills</label>
-            <TagInput tags={skills} setTags={setSkills} placeholder="Type a skill and press Enter..." />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-300 mb-3">Interests</label>
-            <TagInput tags={interests} setTags={setInterests} placeholder="Type an interest and press Enter..." />
-          </div>
-        </div>
-        
-        <button 
-          type="submit" 
-          disabled={isLoading} 
-          className="w-full bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-bold py-3 px-6 rounded-lg disabled:from-slate-600 disabled:to-slate-600 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-sky-500/50 text-lg"
-        >
-          {isLoading ? 'Generating Recommendations...' : 'Get AI Recommendations'}
-        </button>
-      </form>
+      <div className="progress-bar mb-12">
+        <div className="progress-fill" style={{ width: recommendations.length > 0 ? '100%' : '65%' }}></div>
+      </div>
 
-      {/* Results section */}
-      <div className="mt-12">
-        {isLoading && (
-          <div className="flex justify-center py-16">
-            <div className="flex flex-col items-center gap-4">
-              <LoadingSpinner />
-              <p className="text-slate-400 text-lg">Analyzing your profile...</p>
+      {/* ══ FORM CONTAINER ══ */}
+      <div className="form-container">
+        <h2 className="form-title">Tell us about yourself</h2>
+        <p className="form-subtitle">The more detail you share, the more personalized your career recommendations will be.</p>
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Academic Stream</label>
+              <select
+                value={academicStream}
+                onChange={(e) => setAcademicStream(e.target.value)}
+              >
+                <option>Engineering / Tech</option>
+                <option>Science (PCM)</option>
+                <option>Science (PCB)</option>
+                <option>Commerce</option>
+                <option>Arts / Humanities</option>
+                <option>Design</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Current Status</label>
+              <select>
+                <option>Undergraduate (2nd Year)</option>
+                <option>Post-Graduate</option>
+                <option>Working Professional</option>
+                <option>Recent Graduate</option>
+              </select>
             </div>
           </div>
+
+          <div className="form-group">
+            <label>Your Skills</label>
+            <TagInput tags={skills} setTags={setSkills} placeholder="Type a skill and press Enter..." />
+          </div>
+
+          <div className="form-group">
+            <label>Interests & Hobbies</label>
+            <TagInput tags={interests} setTags={setInterests} placeholder="Type an interest and press Enter..." />
+          </div>
+
+          <div className="form-group">
+            <label>Additional Context <span className="text-dim normal-case text-[0.75rem] ml-1">(optional)</span></label>
+            <textarea
+              value={additionalContext}
+              onChange={(e) => setAdditionalContext(e.target.value)}
+              placeholder="Any specific goals, constraints, or preferences? E.g. 'I want to work remotely' or 'I'm interested in fintech'..."
+            />
+          </div>
+
+          <div className="form-footer">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn-primary py-3 px-10 text-[0.95rem]"
+            >
+              {isLoading ? '⟳ Analyzing...' : 'Generate Recommendations →'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* ══ RESULTS SECTION ══ */}
+      <div id="results-section" className="mt-20">
+        {isLoading && (
+          <div className="loader">
+            <div className="loader-dots">
+              <div className="loader-dot"></div>
+              <div className="loader-dot"></div>
+              <div className="loader-dot"></div>
+            </div>
+            <span className="ml-2">SkillSphere AI is analyzing your profile...</span>
+          </div>
         )}
-        
+
         {error && (
-          <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-6 text-red-400 text-center">
+          <div className="glass p-8 border-rose/30 text-rose text-center mb-10">
             <p className="text-lg font-semibold">{error}</p>
           </div>
         )}
 
-        {/* Compare button appears only when recommendations are visible */}
         {recommendations.length > 0 && (
-          <div className="flex justify-center mb-8">
-            <button
-              onClick={handleCompare}
-              disabled={selectedCareers.length !== 2 || isComparing}
-              className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-lg disabled:from-slate-600 disabled:to-slate-600 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-green-500/50 text-lg"
-            >
-              {isComparing ? 'Comparing...' : `Compare (${selectedCareers.length}/2 Selected)`}
-            </button>
-          </div>
-        )}
-
-        {isComparing && (
-          <div className="flex justify-center py-16">
-            <div className="flex flex-col items-center gap-4">
-              <LoadingSpinner />
-              <p className="text-slate-400 text-lg">Comparing careers...</p>
+          <div className="results-section animate-fade-up">
+            <div className="results-header">
+              <div className="section-label">AI Analysis Complete</div>
+              <h2 className="text-3xl font-display font-bold">Your Personalized Career Paths</h2>
             </div>
-          </div>
-        )}
 
-        {/* Comparison results are displayed here */}
-        {!isComparing && (comparisonSummary || tableData.length > 0) && (
-          <div className="bg-gradient-to-br from-slate-800 to-slate-800/50 p-8 rounded-xl text-white mb-10 border border-slate-700/50 shadow-lg">
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-6">Career Comparison</h2>
-            <p className="text-slate-300 mb-8 text-lg leading-relaxed">{comparisonSummary}</p>
-            <ComparisonTable
-              data={tableData}
-              career1Title={selectedCareers[0]}
-              career2Title={selectedCareers[1]}
-            />
-          </div>
-        )}
+            {/* Compare button */}
+            <div className="flex justify-center mb-10">
+              <button
+                onClick={handleCompare}
+                disabled={selectedCareers.length !== 2 || isComparing}
+                className="btn-primary py-2.5 px-8 shadow-glow-teal disabled:opacity-50"
+              >
+                {isComparing ? '⟳ Comparing...' : `Compare (${selectedCareers.length}/2 Selected)`}
+              </button>
+            </div>
 
-        {/* Recommendation cards are displayed here */}
-        {!isLoading && !error && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recommendations.map((rec) => (
-              <CareerCard
-                key={rec.title}
-                {...rec}
-                isSelected={selectedCareers.includes(rec.title)}
-                onSelect={handleSelectCareer}
-              />
-            ))}
+            {isComparing && (
+              <div className="loader py-10">
+                <div className="loader-dots">
+                  <div className="loader-dot"></div>
+                  <div className="loader-dot"></div>
+                  <div className="loader-dot"></div>
+                </div>
+              </div>
+            )}
+
+            {/* Comparison results */}
+            {!isComparing && (comparisonSummary || tableData.length > 0) && (
+              <div className="glass p-8 mb-14 animate-fade-in border-white/5">
+                <h2 className="text-2xl font-display font-bold text-teal mb-6">Career Comparison</h2>
+                <div className="bg-teal/5 border border-teal/20 rounded-radius p-6 mb-8">
+                  <div className="section-label mb-2">AI Recommendation</div>
+                  <p className="text-secondary leading-relaxed">{comparisonSummary}</p>
+                </div>
+                <ComparisonTable
+                  data={tableData}
+                  career1Title={selectedCareers[0]}
+                  career2Title={selectedCareers[1]}
+                />
+              </div>
+            )}
+
+            {/* Career cards */}
+            <div className="career-cards">
+              {recommendations.map((rec, index) => (
+                <CareerCard
+                  key={rec.title}
+                  {...rec}
+                  isSelected={selectedCareers.includes(rec.title)}
+                  onSelect={handleSelectCareer}
+                  className={`anim-delay-${index + 1}`}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>
 
       {/* CAPTCHA Modal */}
       {showCaptchaModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 max-w-md w-full p-8 relative">
+        <div className="modal-overlay open">
+          <div className="modal">
             <button
               onClick={() => setShowCaptchaModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+              className="modal-close"
             >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              ✕
             </button>
-            
-            <h3 className="text-2xl font-bold text-white mb-2">Security Verification</h3>
-            <p className="text-slate-400 mb-6">Please verify you're human before we generate AI recommendations</p>
-            
+
+            <div className="text-3xl mb-4">🚀</div>
+            <h3 className="modal-title">Security Verification</h3>
+            <p className="modal-sub">Please verify you&apos;re human before we generate AI recommendations</p>
+
             <SimpleCaptcha onVerify={handleCaptchaVerify} isModal={true} />
           </div>
         </div>

@@ -1,108 +1,88 @@
 /**
  * This file contains the Header component for the SkillSphere application.
- * It is responsible for displaying the mobile "hamburger" menu and the
- * main authentication component.
+ * It is responsible for displaying the navigation, logo, and authentication component.
  */
 'use client';
 
 import React from 'react';
-import Auth from './Auth'; // The authentication component (Sign in/User Profile)
+import Auth from './Auth';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+// --- TYPE DEFINITION ---
+type HeaderProps = {
+  onMenuClick: () => void;
+  sidebarOpen?: boolean;
+  onCollapseToggle?: () => void;
+  isCollapsed?: boolean;
+};
 
 // --- SVG ICONS ---
-
-/**
- * Hamburger menu icon for mobile navigation
- */
 const MenuIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
   </svg>
 );
 
-/**
- * Close icon for sidebar toggle
- */
 const CloseIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
   </svg>
 );
 
-// --- TYPE DEFINITION ---
-
-/**
- * Defines the props required by the Header component.
- */
-type HeaderProps = {
-  onMenuClick: () => void; // A callback function to open/toggle the mobile sidebar.
-  sidebarOpen?: boolean; // Whether the sidebar is currently open
-  onCollapseToggle?: () => void; // Desktop sidebar collapse toggle
-  isCollapsed?: boolean; // Desktop sidebar collapsed state
-};
-
-/**
- * Collapse/Expand icon for desktop sidebar
- */
-const CollapseIcon = ({ className, isCollapsed }: { className?: string; isCollapsed?: boolean }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-    {isCollapsed ? (
-      <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5m-6-15l7.5 7.5-7.5 7.5" />
-    ) : (
-      <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
-    )}
-  </svg>
-);
-
-/**
- * The main Header component. It is displayed at the top of the content area
- * and provides navigation controls and authentication.
- * @param {HeaderProps} props The props for the component.
- * @returns The header element.
- */
 const Header = ({ onMenuClick, sidebarOpen = false, onCollapseToggle, isCollapsed = false }: HeaderProps) => {
+  const pathname = usePathname();
+  const isDashboard = pathname.startsWith('/dashboard') || pathname.startsWith('/history') || pathname.startsWith('/resume-helper');
+
   // --- RENDER ---
   return (
-    <header className="h-[65px] flex items-center justify-between px-4 sm:px-6 border-b border-slate-700/50 bg-slate-800/80 backdrop-blur-md sticky top-0 z-50 shrink-0">
-      <div className="flex items-center gap-3">
-        {/* Logo/Brand - visible on all screens */}
-        <Link href="/" className="flex items-center gap-2.5 text-white font-bold text-lg hover:text-sky-400 transition-colors">
-          <span className="text-2xl">🎯</span>
-          <span className="hidden sm:inline bg-gradient-to-r from-sky-400 to-blue-400 bg-clip-text text-transparent">
+    <nav className="fixed top-0 left-0 right-0 h-[72px] flex items-center justify-between px-4 sm:px-10 z-[100] bg-void/75 backdrop-blur-nav border-b border-white/5">
+      <div className="flex items-center gap-10">
+        {/* Logo/Brand */}
+        <Link href="/" className="flex items-center gap-3 no-underline group">
+          <div className="w-9 h-9 bg-gradient-brand rounded-[10px] flex items-center justify-center font-display font-bold text-void shadow-[0_0_20px_rgba(0,229,195,0.4)] group-hover:scale-105 transition-transform duration-300">
+            S
+          </div>
+          <span className="font-display text-xl font-bold bg-gradient-brand bg-clip-text text-transparent">
             SkillSphere
           </span>
         </Link>
-        
-        {/* Menu toggle button - visible only on mobile */}
-        <button
-          onClick={onMenuClick}
-          className="md:hidden p-2 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded-lg transition-all"
-          aria-label="Toggle sidebar"
-          title={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-        >
-          {sidebarOpen ? (
-            <CloseIcon className="w-5 h-5" />
-          ) : (
-            <MenuIcon className="w-5 h-5" />
-          )}
-        </button>
 
-        {/* Collapse toggle button - visible only on desktop */}
-        {onCollapseToggle && (
-          <button
-            onClick={onCollapseToggle}
-            className="hidden md:block p-2 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded-lg transition-all"
-            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            <CollapseIcon className="w-5 h-5" isCollapsed={isCollapsed} />
-          </button>
+        {/* Navigation Links - Hidden on mobile, visible on desktop landing */}
+        {!isDashboard && (
+          <div className="hidden md:flex items-center gap-10">
+            <Link href="/" className={`text-sm font-medium tracking-wide transition-colors ${pathname === '/' ? 'text-teal' : 'text-secondary hover:text-teal'}`}>
+              Home
+            </Link>
+            <Link href="/dashboard" className={`text-sm font-medium tracking-wide transition-colors ${pathname === '/dashboard' ? 'text-teal' : 'text-secondary hover:text-teal'}`}>
+              Advisor
+            </Link>
+            <Link href="/history" className="text-sm font-medium tracking-wide text-secondary hover:text-teal transition-colors">
+              History
+            </Link>
+            <Link href="/resume-helper" className={`text-sm font-medium tracking-wide transition-colors ${pathname === '/resume-helper' ? 'text-teal' : 'text-secondary hover:text-teal'}`}>
+              Resume AI
+            </Link>
+          </div>
         )}
       </div>
-      
-      {/* Authentication component on the right */}
-      <Auth />
-    </header>
+
+      <div className="flex items-center gap-4">
+        {/* Menu toggle button - visible only on mobile/dashboard context */}
+        {isDashboard && (
+          <button
+            onClick={onMenuClick}
+            className="md:hidden p-2 text-secondary hover:text-teal hover:bg-white/5 rounded-lg transition-all"
+            aria-label="Toggle sidebar"
+          >
+            {sidebarOpen ? <CloseIcon className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
+          </button>
+        )}
+
+        {/* Authentication component */}
+        <Auth />
+      </div>
+    </nav>
   );
 };
 
