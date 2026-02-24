@@ -1,7 +1,6 @@
 /**
  * Landing Page for SkillSphere
- * A beautiful, informative homepage that welcomes users and guides them
- * to sign in and access the career recommendation features.
+ * Hero + Features + CTA using the full design system.
  */
 'use client';
 
@@ -12,148 +11,112 @@ export default function Home() {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white overflow-hidden">
-      {/* Animated background elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-      </div>
-
-      {/* Hero Section */}
-      <section className="relative px-4 sm:px-6 lg:px-8 py-20 sm:py-32">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="mb-8">
-            <div className="inline-block mb-6 px-4 py-2 bg-sky-500/20 border border-sky-500/50 rounded-full text-sky-300 text-sm font-semibold">
-              ✨ Powered by Google Gemini AI
-            </div>
-          </div>
-          
-          <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold mb-6 bg-gradient-to-r from-sky-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent leading-tight">
-            Your AI Career Advisor
-          </h1>
-          
-          <p className="text-xl sm:text-2xl text-slate-300 mb-12 leading-relaxed max-w-2xl mx-auto">
-            Discover your perfect career path with personalized recommendations powered by advanced AI
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link
-              href={user ? "/dashboard" : "/signup"}
-              className="group px-8 py-4 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-bold rounded-lg text-lg transition-all shadow-lg hover:shadow-sky-500/50 transform hover:scale-105"
-            >
-              <span className="flex items-center gap-2 justify-center">
-                {user ? "Go to Dashboard" : "Get Started"}
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
-              </span>
-            </Link>
-            <button
-              onClick={() => {
-                const element = document.getElementById('features');
-                element?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="px-8 py-4 bg-slate-700/50 hover:bg-slate-600/50 text-white font-bold rounded-lg text-lg transition-colors border border-slate-600"
-            >
-              Learn More
-            </button>
-          </div>
+    <div className="relative pt-[72px]">
+      {/* ══ HERO SECTION ══ */}
+      <section className="hero">
+        <div className="hero-badge">
+          <span className="dot"></span>
+          Powered by Google Gemini AI
         </div>
-      </section>
 
-      {/* Features Section */}
-      <section id="features" className="relative px-4 sm:px-6 lg:px-8 py-20 bg-gradient-to-b from-transparent to-slate-800/30">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl sm:text-5xl font-bold mb-16 text-center bg-gradient-to-r from-sky-400 to-blue-400 bg-clip-text text-transparent">
-            Powerful Features
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Feature 1 */}
-            <div className="group relative bg-gradient-to-br from-slate-800 to-slate-800/50 p-8 rounded-xl border border-slate-700/50 hover:border-sky-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-sky-500/20 hover:transform hover:scale-105">
-              <div className="text-6xl mb-4 group-hover:scale-110 transition-transform">🤖</div>
-              <h3 className="text-2xl font-bold mb-4 text-white">AI Recommendations</h3>
-              <p className="text-slate-400 leading-relaxed">
-                Get personalized career recommendations based on your academic stream, skills, and interests using advanced AI.
-              </p>
-              <div className="absolute inset-0 bg-gradient-to-r from-sky-500/0 to-blue-500/0 group-hover:from-sky-500/10 group-hover:to-blue-500/10 rounded-xl transition-colors pointer-events-none"></div>
-            </div>
+        <h1 className="hero-title">
+          Your Career,<br />
+          <span className="accent">Intelligently Mapped.</span>
+        </h1>
 
-            {/* Feature 2 */}
-            <div className="group relative bg-gradient-to-br from-slate-800 to-slate-800/50 p-8 rounded-xl border border-slate-700/50 hover:border-sky-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-sky-500/20 hover:transform hover:scale-105">
-              <div className="text-6xl mb-4 group-hover:scale-110 transition-transform">📊</div>
-              <h3 className="text-2xl font-bold mb-4 text-white">Career Comparison</h3>
-              <p className="text-slate-400 leading-relaxed">
-                Compare two careers side-by-side to understand the differences in skills, tools, salary, and growth potential.
-              </p>
-              <div className="absolute inset-0 bg-gradient-to-r from-sky-500/0 to-blue-500/0 group-hover:from-sky-500/10 group-hover:to-blue-500/10 rounded-xl transition-colors pointer-events-none"></div>
-            </div>
+        <p className="hero-subtitle">
+          Stop guessing your next move. SkillSphere turns your skills and interests into personalized career roadmaps — powered by AI, designed for you.
+        </p>
 
-            {/* Feature 3 */}
-            <div className="group relative bg-gradient-to-br from-slate-800 to-slate-800/50 p-8 rounded-xl border border-slate-700/50 hover:border-sky-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-sky-500/20 hover:transform hover:scale-105">
-              <div className="text-6xl mb-4 group-hover:scale-110 transition-transform">📝</div>
-              <h3 className="text-2xl font-bold mb-4 text-white">Resume Assistant</h3>
-              <p className="text-slate-400 leading-relaxed">
-                Get AI-powered suggestions to improve your resume and tailor it to specific job descriptions.
-              </p>
-              <div className="absolute inset-0 bg-gradient-to-r from-sky-500/0 to-blue-500/0 group-hover:from-sky-500/10 group-hover:to-blue-500/10 rounded-xl transition-colors pointer-events-none"></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section className="relative px-4 sm:px-6 lg:px-8 py-20">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl font-bold mb-16 text-center bg-gradient-to-r from-sky-400 to-blue-400 bg-clip-text text-transparent">
-            How It Works
-          </h2>
-          
-          <div className="space-y-8">
-            {[
-              { number: 1, title: "Sign In with Google", desc: "Create an account using your Google credentials. It's quick, secure, and easy." },
-              { number: 2, title: "Tell Us About Yourself", desc: "Enter your academic stream, skills, and interests. The more details you provide, the better our recommendations." },
-              { number: 3, title: "Get AI Recommendations", desc: "Our AI analyzes your profile and suggests the best career paths tailored just for you." },
-              { number: 4, title: "Compare & Explore", desc: "Compare careers, explore roadmaps, view salary ranges, and find the perfect fit for your future." }
-            ].map((step) => (
-              <div key={step.number} className="flex gap-6 group">
-                <div className="flex-shrink-0">
-                  <div className="flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-r from-sky-600 to-blue-600 group-hover:scale-110 transition-transform shadow-lg">
-                    <span className="text-white font-bold text-lg">{step.number}</span>
-                  </div>
-                </div>
-                <div className="flex-grow">
-                  <h3 className="text-xl font-bold mb-2 text-white">{step.title}</h3>
-                  <p className="text-slate-400 leading-relaxed">
-                    {step.desc}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="relative px-4 sm:px-6 lg:px-8 py-24 bg-gradient-to-r from-sky-600/20 to-blue-600/20 border-y border-sky-500/30">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-5xl font-bold mb-6 text-white">Ready to Find Your Perfect Career?</h2>
-          <p className="text-xl mb-10 text-sky-100">
-            Join thousands of users who have discovered their ideal career path with SkillSphere.
-          </p>
-          <Link
-            href="/dashboard"
-            className="inline-block px-10 py-4 bg-white text-sky-600 font-bold rounded-lg text-lg hover:bg-slate-100 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+        <div className="hero-cta">
+          <Link href={user ? "/dashboard" : "/signup"} className="btn-large primary no-underline">
+            {user ? "Go to Dashboard →" : "Build My Career Map →"}
+          </Link>
+          <button
+            className="btn-large outline"
+            onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
           >
-            Get Started Now
+            Explore Features
+          </button>
+        </div>
+
+        <div className="hero-stats">
+          <div className="stat">
+            <div className="stat-num">3</div>
+            <div className="stat-label">Career Paths</div>
+          </div>
+          <div className="stat">
+            <div className="stat-num">AI</div>
+            <div className="stat-label">Powered</div>
+          </div>
+          <div className="stat">
+            <div className="stat-num">∞</div>
+            <div className="stat-label">Possibilities</div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ FEATURES SECTION ══ */}
+      <section id="features">
+        <div className="section-eyebrow">Core Features</div>
+        <h2 className="section-heading">Everything you need to navigate your career</h2>
+        <p className="section-subtext">
+          Three powerful AI tools, seamlessly integrated into one platform built for clarity.
+        </p>
+
+        <div className="features-grid mt-14">
+          <Link href="/dashboard" className="feature-card anim-delay-1 no-underline">
+            <div className="feature-icon icon-teal">🧭</div>
+            <h3>Career Recommendations</h3>
+            <p>
+              AI generates 3 tailored career paths based on your academic stream, current skills, and personal interests — with salary ranges and growth outlook.
+            </p>
+          </Link>
+
+          <Link href="/dashboard" className="feature-card anim-delay-2 no-underline">
+            <div className="feature-icon icon-cyan">⚖️</div>
+            <h3>Side-by-Side Comparison</h3>
+            <p>
+              Pick any two career paths and get a detailed AI-generated comparison table covering salary, growth, required skills, and work-life balance.
+            </p>
+          </Link>
+
+          <Link href="/resume-helper" className="feature-card anim-delay-3 no-underline">
+            <div className="feature-icon icon-gold">📝</div>
+            <h3>Resume Co-Pilot</h3>
+            <p>
+              Paste a job description and receive powerful, ATS-optimized resume bullet points tailored specifically to your unique skill set.
+            </p>
+          </Link>
+
+          <div className="feature-card anim-delay-4">
+            <div className="feature-icon icon-rose">🔐</div>
+            <h3>Secure Authentication</h3>
+            <p>
+              Sign in with your Google account via Firebase. Your career history and recommendations are saved privately and securely in the cloud.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ CTA SECTION ══ */}
+      <section className="py-24 mb-20 text-center" style={{ position: 'relative', zIndex: 1 }}>
+        <div className="glass p-12 max-w-4xl mx-auto" style={{ boxShadow: 'var(--glow-teal)' }}>
+          <div className="section-eyebrow" style={{ marginBottom: '1rem' }}>Get Started Today</div>
+          <h2 className="section-heading">Ready to find your perfect career?</h2>
+          <p className="section-subtext mx-auto" style={{ marginBottom: '2.5rem' }}>
+            Join thousands of users who have discovered their ideal career path with SkillSphere AI.
+          </p>
+          <Link href={user ? "/dashboard" : "/signup"} className="btn-large primary no-underline">
+            Get Started Now →
           </Link>
         </div>
       </section>
 
       {/* ══ FOOTER ══ */}
-      <footer className="border-t border-white/5 py-10 text-center text-dim text-sm">
-        <p>© 2026 SkillSphere · Built with <span className="text-secondary">Next.js</span> · Powered by <span className="text-secondary">Google Gemini AI</span></p>
+      <footer style={{ borderTop: '1px solid var(--border-subtle)', padding: '2.5rem 1.5rem', textAlign: 'center', color: 'var(--text-dim)', fontSize: '0.875rem', position: 'relative', zIndex: 1 }}>
+        <p>© 2026 SkillSphere · Built with <span style={{ color: 'var(--text-secondary)' }}>Next.js</span> · Powered by <span style={{ color: 'var(--text-secondary)' }}>Google Gemini AI</span></p>
       </footer>
     </div>
   );
 }
-
-
