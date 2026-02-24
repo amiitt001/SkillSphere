@@ -86,7 +86,17 @@ export default function SignInPage() {
         </div>
 
         {/* Glass card */}
-        <div className="glass p-8" style={{ boxShadow: '0 0 60px rgba(0,229,195,0.06), inset 0 1px 0 rgba(255,255,255,0.04)' }}>
+        <div
+          className="p-8"
+          style={{
+            background: 'rgba(11, 18, 35, 0.9)',
+            border: '1px solid rgba(0, 229, 195, 0.25)',
+            borderRadius: '16px',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            boxShadow: '0 0 60px rgba(0,229,195,0.08), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 24px 80px rgba(0,0,0,0.5)',
+          }}
+        >
 
           {/* Error */}
           {error && (
