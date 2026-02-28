@@ -19,9 +19,12 @@ export default function LayoutClient({
   const pathname = usePathname();
   const { user } = useAuth();
 
-  // Public routes that don't require authentication
-  const publicRoutes = ['/', '/signin', '/signup'];
-  const isPublicRoute = publicRoutes.includes(pathname);
+  // Auth-only routes that don't need header at all
+  const authRoutes = ['/signin', '/signup'];
+  const isAuthRoute = authRoutes.includes(pathname);
+
+  // Landing page shows header but no sidebar
+  const isLandingPage = pathname === '/';
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -35,11 +38,23 @@ export default function LayoutClient({
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
-  // PUBLIC ROUTES: No sidebar, no header - just content
-  // We keep the container transparent to show the global background effects
-  if (isPublicRoute) {
+  // AUTH ROUTES: No sidebar, no header — clean auth UX
+  if (isAuthRoute) {
     return (
       <div className={`min-h-screen ${fontClassName || ''}`}>
+        {children}
+      </div>
+    );
+  }
+
+  // LANDING PAGE: Header only, no sidebar
+  if (isLandingPage) {
+    return (
+      <div className={`min-h-screen ${fontClassName || ''}`}>
+        <Header
+          onMenuClick={toggleSidebar}
+          sidebarOpen={isSidebarOpen}
+        />
         {children}
       </div>
     );

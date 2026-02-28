@@ -148,6 +148,7 @@ export default function SignInPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
                 className="w-full"
                 placeholder="architect@skillsphere.ai"
               />
@@ -162,6 +163,7 @@ export default function SignInPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="current-password"
                 className="w-full"
                 placeholder="••••••••••••"
               />

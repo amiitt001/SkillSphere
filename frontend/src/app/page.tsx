@@ -42,8 +42,8 @@ export default function Home() {
 
         <div className="hero-stats">
           <div className="stat">
-            <div className="stat-num">3</div>
-            <div className="stat-label">Career Paths</div>
+            <div className="stat-num">7</div>
+            <div className="stat-label">AI Tools</div>
           </div>
           <div className="stat">
             <div className="stat-num">AI</div>
@@ -61,7 +61,7 @@ export default function Home() {
         <div className="section-eyebrow">Core Features</div>
         <h2 className="section-heading">Everything you need to navigate your career</h2>
         <p className="section-subtext">
-          Three powerful AI tools, seamlessly integrated into one platform built for clarity.
+          Seven powerful AI tools, seamlessly integrated into one platform built for clarity.
         </p>
 
         <div className="features-grid mt-14">
@@ -96,6 +96,38 @@ export default function Home() {
               Sign in with your Google account via Firebase. Your career history and recommendations are saved privately and securely in the cloud.
             </p>
           </div>
+
+          <Link href="/skill-quiz" className="feature-card anim-delay-1 no-underline">
+            <div className="feature-icon icon-purple">🧩</div>
+            <h3>Skill Assessment Quiz</h3>
+            <p>
+              AI-generated quizzes to test your knowledge across skills. Get a radar chart, weak area analysis, and personalized learning recommendations.
+            </p>
+          </Link>
+
+          <Link href="/resume-analyzer" className="feature-card anim-delay-2 no-underline">
+            <div className="feature-icon icon-emerald">📊</div>
+            <h3>Resume Analyzer</h3>
+            <p>
+              Get your resume&apos;s ATS score, bullet-by-bullet analysis, missing skills detection, and AI-rewritten professional summaries.
+            </p>
+          </Link>
+
+          <Link href="/project-generator" className="feature-card anim-delay-3 no-underline">
+            <div className="feature-icon icon-blue">🛠️</div>
+            <h3>AI Project Generator</h3>
+            <p>
+              Generate portfolio-worthy projects with tech stacks, architectures, feature lists, and resume-ready descriptions tailored to your career.
+            </p>
+          </Link>
+
+          <Link href="/interview-prep" className="feature-card anim-delay-4 no-underline">
+            <div className="feature-icon icon-gold">🎤</div>
+            <h3>Interview Prep</h3>
+            <p>
+              Practice with AI-generated technical, behavioral, and coding questions. Get instant feedback with scoring on structure, clarity, and depth.
+            </p>
+          </Link>
         </div>
       </section>
 
