@@ -1,21 +1,32 @@
 /**
- * Resume Analyzer Page
- * Upload resume text → AI analysis with ATS score, bullet analysis, missing skills, and project suggestions.
+ * Resume Analyzer Page — Redesigned
+ * Two-column layout: Left (Upload + Paste) | Right (ATS Score + Issues + Rewritten Summary)
  */
 'use client';
 
 import { useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import FileUpload from '@/components/FileUpload';
 import ScoreGauge from '@/components/ScoreGauge';
 import type { ResumeAnalysis } from '@/types';
 
 function ResumeAnalyzerContent() {
     const [resumeText, setResumeText] = useState('');
-    const [targetCareer, setTargetCareer] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [analysis, setAnalysis] = useState<ResumeAnalysis | null>(null);
-    const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+    const [copiedSummary, setCopiedSummary] = useState(false);
+
+    const handleFileSelect = async (file: File) => {
+        // Read file as text for .txt / .doc, or just set the name for PDF
+        if (file.name.endsWith('.txt')) {
+            const text = await file.text();
+            setResumeText(text);
+        } else {
+            // For PDF/DOCX, show file name — in production this would parse the file
+            setResumeText(`[Uploaded: ${file.name}] — PDF parsing requires server-side processing. Please also paste your resume text below for best results.`);
+        }
+    };
 
     const handleAnalyze = async () => {
         if (resumeText.trim().length < 50) {
@@ -30,7 +41,7 @@ function ResumeAnalyzerContent() {
             const response = await fetch('/api/resume-analyzer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ resumeText, targetCareer: targetCareer || undefined }),
+                body: JSON.stringify({ resumeText }),
             });
             if (!response.ok) throw new Error('Failed to analyze resume');
             const data = await response.json();
@@ -42,182 +53,291 @@ function ResumeAnalyzerContent() {
         }
     };
 
-    const copyToClipboard = (text: string, idx: number) => {
-        navigator.clipboard.writeText(text);
-        setCopiedIdx(idx);
-        setTimeout(() => setCopiedIdx(null), 2000);
+    const copySummary = () => {
+        if (!analysis) return;
+        navigator.clipboard.writeText(analysis.professionalSummary);
+        setCopiedSummary(true);
+        setTimeout(() => setCopiedSummary(false), 2000);
     };
 
-    const getRatingBadge = (rating: string) => {
-        const map: Record<string, string> = { weak: 'weak', average: 'average', strong: 'strong' };
-        return <span className={`score-badge ${map[rating] || 'average'}`}>{rating}</span>;
+    const getScoreLabel = (score: number) => {
+        if (score >= 90) return 'Excellent';
+        if (score >= 75) return 'Good · Above Average';
+        if (score >= 50) return 'Average · Needs Work';
+        return 'Poor · Major Improvements Needed';
     };
 
     return (
         <div className="page-container">
-            <div className="page-header">
-                <div className="section-eyebrow">AI Resume Intelligence</div>
-                <h1 className="page-title">Resume Analyzer</h1>
-                <p className="page-subtitle">
-                    Paste your resume and get an AI-powered ATS score, bullet-by-bullet analysis, and actionable improvement suggestions.
+            {/* ══ PAGE HEADER ══ */}
+            <div className="page-header" style={{ marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: '1.25rem' }}>📄</span>
+                    <h1 className="page-title" style={{ margin: 0 }}>AI Resume Enhancement Engine</h1>
+                </div>
+                <p className="page-subtitle" style={{ margin: 0 }}>
+                    Upload your resume for deep AI analysis
                 </p>
             </div>
 
             {error && (
-                <div style={{ background: 'rgba(255,95,160,0.08)', border: '1px solid rgba(255,95,160,0.25)', borderRadius: 'var(--radius-sm)', padding: '1rem', marginBottom: '1.5rem', color: 'var(--accent-rose)', fontSize: '0.9rem' }}>
+                <div style={{
+                    background: 'rgba(255,95,160,0.08)',
+                    border: '1px solid rgba(255,95,160,0.25)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '1rem',
+                    marginBottom: '1.5rem',
+                    color: 'var(--accent-rose)',
+                    fontSize: '0.9rem',
+                }}>
                     {error}
                 </div>
             )}
 
-            {/* Input Form */}
-            {!analysis && (
-                <div className="quiz-card animate-fade-up">
-                    <div className="form-group">
-                        <label>Target Career (Optional)</label>
-                        <input
-                            type="text"
-                            value={targetCareer}
-                            onChange={(e) => setTargetCareer(e.target.value)}
-                            placeholder="e.g., Full-Stack Developer, Data Scientist"
-                            style={{ width: '100%' }}
+            {/* ══ TWO-COLUMN LAYOUT ══ */}
+            <div className="ra-grid">
+                {/* ── LEFT COLUMN: Upload + Paste ── */}
+                <div className="ra-left">
+                    {/* Upload Resume */}
+                    <div className="ra-section animate-fade-up">
+                        <div className="ra-section-title">
+                            <span>📎</span> Upload Resume
+                        </div>
+                        <FileUpload
+                            accept=".pdf,.doc,.docx"
+                            onFileSelect={handleFileSelect}
+                            label="Drop your PDF here"
+                            hint="or click to browse · PDF, DOC, DOCX"
                         />
+                        <button
+                            className="btn-primary"
+                            onClick={handleAnalyze}
+                            disabled={loading || resumeText.trim().length < 50}
+                            style={{ width: '100%', marginTop: '1rem', fontSize: '0.85rem' }}
+                        >
+                            {loading ? 'Analyzing...' : 'Analyze Resume'}
+                        </button>
                     </div>
 
-                    <div className="form-group">
-                        <label>Resume Text</label>
+                    {/* Paste Resume Text */}
+                    <div className="ra-section animate-fade-up" style={{ animationDelay: '0.1s' }}>
+                        <div className="ra-section-title">
+                            <span>📝</span> Or Paste Resume Text
+                        </div>
                         <textarea
                             value={resumeText}
                             onChange={(e) => setResumeText(e.target.value)}
-                            placeholder="Paste your full resume text here..."
-                            rows={12}
-                            style={{ width: '100%', minHeight: '250px' }}
+                            placeholder={`Aryan Kumar\nB.Tech Computer Science | IIT Delhi\naryan.kumar@email.com | github.com/aryan | linkedin.com/in/aryan\n\nSKILLS: Python, React, Node.js, MongoDB, Machine Learning, TensorFlow\n\nEXPERIENCE:\nSoftware Intern – TechCorp (Jun 2024 – Aug 2024)\n– Built REST APIs for data processing\n– Worked on front-end components`}
+                            rows={10}
+                            style={{
+                                width: '100%',
+                                padding: '1rem',
+                                borderRadius: 'var(--radius-sm)',
+                                border: '1px solid var(--border-subtle)',
+                                background: 'rgba(255,255,255,0.03)',
+                                color: 'var(--text-primary)',
+                                fontFamily: 'var(--font-body)',
+                                fontSize: '0.85rem',
+                                lineHeight: 1.6,
+                                resize: 'vertical',
+                                outline: 'none',
+                                transition: 'border-color 0.3s',
+                            }}
+                            onFocus={(e) => e.target.style.borderColor = 'var(--accent-teal)'}
+                            onBlur={(e) => e.target.style.borderColor = 'var(--border-subtle)'}
                         />
-                        <p style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>
-                            Tip: Copy all text from your resume PDF and paste it here. The AI will analyze the content regardless of formatting.
-                        </p>
-                    </div>
-
-                    <div className="form-footer">
                         <button
-                            className="btn-large primary"
+                            className="btn-primary"
                             onClick={handleAnalyze}
                             disabled={loading || resumeText.trim().length < 50}
+                            style={{ width: '100%', marginTop: '1rem', fontSize: '0.85rem' }}
                         >
-                            {loading ? 'Analyzing...' : 'Analyze Resume →'}
+                            <span style={{ marginRight: 6 }}>✨</span>
+                            {loading ? 'Analyzing...' : 'Analyze with AI'}
                         </button>
                     </div>
                 </div>
-            )}
 
-            {/* Loading */}
-            {loading && (
-                <div className="loader" style={{ minHeight: '300px' }}>
-                    <div className="loader-dots">
-                        <div className="loader-dot" />
-                        <div className="loader-dot" />
-                        <div className="loader-dot" />
-                    </div>
-                    <span>AI is analyzing your resume...</span>
-                </div>
-            )}
-
-            {/* Results */}
-            {analysis && !loading && (
-                <div className="animate-fade-up">
-                    {/* ATS Score */}
-                    <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-                        <ScoreGauge score={analysis.atsScore} label="ATS Score" size={200} strokeWidth={12} />
-                    </div>
-
-                    {/* Overall Feedback */}
-                    <div className="result-panel" style={{ marginBottom: '1.5rem' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.75rem' }}>
-                            Overall Assessment
-                        </h3>
-                        <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7, fontSize: '0.95rem' }}>
-                            {analysis.overallFeedback}
-                        </p>
-                    </div>
-
-                    {/* Professional Summary */}
-                    <div className="result-panel" style={{ marginBottom: '1.5rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                                Suggested Professional Summary
-                            </h3>
-                            <button
-                                className={`copy-btn ${copiedIdx === -1 ? 'copied' : ''}`}
-                                onClick={() => copyToClipboard(analysis.professionalSummary, -1)}
-                            >
-                                {copiedIdx === -1 ? '✓ Copied' : '📋 Copy'}
-                            </button>
-                        </div>
-                        <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7, fontSize: '0.95rem', fontStyle: 'italic' }}>
-                            &ldquo;{analysis.professionalSummary}&rdquo;
-                        </p>
-                    </div>
-
-                    {/* Bullet Analysis */}
-                    {analysis.bullets && analysis.bullets.length > 0 && (
-                        <div className="result-panel" style={{ marginBottom: '1.5rem' }}>
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
-                                Bullet Point Analysis
-                            </h3>
-                            {analysis.bullets.map((bullet, i) => (
-                                <div key={i} className="bullet-item">
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                                        {getRatingBadge(bullet.rating)}
-                                        <button
-                                            className={`copy-btn ${copiedIdx === i ? 'copied' : ''}`}
-                                            onClick={() => copyToClipboard(bullet.rewritten, i)}
-                                        >
-                                            {copiedIdx === i ? '✓ Copied' : '📋 Copy Rewrite'}
-                                        </button>
-                                    </div>
-                                    <div className="bullet-original">{bullet.original}</div>
-                                    <p style={{ fontSize: '0.82rem', color: 'var(--accent-gold)', margin: '0.5rem 0', fontWeight: 600 }}>
-                                        💡 {bullet.suggestion}
-                                    </p>
-                                    <div className="bullet-rewrite">{bullet.rewritten}</div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Missing Skills */}
-                    {analysis.missingSkills && analysis.missingSkills.length > 0 && (
-                        <div className="result-panel" style={{ marginBottom: '1.5rem' }}>
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
-                                Missing Skills
-                            </h3>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                {analysis.missingSkills.map((skill, i) => (
-                                    <span key={i} className="tech-badge">{skill}</span>
-                                ))}
+                {/* ── RIGHT COLUMN: Results ── */}
+                <div className="ra-right">
+                    {/* Loading State */}
+                    {loading && (
+                        <div className="ra-section animate-fade-in" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+                            <div className="loader-dots" style={{ marginBottom: '1rem' }}>
+                                <div className="loader-dot" />
+                                <div className="loader-dot" />
+                                <div className="loader-dot" />
                             </div>
+                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                AI is analyzing your resume...
+                            </span>
                         </div>
                     )}
 
-                    {/* Suggested Projects */}
-                    {analysis.suggestedProjects && analysis.suggestedProjects.length > 0 && (
-                        <div className="result-panel" style={{ marginBottom: '1.5rem' }}>
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
-                                Suggested Projects to Add
+                    {/* Empty State */}
+                    {!analysis && !loading && (
+                        <div className="ra-section animate-fade-in" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+                            <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.3 }}>📊</div>
+                            <h3 style={{
+                                fontFamily: 'var(--font-display)',
+                                fontSize: '1.1rem',
+                                color: 'var(--text-secondary)',
+                                marginBottom: '0.5rem',
+                            }}>
+                                ATS Score Analysis
                             </h3>
-                            {analysis.suggestedProjects.map((project, i) => (
-                                <div key={i} className="feature-check">{project}</div>
-                            ))}
+                            <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>
+                                Upload or paste your resume to get an AI-powered analysis
+                            </p>
                         </div>
                     )}
 
-                    {/* Reset */}
-                    <div className="form-footer">
-                        <button className="btn-large outline" onClick={() => setAnalysis(null)}>
-                            ← Analyze Another Resume
-                        </button>
-                    </div>
+                    {/* Results */}
+                    {analysis && !loading && (
+                        <>
+                            {/* ATS Score */}
+                            <div className="ra-section animate-fade-up">
+                                <div className="ra-section-title">
+                                    <span>🎯</span> ATS Score Analysis
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1rem 0' }}>
+                                    <ScoreGauge score={analysis.atsScore} label="ATS Score" size={160} strokeWidth={10} />
+                                    <p style={{
+                                        color: analysis.atsScore >= 75 ? 'var(--accent-teal)' : analysis.atsScore >= 50 ? 'var(--accent-gold)' : 'var(--accent-rose)',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 600,
+                                        marginTop: '0.75rem',
+                                    }}>
+                                        {getScoreLabel(analysis.atsScore)}
+                                    </p>
+                                    {/* Score bar */}
+                                    <div style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        gap: 4,
+                                        marginTop: '1rem',
+                                    }}>
+                                        <div style={{
+                                            flex: 4, height: 6, borderRadius: 3,
+                                            background: analysis.atsScore >= 0 ? 'var(--accent-rose)' : 'var(--border-subtle)',
+                                        }} />
+                                        <div style={{
+                                            flex: 4, height: 6, borderRadius: 3,
+                                            background: analysis.atsScore >= 50 ? 'var(--accent-gold)' : 'var(--border-subtle)',
+                                        }} />
+                                        <div style={{
+                                            flex: 2, height: 6, borderRadius: 3,
+                                            background: analysis.atsScore >= 90 ? 'var(--accent-teal)' : 'var(--border-subtle)',
+                                        }} />
+                                    </div>
+                                    <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>Poor (0-49)</span>
+                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>Good (50-89)</span>
+                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>Excellent (90+)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Issues Found */}
+                            <div className="ra-section animate-fade-up" style={{ animationDelay: '0.1s' }}>
+                                <div className="ra-section-title">
+                                    <span>⚠️</span> Issues Found
+                                </div>
+
+                                {/* Weak Bullet Points */}
+                                {analysis.bullets && analysis.bullets.filter(b => b.rating === 'weak').length > 0 && (
+                                    <div className="ra-issue-block" style={{ marginBottom: '1rem' }}>
+                                        <div className="ra-issue-label weak">Weak Bullet Points</div>
+                                        {analysis.bullets
+                                            .filter((b) => b.rating === 'weak')
+                                            .map((bullet, i) => (
+                                                <p key={i} style={{
+                                                    fontSize: '0.82rem',
+                                                    color: 'var(--text-secondary)',
+                                                    margin: '0.5rem 0',
+                                                    lineHeight: 1.5,
+                                                }}>
+                                                    &ldquo;{bullet.original}&rdquo; → <em style={{ color: 'var(--accent-teal)' }}>{bullet.rewritten}</em>
+                                                </p>
+                                            ))}
+                                    </div>
+                                )}
+
+                                {/* Missing Skills */}
+                                {analysis.missingSkills && analysis.missingSkills.length > 0 && (
+                                    <div className="ra-issue-block" style={{ marginBottom: '1rem' }}>
+                                        <div className="ra-issue-label missing">Missing Skills</div>
+                                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0.5rem 0', lineHeight: 1.5 }}>
+                                            Add: {analysis.missingSkills.join(', ')}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Suggested Projects */}
+                                {analysis.suggestedProjects && analysis.suggestedProjects.length > 0 && (
+                                    <div className="ra-issue-block">
+                                        <div className="ra-issue-label projects">Suggest Projects</div>
+                                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0.5rem 0', lineHeight: 1.5 }}>
+                                            {analysis.suggestedProjects.join(', ')}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Rewritten Summary */}
+                            <div className="ra-section animate-fade-up" style={{ animationDelay: '0.2s' }}>
+                                <div className="ra-section-title">
+                                    <span>✨</span> Rewritten Summary
+                                </div>
+                                <blockquote style={{
+                                    padding: '1.25rem',
+                                    borderRadius: 'var(--radius-sm)',
+                                    background: 'rgba(255,255,255,0.02)',
+                                    border: '1px solid var(--border-subtle)',
+                                    borderLeft: '3px solid var(--accent-teal)',
+                                    margin: 0,
+                                }}>
+                                    <p style={{
+                                        fontSize: '0.85rem',
+                                        color: 'var(--text-secondary)',
+                                        lineHeight: 1.7,
+                                        fontStyle: 'italic',
+                                        margin: 0,
+                                    }}>
+                                        &ldquo;{analysis.professionalSummary}&rdquo;
+                                    </p>
+                                </blockquote>
+                                <button
+                                    onClick={copySummary}
+                                    style={{
+                                        marginTop: '0.75rem',
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: 'var(--radius-sm)',
+                                        border: '1px solid var(--border-subtle)',
+                                        background: 'rgba(255,255,255,0.03)',
+                                        color: copiedSummary ? 'var(--accent-teal)' : 'var(--text-secondary)',
+                                        fontSize: '0.8rem',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        fontFamily: 'var(--font-body)',
+                                    }}
+                                >
+                                    {copiedSummary ? '✓ Copied!' : '📋 Copy to Clipboard'}
+                                </button>
+                            </div>
+
+                            {/* Reset */}
+                            <button
+                                className="btn-large outline"
+                                onClick={() => { setAnalysis(null); setResumeText(''); }}
+                                style={{ width: '100%', marginTop: '1rem' }}
+                            >
+                                ← Analyze Another Resume
+                            </button>
+                        </>
+                    )}
                 </div>
-            )}
+            </div>
         </div>
     );
 }

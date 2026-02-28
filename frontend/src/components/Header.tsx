@@ -41,7 +41,7 @@ const ChevronDown = ({ rotated }: { rotated: boolean }) => (
 const Header = ({ onMenuClick, sidebarOpen = false }: HeaderProps) => {
   const pathname = usePathname();
   const { user } = useAuth();
-  const isDashboard = pathname.startsWith('/dashboard') || pathname.startsWith('/history') || pathname.startsWith('/resume-helper');
+  const isDashboard = pathname.startsWith('/dashboard') || pathname.startsWith('/history') || pathname.startsWith('/resume-helper') || pathname.startsWith('/profile') || pathname.startsWith('/profile-aggregator');
   const [toolsOpen, setToolsOpen] = useState(false);
 
   const navLinkStyle = (active: boolean): React.CSSProperties => ({
@@ -109,11 +109,12 @@ const Header = ({ onMenuClick, sidebarOpen = false }: HeaderProps) => {
 
             {/* AI Tools Dropdown */}
             <div
-              style={{ position: 'relative' }}
+              style={{ position: 'relative', padding: '8px 0' }}
               onMouseEnter={() => setToolsOpen(true)}
               onMouseLeave={() => setToolsOpen(false)}
             >
               <button
+                onClick={() => setToolsOpen(!toolsOpen)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 4,
                   fontSize: '0.875rem', fontWeight: 500, letterSpacing: '0.025em',
@@ -134,7 +135,7 @@ const Header = ({ onMenuClick, sidebarOpen = false }: HeaderProps) => {
                     top: '100%',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    marginTop: 8,
+                    paddingTop: 0,
                     width: 224,
                     padding: '8px 0',
                     borderRadius: 12,

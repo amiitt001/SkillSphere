@@ -146,3 +146,34 @@ export interface JobListing {
   fitPercentage?: number;
   postedDate: string;
 }
+
+// ─── User Profile ───
+export interface Achievement {
+  id: string;
+  label: string;
+  icon: string;
+  color: string;
+  unlocked: boolean;
+}
+
+export interface UserProfile {
+  fullName: string;
+  email: string;
+  college: string;
+  stream: string;
+  year: string;
+  bio: string;
+  location: string;
+  stats: {
+    repos: number;
+    skills: number;
+    cgpa: number;
+    streak: number;
+  };
+  achievements: Achievement[];
+  preferences: {
+    emailNotifications: boolean;
+    weeklyReports: boolean;
+    jobAlerts: boolean;
+  };
+}
