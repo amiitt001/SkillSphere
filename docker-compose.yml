@@ -4,7 +4,7 @@ services:
   skillsphere:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: frontend/Dockerfile
     container_name: skillsphere-app
     ports:
       - "3000:3000"
