@@ -39,57 +39,97 @@ export async function GET(request: NextRequest) {
       - Interests: ${interests}
     `;
 
-    const API_KEY = process.env.GEMINI_API_KEY;
-    if (!API_KEY) {
-      throw new Error('GEMINI_API_KEY is not defined');
-    }
+    // --- SEQUENCE OF APIS: 1. GEMINI -> 2. NVIDIA DEEPSEEK -> 3. STATIC MOCK ---
+    
+    // 1. Try Google Gemini API
+    try {
+      const API_KEY = process.env.GEMINI_API_KEY;
+      if (API_KEY) {
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              response_mime_type: "application/json"
+            }
+          }),
+        });
 
-    // Using gemini-2.5-flash which is the latest stable model
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
-
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          response_mime_type: "application/json"
+        if (response.ok) {
+          const data = await response.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) {
+            const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            return new Response(cleanedText, {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+        } else {
+          const errText = await response.text();
+          console.warn(`Gemini API failed with status ${response.status}: ${errText}. Retrying with NVIDIA DeepSeek API...`);
         }
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.warn("Error from Google AI API, using high-fidelity fallback instead:", errorText);
-      const fallbackData = getFallbackRecommendations(academicStream, skills, interests);
-      return new Response(JSON.stringify(fallbackData), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      }
+    } catch (geminiError: any) {
+      console.warn("Gemini API call failed with exception:", geminiError.message || geminiError, ". Retrying with NVIDIA DeepSeek API...");
     }
 
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    // 2. Try NVIDIA DeepSeek API
+    try {
+      const nvidiaKey = process.env.NVIDIA_API_KEY;
+      if (nvidiaKey) {
+        const nvidiaBaseUrl = process.env.NVIDIA_BASE_URL || "https://integrate.api.nvidia.com/v1";
+        const nvidiaModel = process.env.NVIDIA_MODEL || "deepseek-ai/deepseek-v4-flash";
 
-    if (!text) {
-      throw new Error("Invalid response structure from AI API");
+        const response = await fetch(`${nvidiaBaseUrl}/chat/completions`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${nvidiaKey}`
+          },
+          body: JSON.stringify({
+            model: nvidiaModel,
+            messages: [{ role: "user", content: prompt }],
+            temperature: 1,
+            top_p: 0.95,
+            max_tokens: 16384,
+            response_format: { type: "json_object" }
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const text = data.choices?.[0]?.message?.content;
+          if (text) {
+            const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            return new Response(cleanedText, {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+        } else {
+          const errText = await response.text();
+          console.warn(`NVIDIA DeepSeek API failed with status ${response.status}: ${errText}. Falling back to static mock...`);
+        }
+      }
+    } catch (nvidiaError: any) {
+      console.warn("NVIDIA DeepSeek API call failed with exception:", nvidiaError.message || nvidiaError, ". Falling back to static mock...");
     }
 
-    // Clean the response to ensure it's valid JSON
-    const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-
-    return new Response(cleanedText, {
+    // 3. Fallback to static mock data
+    const fallbackData = getFallbackRecommendations(academicStream, skills, interests);
+    return new Response(JSON.stringify(fallbackData), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
 
   } catch (error: unknown) {
-    console.error("Error in generate-recommendations API route:", error);
-    const errorMessage = error instanceof Error ? error.message : "Error generating recommendation.";
+    console.error("General error in generate-recommendations API route:", error);
     try {
-      // Direct catch fallback
       const searchParams = request.nextUrl.searchParams;
       const academicStream = searchParams.get('academicStream') || '';
       const skills = searchParams.get('skills') || '';
@@ -100,7 +140,7 @@ export async function GET(request: NextRequest) {
         headers: { 'Content-Type': 'application/json' }
       });
     } catch {
-      return new Response(JSON.stringify({ error: errorMessage }), { status: 500 });
+      return new Response(JSON.stringify({ error: "Fatal error in recommendations generator." }), { status: 500 });
     }
   }
 }

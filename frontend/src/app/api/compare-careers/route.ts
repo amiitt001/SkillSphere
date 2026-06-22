@@ -26,36 +26,7 @@ export async function GET(request: NextRequest) {
       return new Response("Error: Please provide two careers to compare.", { status: 400 });
     }
 
-    // --- 2. INITIALIZE THE AI MODEL ---
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-      },
-      safetySettings: [
-        {
-          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-      ],
-    });
-
     // --- 3. CONSTRUCT THE DETAILED PROMPT ---
-    // This prompt instructs the AI to return a structured JSON object containing
-    // summaries, structured recommendation pointers, and comparison metrics.
     const prompt = `
       You are an expert career advisor. Your task is to provide a comparison between two career paths for a user in India.
       Your entire response MUST be a single, valid JSON object. Do not include any text, markdown, or notes outside of the JSON.
@@ -87,40 +58,89 @@ export async function GET(request: NextRequest) {
       3. Do NOT wrap the JSON inside markdown tags (like \`\`\`json ... \`\`\`). Just output the raw JSON starting with an opening curly bracket and ending with a closing curly bracket.
     `;
 
-    // --- 4. CALL THE AI AND GET A STREAMING RESPONSE ---
-    let result: any;
-    try {
-      result = await model.generateContentStream(prompt);
-      
-      // --- 5. FORWARD THE STREAM TO THE CLIENT ---
-      const stream = new ReadableStream({
-        async start(controller) {
-          try {
-            for await (const chunk of result.stream) {
-              const chunkText = chunk.text();
-              controller.enqueue(new TextEncoder().encode(chunkText));
-            }
-            controller.close();
-          } catch (streamErr) {
-            console.error("Stream reading error, serving fallback comparison:", streamErr);
-            const fallbackJson = getFallbackComparison(career1, career2);
-            controller.enqueue(new TextEncoder().encode(JSON.stringify(fallbackJson)));
-            controller.close();
-          }
-        },
-      });
+    // --- SEQUENCE OF APIS: 1. GEMINI -> 2. NVIDIA DEEPSEEK -> 3. STATIC MOCK ---
 
-      return new Response(stream, {
+    // 1. Try Google Gemini API (streaming)
+    try {
+      const API_KEY = process.env.GEMINI_API_KEY;
+      if (API_KEY) {
+        const genAI = new GoogleGenerativeAI(API_KEY);
+        const model = genAI.getGenerativeModel({
+          model: "gemini-2.5-flash",
+          generationConfig: {
+            responseMimeType: "application/json",
+          },
+          safetySettings: [
+            {
+              category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+              threshold: HarmBlockThreshold.BLOCK_NONE,
+            },
+            {
+              category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+              threshold: HarmBlockThreshold.BLOCK_NONE,
+            },
+            {
+              category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+              threshold: HarmBlockThreshold.BLOCK_NONE,
+            },
+            {
+              category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+              threshold: HarmBlockThreshold.BLOCK_NONE,
+            },
+          ],
+        });
+
+        const result = await model.generateContentStream(prompt);
+        
+        // Forward the stream to the client
+        const stream = new ReadableStream({
+          async start(controller) {
+            try {
+              for await (const chunk of result.stream) {
+                const chunkText = chunk.text();
+                controller.enqueue(new TextEncoder().encode(chunkText));
+              }
+              controller.close();
+            } catch (streamErr) {
+              console.error("Stream reading error in Gemini, retrying with NVIDIA DeepSeek:", streamErr);
+              // In case stream reading fails midway, we try NVIDIA DeepSeek as a fallback
+              try {
+                const nvidiaText = await callNvidiaComparison(prompt);
+                controller.enqueue(new TextEncoder().encode(nvidiaText));
+              } catch (fallbackErr) {
+                console.error("NVIDIA fallback inside stream start failed:", fallbackErr);
+                const fallbackJson = getFallbackComparison(career1, career2);
+                controller.enqueue(new TextEncoder().encode(JSON.stringify(fallbackJson)));
+              }
+              controller.close();
+            }
+          },
+        });
+
+        return new Response(stream, {
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        });
+      }
+    } catch (geminiError: any) {
+      console.warn("Gemini API compare-careers call failed, retrying with NVIDIA DeepSeek:", geminiError.message || geminiError);
+    }
+
+    // 2. Try NVIDIA DeepSeek API
+    try {
+      const nvidiaText = await callNvidiaComparison(prompt);
+      return new Response(nvidiaText, {
         headers: { 'Content-Type': 'text/plain; charset=utf-8' },
       });
-    } catch (apiErr) {
-      console.warn("Gemini API call failed, using high-fidelity fallback comparison instead:", apiErr);
-      const fallbackJson = getFallbackComparison(career1, career2);
-      return new Response(JSON.stringify(fallbackJson), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json; charset=utf-8' },
-      });
+    } catch (nvidiaError: any) {
+      console.warn("NVIDIA DeepSeek API comparison failed, using static fallback comparison:", nvidiaError.message || nvidiaError);
     }
+
+    // 3. Fallback to static mock comparison
+    const fallbackJson = getFallbackComparison(career1, career2);
+    return new Response(JSON.stringify(fallbackJson), {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
 
   } catch (error) {
     console.error("Error in compare-careers API route:", error);
@@ -131,12 +151,49 @@ export async function GET(request: NextRequest) {
       const fallbackJson = getFallbackComparison(career1, career2);
       return new Response(JSON.stringify(fallbackJson), {
         status: 200,
-        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
       });
     } catch {
       return new Response("Error generating comparison.", { status: 500 });
     }
   }
+}
+
+async function callNvidiaComparison(prompt: string): Promise<string> {
+  const nvidiaKey = process.env.NVIDIA_API_KEY;
+  if (!nvidiaKey) {
+    throw new Error("NVIDIA_API_KEY is not defined");
+  }
+  const nvidiaBaseUrl = process.env.NVIDIA_BASE_URL || "https://integrate.api.nvidia.com/v1";
+  const nvidiaModel = process.env.NVIDIA_MODEL || "deepseek-ai/deepseek-v4-flash";
+
+  const response = await fetch(`${nvidiaBaseUrl}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${nvidiaKey}`
+    },
+    body: JSON.stringify({
+      model: nvidiaModel,
+      messages: [{ role: "user", content: prompt }],
+      temperature: 1,
+      top_p: 0.95,
+      max_tokens: 16384,
+      response_format: { type: "json_object" }
+    })
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`NVIDIA DeepSeek API failed: ${errText}`);
+  }
+
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content;
+  if (!text) {
+    throw new Error("Empty response from NVIDIA DeepSeek");
+  }
+  return text;
 }
 
 function getFallbackComparison(career1: string, career2: string) {
