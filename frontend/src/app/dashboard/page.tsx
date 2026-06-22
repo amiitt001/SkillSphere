@@ -76,6 +76,9 @@ function DashboardContent() {
       const url = `/api/generate-recommendations?${params.toString()}`;
 
       const response = await fetch(url);
+      if (response.status === 429) {
+        throw new Error("SkillSphere AI is currently experiencing high request volumes. Please wait a few seconds and try again.");
+      }
       if (!response.ok || !response.body) {
         throw new Error(`Server responded with status: ${response.status}`);
       }

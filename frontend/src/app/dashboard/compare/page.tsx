@@ -67,6 +67,9 @@ function CompareContent() {
       const url = `/api/compare-careers?${params.toString()}`;
 
       const response = await fetch(url);
+      if (response.status === 429) {
+        throw new Error("The career comparison AI service is currently busy due to rate limits. Please wait a few seconds and try again.");
+      }
       if (!response.ok || !response.body) {
         throw new Error(`Comparison API responded with status: ${response.status}`);
       }
