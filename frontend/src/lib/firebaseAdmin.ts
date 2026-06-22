@@ -2,10 +2,12 @@
  * This file contains the core Firebase Admin SDK initialization for the SERVER-SIDE.
  * It uses the Base64 encoded service account for secure initialization.
  */
-import admin from 'firebase-admin';
+import { getApps, initializeApp, cert, getApp } from 'firebase-admin/app';
+
+let adminApp: any;
 
 // Check if the app is already initialized to prevent errors
-if (!admin.apps.length) {
+if (!getApps().length) {
   try {
     const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
 
@@ -19,14 +21,22 @@ if (!admin.apps.length) {
     const serviceAccount = JSON.parse(serviceAccountJson);
 
     // Initialize the Firebase Admin SDK
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
+    adminApp = initializeApp({
+      credential: cert(serviceAccount)
     });
 
   } catch (error) {
     console.error("CRITICAL ERROR: Initializing Firebase Admin SDK failed!", error);
   }
+} else {
+  adminApp = getApp();
 }
 
-// Export the initialized admin instance
+// Export a compatible legacy default export containing the initialized app
+const admin = {
+  apps: getApps(),
+  initializeApp: (options: any) => initializeApp(options),
+  app: (name?: string) => getApp(name),
+};
+
 export default admin;

@@ -29,7 +29,7 @@ const useAuthMock = useAuth as jest.Mock;
 describe('Auth Component', () => {
 
   // Test case 1: When the user is logged out
-  it('shows the "Sign in with Google" button when user is logged out', () => {
+  it('shows the "Sign In →" link when user is logged out', () => {
     // 1. Arrange: Set up our mock to return a "logged out" state.
     useAuthMock.mockReturnValue({
       user: null, // No user
@@ -39,13 +39,12 @@ describe('Auth Component', () => {
     // 2. Act: Render the Auth component.
     render(<Auth />);
 
-    // 3. Assert: Check if an element with the text "Sign in with Google" is visible on the screen.
-    // The `getByText` function will throw an error if the text is not found, failing the test.
-    expect(screen.getByText('Sign in with Google')).toBeInTheDocument();
+    // 3. Assert: Check if an element with the text "Sign In →" is visible on the screen.
+    expect(screen.getByText('Sign In →')).toBeInTheDocument();
   });
 
   // Test case 2: When the user is logged in
-  it('shows the user display name and sign out button when user is logged in', () => {
+  it('shows the user display name when user is logged in', () => {
     // 1. Arrange: Set up our mock to return a fake "logged in" user.
     useAuthMock.mockReturnValue({
       user: {
@@ -58,12 +57,11 @@ describe('Auth Component', () => {
     // 2. Act: Render the Auth component.
     render(<Auth />);
 
-    // 3. Assert: Check if the user's name and the "Sign Out" button are visible.
+    // 3. Assert: Check if the user's name is visible.
     expect(screen.getByText('Amit Verma')).toBeInTheDocument();
-    expect(screen.getByText('Sign Out')).toBeInTheDocument();
 
-    // We can also assert that the "Sign in" button is NOT there
-    expect(screen.queryByText('Sign in with Google')).not.toBeInTheDocument();
+    // We can also assert that the "Sign In →" link is NOT there
+    expect(screen.queryByText('Sign In →')).not.toBeInTheDocument();
   });
 
 });

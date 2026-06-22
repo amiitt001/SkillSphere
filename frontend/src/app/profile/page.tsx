@@ -8,6 +8,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import type { UserProfile, Achievement } from '@/types';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const defaultAchievements: Achievement[] = [
     { id: 'streak', label: '21 Day Streak', icon: '🔥', color: 'rgba(255, 149, 0, 0.15)', unlocked: true },
@@ -58,55 +60,125 @@ export default function ProfilePage() {
     const [saved, setSaved] = useState(false);
     const [headerSaved, setHeaderSaved] = useState(false);
 
-    // Load from localStorage on mount
+    // Load from Firestore on mount
     useEffect(() => {
-        const stored = localStorage.getItem('skillsphere_profile');
-        if (stored) {
+        if (!user) return;
+
+        const loadProfile = async () => {
             try {
-                const parsed = JSON.parse(stored);
-                setProfile({ ...defaultProfile, ...parsed, achievements: defaultAchievements });
-            } catch {
-                // ignore parse errors
+                const userDocRef = doc(db, 'users', user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                
+                if (userDocSnap.exists()) {
+                    const data = userDocSnap.data();
+                    setProfile({
+                        fullName: data.name || data.fullName || user.displayName || '',
+                        email: data.email || user.email || '',
+                        college: data.college || '',
+                        stream: data.stream || 'Computer Science & Engineering',
+                        year: data.year || '3rd Year',
+                        bio: data.bio || '',
+                        location: data.location || 'India',
+                        stats: data.stats || defaultProfile.stats,
+                        achievements: defaultAchievements,
+                        preferences: data.preferences || defaultProfile.preferences,
+                    });
+                } else {
+                    // LocalStorage fallback for legacy users
+                    const stored = localStorage.getItem('skillsphere_profile');
+                    if (stored) {
+                        const parsed = JSON.parse(stored);
+                        setProfile({ ...defaultProfile, ...parsed, fullName: parsed.fullName || user.displayName || '', email: parsed.email || user.email || '', achievements: defaultAchievements });
+                    } else {
+                        setProfile((prev) => ({
+                            ...prev,
+                            fullName: user.displayName || '',
+                            email: user.email || '',
+                        }));
+                    }
+                }
+            } catch (err) {
+                console.error("Error loading profile from Firestore:", err);
             }
-        }
-        // Pre-fill from Firebase user
-        if (user) {
-            setProfile((prev) => ({
-                ...prev,
-                fullName: prev.fullName || user.displayName || '',
-                email: prev.email || user.email || '',
-            }));
-        }
+        };
+
+        loadProfile();
     }, [user]);
 
-    const saveProfile = () => {
-        localStorage.setItem('skillsphere_profile', JSON.stringify(profile));
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
+    const saveProfile = async () => {
+        if (!user) return;
+        try {
+            await setDoc(doc(db, 'users', user.uid), {
+                name: profile.fullName,
+                fullName: profile.fullName,
+                email: profile.email,
+                college: profile.college,
+                stream: profile.stream,
+                year: profile.year,
+                bio: profile.bio,
+                location: profile.location,
+                stats: profile.stats,
+                preferences: profile.preferences,
+                updatedAt: serverTimestamp(),
+                createdAt: serverTimestamp() // setDoc merge preserves if already exists, but rule requires name/email/createdAt at creation time
+            }, { merge: true });
+
+            localStorage.setItem('skillsphere_profile', JSON.stringify(profile)); // keep local storage in sync as a backup
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2000);
+        } catch (err) {
+            console.error("Error saving profile to Firestore:", err);
+        }
     };
 
-    const saveHeader = () => {
-        localStorage.setItem('skillsphere_profile', JSON.stringify(profile));
-        setHeaderSaved(true);
-        setTimeout(() => setHeaderSaved(false), 2000);
+    const saveHeader = async () => {
+        if (!user) return;
+        try {
+            await setDoc(doc(db, 'users', user.uid), {
+                name: profile.fullName,
+                fullName: profile.fullName,
+                college: profile.college,
+                stream: profile.stream,
+                year: profile.year,
+                location: profile.location,
+                updatedAt: serverTimestamp(),
+                createdAt: serverTimestamp()
+            }, { merge: true });
+
+            localStorage.setItem('skillsphere_profile', JSON.stringify(profile));
+            setHeaderSaved(true);
+            setTimeout(() => setHeaderSaved(false), 2000);
+        } catch (err) {
+            console.error("Error saving profile header:", err);
+        }
     };
 
     const updateField = (field: keyof UserProfile, value: string) => {
         setProfile((prev) => ({ ...prev, [field]: value }));
     };
 
-    const togglePreference = (key: keyof UserProfile['preferences']) => {
+    const togglePreference = async (key: keyof UserProfile['preferences']) => {
+        if (!user) return;
+        const updatedPrefs = { ...profile.preferences, [key]: !profile.preferences[key] };
         setProfile((prev) => ({
             ...prev,
-            preferences: { ...prev.preferences, [key]: !prev.preferences[key] },
+            preferences: updatedPrefs,
         }));
-        // Auto-save on toggle
-        setTimeout(() => {
+
+        try {
+            await setDoc(doc(db, 'users', user.uid), {
+                preferences: updatedPrefs,
+                updatedAt: serverTimestamp(),
+                createdAt: serverTimestamp()
+            }, { merge: true });
+            
             localStorage.setItem('skillsphere_profile', JSON.stringify({
                 ...profile,
-                preferences: { ...profile.preferences, [key]: !profile.preferences[key] },
+                preferences: updatedPrefs
             }));
-        }, 0);
+        } catch (err) {
+            console.error("Error updating preference:", err);
+        }
     };
 
     return (

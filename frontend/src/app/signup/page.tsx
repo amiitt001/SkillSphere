@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -61,8 +62,16 @@ export default function SignUpPage() {
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      if (userCredential.user && name) {
-        await updateProfile(userCredential.user, { displayName: name });
+      if (userCredential.user) {
+        if (name) {
+          await updateProfile(userCredential.user, { displayName: name });
+        }
+        // Save initial profile to Firestore
+        await setDoc(doc(db, 'users', userCredential.user.uid), {
+          name: name || '',
+          email: email,
+          createdAt: serverTimestamp()
+        });
       }
       router.push('/dashboard');
     } catch (error: any) {

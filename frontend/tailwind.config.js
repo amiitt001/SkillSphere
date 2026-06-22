@@ -1,5 +1,4 @@
 /** @type {import('tailwindcss').Config} */
-// Drop this into: frontend/tailwind.config.ts
 
 module.exports = {
     content: [
@@ -41,7 +40,7 @@ module.exports = {
             },
 
             fontSize: {
-                'hero-lg': 'clamp(3rem, 7vw, 6.5rem)',
+                'hero-lg': 'clamp(3rem, 7vw, 5.5rem)',
                 'hero-sm': 'clamp(2rem, 4vw, 3rem)',
             },
 
@@ -70,13 +69,13 @@ module.exports = {
             },
 
             backgroundSize: {
-                'grid': '60px 60px',
+                'grid': '80px 80px',
             },
 
             animation: {
                 'fade-up': 'fade-up 0.6s ease both',
                 'fade-in': 'fade-in 0.4s ease both',
-                'orb-drift': 'orb-drift 20s ease-in-out infinite',
+                'orb-drift': 'orb-drift 25s ease-in-out infinite',
                 'pulse-dot': 'pulse-dot 2s ease-in-out infinite',
                 'shimmer': 'shimmer 1.5s infinite',
                 'tag-pop': 'tag-pop 0.2s cubic-bezier(0.34,1.56,0.64,1)',

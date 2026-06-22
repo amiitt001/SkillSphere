@@ -5,7 +5,8 @@
 
 import { useState, useEffect } from 'react';
 import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -24,7 +25,18 @@ export default function SignInPage() {
     setLoading(true);
     setError('');
     try {
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      if (result.user) {
+        const userDocRef = doc(db, 'users', result.user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (!userDocSnap.exists()) {
+          await setDoc(userDocRef, {
+            name: result.user.displayName || '',
+            email: result.user.email || '',
+            createdAt: serverTimestamp()
+          });
+        }
+      }
       router.push('/dashboard');
     } catch (error: any) {
       setError(error.message || 'Failed to sign in with Google');

@@ -1,26 +1,21 @@
-# Build stage
-FROM node:18-alpine AS builder
+
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
 COPY frontend/package*.json ./
 
-# Install dependencies
 RUN npm ci
 
-# Copy source code
+
 COPY frontend/ ./
 
-# Build the application
 RUN npm run build
 
-# Production stage
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
 
 # Copy package files

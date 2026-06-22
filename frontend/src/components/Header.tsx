@@ -41,17 +41,8 @@ const ChevronDown = ({ rotated }: { rotated: boolean }) => (
 const Header = ({ onMenuClick, sidebarOpen = false }: HeaderProps) => {
   const pathname = usePathname();
   const { user } = useAuth();
-  const isDashboard = pathname.startsWith('/dashboard') || pathname.startsWith('/history') || pathname.startsWith('/resume-helper') || pathname.startsWith('/profile') || pathname.startsWith('/profile-aggregator');
+  const isDashboard = pathname.startsWith('/dashboard') || pathname.startsWith('/history') || pathname.startsWith('/resume-helper') || pathname.startsWith('/profile') || pathname.startsWith('/profile-aggregator') || pathname.startsWith('/skill-quiz') || pathname.startsWith('/resume-analyzer') || pathname.startsWith('/project-generator') || pathname.startsWith('/interview-prep');
   const [toolsOpen, setToolsOpen] = useState(false);
-
-  const navLinkStyle = (active: boolean): React.CSSProperties => ({
-    fontSize: '0.875rem',
-    fontWeight: 500,
-    letterSpacing: '0.025em',
-    color: active ? 'var(--accent-teal)' : 'var(--text-secondary)',
-    transition: 'color 0.2s',
-    textDecoration: 'none',
-  });
 
   // --- RENDER ---
   return (
@@ -61,40 +52,39 @@ const Header = ({ onMenuClick, sidebarOpen = false }: HeaderProps) => {
         top: 0,
         left: 0,
         right: 0,
-        height: 72,
+        height: 64,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 2.5rem',
+        padding: '0 2rem',
         zIndex: 100,
-        backgroundColor: 'rgba(3, 4, 10, 0.75)',
+        backgroundColor: 'rgba(15, 13, 11, 0.8)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+        borderBottom: '1px solid rgba(196, 112, 75, 0.08)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 40 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 36 }}>
         {/* Logo/Brand */}
-        <Link href="/" className="no-underline" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
+        <Link href="/" className="no-underline" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
           <div
             style={{
-              width: 36, height: 36,
-              background: 'linear-gradient(135deg, #00e5c3, #0af0ff)',
+              width: 34, height: 34,
+              background: 'linear-gradient(135deg, #ffffff, #e5e5e5)',
               borderRadius: 10,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: 'var(--font-display)', fontWeight: 700,
-              color: 'var(--bg-void)',
-              boxShadow: '0 0 20px rgba(0, 229, 195, 0.4)',
+              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.95rem',
+              color: '#fff',
+              boxShadow: '0 0 20px rgba(196, 112, 75, 0.3)',
             }}
           >
             S
           </div>
           <span
             style={{
-              fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 700,
-              background: 'linear-gradient(90deg, #00e5c3, #0af0ff)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
+              fontFamily: 'var(--font-display)', fontSize: '1.15rem', fontWeight: 700,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.02em',
             }}
           >
             SkillSphere
@@ -103,9 +93,17 @@ const Header = ({ onMenuClick, sidebarOpen = false }: HeaderProps) => {
 
         {/* Navigation Links — desktop only */}
         {!isDashboard && (
-          <div className="header-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-            <Link href="/" style={navLinkStyle(pathname === '/')}>Home</Link>
-            <Link href="/dashboard" style={navLinkStyle(pathname === '/dashboard')}>Advisor</Link>
+          <div className="header-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+            <Link href="/" style={{
+              fontSize: '0.875rem', fontWeight: 500,
+              color: pathname === '/' ? 'var(--accent-terra)' : 'var(--text-secondary)',
+              transition: 'color 0.2s', textDecoration: 'none',
+            }}>Home</Link>
+            <Link href="/dashboard" style={{
+              fontSize: '0.875rem', fontWeight: 500,
+              color: pathname === '/dashboard' ? 'var(--accent-terra)' : 'var(--text-secondary)',
+              transition: 'color 0.2s', textDecoration: 'none',
+            }}>Advisor</Link>
 
             {/* AI Tools Dropdown */}
             <div
@@ -117,7 +115,7 @@ const Header = ({ onMenuClick, sidebarOpen = false }: HeaderProps) => {
                 onClick={() => setToolsOpen(!toolsOpen)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 4,
-                  fontSize: '0.875rem', fontWeight: 500, letterSpacing: '0.025em',
+                  fontSize: '0.875rem', fontWeight: 500,
                   color: 'var(--text-secondary)',
                   transition: 'color 0.2s',
                   background: 'none', border: 'none', cursor: 'pointer',
@@ -135,14 +133,13 @@ const Header = ({ onMenuClick, sidebarOpen = false }: HeaderProps) => {
                     top: '100%',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    paddingTop: 0,
-                    width: 224,
-                    padding: '8px 0',
+                    width: 220,
+                    padding: '6px 0',
                     borderRadius: 12,
                     border: '1px solid var(--border-subtle)',
-                    background: 'rgba(11, 18, 35, 0.95)',
+                    background: 'rgba(23, 20, 18, 0.97)',
                     backdropFilter: 'blur(20px)',
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 30px rgba(0,229,195,0.08)',
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 20px rgba(196,112,75,0.05)',
                   }}
                 >
                   {[
@@ -164,10 +161,12 @@ const Header = ({ onMenuClick, sidebarOpen = false }: HeaderProps) => {
                         color: 'var(--text-secondary)',
                         transition: 'all 0.15s',
                         textDecoration: 'none',
+                        borderRadius: 8,
+                        margin: '0 4px',
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.color = 'var(--accent-teal)';
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                        e.currentTarget.style.color = 'var(--accent-terra)';
+                        e.currentTarget.style.background = 'rgba(196, 112, 75, 0.06)';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.color = 'var(--text-secondary)';
@@ -185,7 +184,7 @@ const Header = ({ onMenuClick, sidebarOpen = false }: HeaderProps) => {
         )}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {/* Menu toggle button - dashboard context only */}
         {isDashboard && (
           <button

@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
             const API_KEY = process.env.GEMINI_API_KEY;
             if (!API_KEY) throw new Error('GEMINI_API_KEY is not defined');
 
-            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`;
+            const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
             const evalResponse = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
         const API_KEY = process.env.GEMINI_API_KEY;
         if (!API_KEY) throw new Error('GEMINI_API_KEY is not defined');
 
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`;
+        const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
         const response = await fetch(API_URL, {
             method: 'POST',

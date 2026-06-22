@@ -1,6 +1,6 @@
 /**
  * Landing Page for SkillSphere
- * Hero + Features + CTA using the full design system.
+ * Earth-tone hero + features + CTA using the warm design system.
  */
 'use client';
 
@@ -11,7 +11,7 @@ export default function Home() {
   const { user } = useAuth();
 
   return (
-    <div className="relative pt-[72px]">
+    <div className="relative pt-16">
       {/* ══ HERO SECTION ══ */}
       <section className="hero">
         <div className="hero-badge">
@@ -21,11 +21,11 @@ export default function Home() {
 
         <h1 className="hero-title">
           Your Career,<br />
-          <span className="accent">Intelligently Mapped.</span>
+          <span className="accent">Naturally Mapped.</span>
         </h1>
 
         <p className="hero-subtitle">
-          Stop guessing your next move. SkillSphere turns your skills and interests into personalized career roadmaps — powered by AI, designed for you.
+          Stop guessing your next move. SkillSphere turns your skills and interests into personalized career roadmaps — powered by AI, grounded in reality.
         </p>
 
         <div className="hero-cta">
@@ -46,11 +46,11 @@ export default function Home() {
             <div className="stat-label">AI Tools</div>
           </div>
           <div className="stat">
-            <div className="stat-num">AI</div>
+            <div className="stat-num" style={{ color: 'var(--accent-amber)' }}>AI</div>
             <div className="stat-label">Powered</div>
           </div>
           <div className="stat">
-            <div className="stat-num">∞</div>
+            <div className="stat-num" style={{ color: 'var(--accent-sage)' }}>∞</div>
             <div className="stat-label">Possibilities</div>
           </div>
         </div>
@@ -133,7 +133,7 @@ export default function Home() {
 
       {/* ══ CTA SECTION ══ */}
       <section className="py-24 mb-20 text-center" style={{ position: 'relative', zIndex: 1 }}>
-        <div className="glass p-12 max-w-4xl mx-auto" style={{ boxShadow: 'var(--glow-teal)' }}>
+        <div className="glass p-12 max-w-4xl mx-auto" style={{ boxShadow: 'var(--glow-terra)' }}>
           <div className="section-eyebrow" style={{ marginBottom: '1rem' }}>Get Started Today</div>
           <h2 className="section-heading">Ready to find your perfect career?</h2>
           <p className="section-subtext mx-auto" style={{ marginBottom: '2.5rem' }}>

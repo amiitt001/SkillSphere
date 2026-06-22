@@ -23,8 +23,9 @@ service cloud.firestore {
     // ─────────────────────────────────────────────
     match /history/{uid}/entries/{entryId} {
 
-      allow read, write: if isSignedIn() && request.auth.uid == uid
-                          && validHistoryEntry(request.resource.data);
+      allow read, delete: if isSignedIn() && request.auth.uid == uid;
+      allow create, update: if isSignedIn() && request.auth.uid == uid
+                            && validHistoryEntry(request.resource.data);
     }
 
     // ─────────────────────────────────────────────
@@ -43,7 +44,7 @@ service cloud.firestore {
 
     // Validate user profile schema
     function validUserProfile(data) {
-      return data.keys().hasOnly([
+      return data.keys().hasAll([
         'name',
         'email',
         'createdAt'

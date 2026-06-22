@@ -25,6 +25,13 @@ export async function GET(request: NextRequest) {
       - "estimatedSalary": A typical annual salary range in India (e.g., "₹8,00,000 - ₹15,00,000 LPA").
       - "suggestedCertifications": An array of 2-3 relevant professional certifications.
       - "keyCompanies": An array of 2-3 notable companies in India that hire for this role.
+      - "skillGapAnalysis": A JSON object containing:
+        - "readinessScore": An integer score (0-100) representing readiness.
+        - "estimatedTime": Estimated time to become ready (e.g., "4-6 Months").
+        - "currentSkills": Array of strings matching user skills that are relevant to this career.
+        - "missingSkills": Array of objects representing missing skills. Each object has "name" (string) and "level" (number, 0-60 representing current partial exposure).
+        - "topPrioritySkills": Array of top 3 priority skills to learn.
+        - "aiInsight": A concise personalized career recommendation insight under 25 words.
 
       User's Profile:
       - Academic Stream: ${academicStream}
@@ -37,8 +44,8 @@ export async function GET(request: NextRequest) {
       throw new Error('GEMINI_API_KEY is not defined');
     }
 
-    // THE FIX: Using gemini-2.0-flash which is the latest stable model
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`;
+    // Using gemini-2.5-flash which is the latest stable model
+    const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
     const response = await fetch(API_URL, {
       method: 'POST',
@@ -47,6 +54,9 @@ export async function GET(request: NextRequest) {
       },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json"
+        }
       }),
     });
 

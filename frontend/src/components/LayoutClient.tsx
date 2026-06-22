@@ -72,7 +72,7 @@ export default function LayoutClient({
       />
 
       {/* Flex Container: Sidebar + Main Content */}
-      <div className="flex h-[calc(100vh-72px)] overflow-hidden">
+      <div className="flex h-[calc(100vh-64px)] overflow-hidden mt-16">
         {/* Sidebar - Fixed width, no shrinking, collapsible on desktop */}
         <Sidebar
           isOpen={isSidebarOpen}

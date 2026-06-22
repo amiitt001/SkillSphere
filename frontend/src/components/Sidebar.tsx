@@ -1,15 +1,16 @@
 /**
  * This file contains the Sidebar component.
- * It features the glassmorphism design and the 'Recent Sessions' section
- * as seen in the SkillSphere prototype.
+ * Earth-tone design with warm accents and clean navigation.
  */
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
 const DashboardIcon = () => (
   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
@@ -51,6 +52,21 @@ type SidebarProps = {
   isCollapsed?: boolean;
 };
 
+function formatRelativeTime(timestamp: any): string {
+  if (!timestamp) return 'Just now';
+  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return 'Yesterday';
+  return `${diffDays}d ago`;
+}
+
 const Sidebar = ({ isOpen, onClose, isCollapsed = false }: SidebarProps) => {
   const pathname = usePathname();
   const { user } = useAuth();
@@ -77,37 +93,75 @@ const Sidebar = ({ isOpen, onClose, isCollapsed = false }: SidebarProps) => {
     { href: '/profile-aggregator', label: 'Aggregator', icon: AggregatorIcon },
   ];
 
-  const recentSessions = [
-    { id: 1, title: 'Software Engineer', date: '2h ago' },
-    { id: 2, title: 'Product Designer', date: '5h ago' },
-    { id: 3, title: 'Data Scientist', date: 'Yesterday' },
-  ];
+  const [recentSessions, setRecentSessions] = useState<{ id: string; title: string; date: string }[]>([]);
+
+  useEffect(() => {
+    if (!user) {
+      setRecentSessions([]);
+      return;
+    }
+
+    const q = query(
+      collection(db, 'history', user.uid, 'entries'),
+      orderBy('createdAt', 'desc'),
+      limit(5)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const sessions = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: data.title || 'Untitled Map',
+          date: formatRelativeTime(data.createdAt),
+        };
+      });
+      setRecentSessions(sessions);
+    }, (err) => {
+      console.error("Error listening to history changes:", err);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   return (
     <>
       <div
-        className={`fixed inset-0 bg-void/50 backdrop-blur-sm z-[90] md:hidden transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-[90] md:hidden transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
         onClick={onClose}
       />
 
       <aside
-        className={`fixed md:sticky top-0 left-0 h-screen z-[100] bg-void/90 backdrop-blur-nav border-r border-white/5 flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-[260px]'
+        className={`fixed md:sticky top-0 left-0 h-screen z-[100] flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-[250px]'
           } ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
+        style={{
+          backgroundColor: 'rgba(15, 13, 11, 0.95)',
+          backdropFilter: 'blur(24px)',
+          borderRight: '1px solid rgba(196, 112, 75, 0.08)',
+        }}
       >
-        <div className="p-6 flex flex-col h-full">
+        <div className="p-5 flex flex-col h-full">
           {/* Brand */}
-          <div className="flex items-center gap-3 mb-10 overflow-hidden">
-            <div className="w-8 h-8 min-w-[32px] bg-gradient-brand rounded-lg flex items-center justify-center font-display font-bold text-void text-sm">
+          <div className="flex items-center gap-3 mb-8 overflow-hidden">
+            <div className="w-8 h-8 min-w-[32px] rounded-lg flex items-center justify-center font-bold text-sm"
+              style={{
+                background: 'linear-gradient(135deg, #ffffff, #e5e5e5)',
+                fontFamily: 'var(--font-display)',
+                color: '#fff',
+              }}
+            >
               S
             </div>
             {!isCollapsed && (
-              <span className="font-display font-bold text-lg text-primary truncate">SkillSphere</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                SkillSphere
+              </span>
             )}
           </div>
 
           {/* Nav Links */}
-          <nav className="space-y-1.5 mb-10">
+          <nav className="space-y-1 mb-8">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -128,30 +182,41 @@ const Sidebar = ({ isOpen, onClose, isCollapsed = false }: SidebarProps) => {
           {/* Recent Sessions List */}
           {!isCollapsed && (
             <div className="flex-grow overflow-y-auto no-scrollbar">
-              <div className="section-label mb-4">Recent Sessions</div>
-              <div className="space-y-1">
+              <div className="section-label mb-3" style={{ fontSize: '0.65rem' }}>Recent Sessions</div>
+              <div className="space-y-0.5">
                 {recentSessions.map((session) => (
-                  <div key={session.id} className="session-item group">
+                  <Link
+                    key={session.id}
+                    href={`/dashboard?session=${session.id}`}
+                    onClick={onClose}
+                    className="session-item group no-underline flex items-center justify-between"
+                  >
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium text-primary group-hover:text-teal transition-colors">
+                      <span className="text-sm font-medium text-primary group-hover:text-terra transition-colors">
                         {session.title}
                       </span>
                       <span className="text-[0.65rem] text-dim">{session.date}</span>
                     </div>
-                    <svg className="w-3.5 h-3.5 text-dim group-hover:text-teal opacity-0 group-hover:opacity-100 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-3.5 h-3.5 text-dim group-hover:text-terra opacity-0 group-hover:opacity-100 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
-                  </div>
+                  </Link>
                 ))}
+                {recentSessions.length === 0 && (
+                  <p className="text-xs text-dim italic pl-1">No recent maps</p>
+                )}
               </div>
             </div>
           )}
 
           {/* User / Logout */}
-          <div className="mt-auto pt-6 border-t border-white/5">
+          <div className="mt-auto pt-5 border-t" style={{ borderColor: 'rgba(196, 112, 75, 0.08)' }}>
             <button
               onClick={handleSignOut}
-              className={`nav-pill w-full hover:bg-rose/10 hover:text-rose ${isCollapsed ? 'justify-center px-0' : ''}`}
+              className={`nav-pill w-full ${isCollapsed ? 'justify-center px-0' : ''}`}
+              style={{ color: 'var(--text-secondary)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent-rose)'; e.currentTarget.style.background = 'rgba(196, 94, 106, 0.08)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}
             >
               <LogoutIcon />
               {!isCollapsed && <span>Logout</span>}
@@ -164,4 +229,3 @@ const Sidebar = ({ isOpen, onClose, isCollapsed = false }: SidebarProps) => {
 };
 
 export default Sidebar;
-

@@ -3,7 +3,7 @@
  */
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, initializeFirestore, CACHE_SIZE_UNLIMITED } from "firebase/firestore";
+import { getFirestore, initializeFirestore, CACHE_SIZE_UNLIMITED, Firestore } from "firebase/firestore";
 
 // This is your public, client-side configuration.
 const firebaseConfig = {
@@ -26,7 +26,7 @@ if (!getApps().length) {
 const auth = getAuth(app);
 
 // Initialize Firestore with better settings
-let db;
+let db: Firestore;
 try {
   db = initializeFirestore(app, {
     cacheSizeBytes: CACHE_SIZE_UNLIMITED,

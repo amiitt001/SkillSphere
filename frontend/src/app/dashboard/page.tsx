@@ -1,30 +1,27 @@
 /**
- * This is the main dashboard page for the SkillSphere application.
- * It handles all user input, fetches AI-powered recommendations, allows users
- * to select careers for comparison, and displays all results to the user.
+ * This is the main dashboard inputs page for the SkillSphere application.
+ * It handles the academic background and profile form, verifies the CAPTCHA,
+ * calls the recommendations API, saves the search to Firestore, and redirects
+ * the user to the results page.
  */
 'use client';
 
-import { useState } from 'react';
-import CareerCard from "@/components/CareerCard";
-import LoadingSpinner from '@/components/LoadingSpinner';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import TagInput from '@/components/TagInput';
-import { Recommendation } from '@/types';
-import ComparisonTable from '@/components/ComparisonTable';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import SimpleCaptcha from '@/components/SimpleCaptcha';
-
-// Define the type for the comparison table's data structure
-interface TableRow {
-  feature: string;
-  career1_details: string;
-  career2_details: string;
-}
+import { db } from '@/lib/firebase';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 function DashboardContent() {
   // --- STATE MANAGEMENT ---
   const { user } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const sessionId = searchParams.get('session');
 
   // State for the user's input profile
   const [academicStream, setAcademicStream] = useState('Engineering / Tech');
@@ -32,32 +29,20 @@ function DashboardContent() {
   const [interests, setInterests] = useState<string[]>(['AI Ethics', 'Open Source']);
   const [additionalContext, setAdditionalContext] = useState('');
 
-  // State for managing UI and data fetching for recommendations
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  // State for managing UI and API loading state
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
   const [showCaptchaModal, setShowCaptchaModal] = useState(false);
 
-  // State specifically for the Career Comparison feature
-  const [selectedCareers, setSelectedCareers] = useState<string[]>([]);
-  const [isComparing, setIsComparing] = useState(false);
-  const [comparisonSummary, setComparisonSummary] = useState('');
-  const [tableData, setTableData] = useState<TableRow[]>([]);
+  // past session ID redirect
+  useEffect(() => {
+    if (sessionId) {
+      router.push(`/dashboard/results?session=${sessionId}`);
+    }
+  }, [sessionId, router]);
 
   // --- HANDLER FUNCTIONS ---
-
-  const handleSelectCareer = (title: string) => {
-    setSelectedCareers(prevSelected => {
-      if (prevSelected.includes(title)) {
-        return prevSelected.filter(t => t !== title);
-      }
-      if (prevSelected.length < 2) {
-        return [...prevSelected, title];
-      }
-      return prevSelected;
-    });
-  };
 
   const handleCaptchaVerify = (verified: boolean) => {
     if (verified) {
@@ -80,10 +65,6 @@ function DashboardContent() {
 
     setIsLoading(true);
     setError('');
-    setRecommendations([]);
-    setSelectedCareers([]);
-    setComparisonSummary('');
-    setTableData([]);
 
     try {
       const params = new URLSearchParams({
@@ -112,11 +93,31 @@ function DashboardContent() {
       if (jsonMatch && jsonMatch[0]) {
         const jsonString = jsonMatch[0];
         const resultJson = JSON.parse(jsonString);
-        setRecommendations(resultJson.recommendations);
-        // Scroll to results
-        setTimeout(() => {
-          document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
+
+        // Save to Firestore history subcollection if user is logged in
+        if (user) {
+          try {
+            const docRef = await addDoc(collection(db, 'history', user.uid, 'entries'), {
+              title: academicStream + " Career Map",
+              content: JSON.stringify({
+                academicStream,
+                skills,
+                interests,
+                additionalContext,
+                recommendations: resultJson.recommendations
+              }),
+              createdAt: serverTimestamp()
+            });
+
+            // Redirect to results page
+            router.push(`/dashboard/results?session=${docRef.id}`);
+          } catch (dbErr) {
+            console.error("Error saving search to Firestore history:", dbErr);
+            setError('Failed to save search history.');
+          }
+        } else {
+          setError('User session not found.');
+        }
       } else {
         throw new Error("No valid JSON object found in the AI response.");
       }
@@ -125,48 +126,6 @@ function DashboardContent() {
       setError(message);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleCompare = async () => {
-    if (selectedCareers.length !== 2) return;
-    setIsComparing(true);
-    setComparisonSummary('');
-    setTableData([]);
-    setError('');
-
-    try {
-      const params = new URLSearchParams({ career1: selectedCareers[0], career2: selectedCareers[1] });
-      const url = `/api/compare-careers?${params.toString()}`;
-
-      const response = await fetch(url);
-      if (!response.ok || !response.body) {
-        throw new Error(`Server responded with status: ${response.status}`);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let fullResponse = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        fullResponse += decoder.decode(value);
-      }
-
-      const jsonMatch = fullResponse.match(/{[\s\S]*}/);
-      if (jsonMatch && jsonMatch[0]) {
-        const jsonString = jsonMatch[0];
-        const resultJson = JSON.parse(jsonString);
-        setComparisonSummary(resultJson.summary);
-        setTableData(resultJson.tableData);
-      } else {
-        throw new Error("No valid JSON object found in the AI response.");
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-      setError(message);
-    } finally {
-      setIsComparing(false);
     }
   };
 
@@ -193,7 +152,7 @@ function DashboardContent() {
       </div>
 
       <div className="progress-bar mb-12">
-        <div className="progress-fill" style={{ width: recommendations.length > 0 ? '100%' : '65%' }}></div>
+        <div className="progress-fill" style={{ width: '65%' }}></div>
       </div>
 
       {/* ══ FORM CONTAINER ══ */}
@@ -259,8 +218,8 @@ function DashboardContent() {
         </form>
       </div>
 
-      {/* ══ RESULTS SECTION ══ */}
-      <div id="results-section" className="mt-20">
+      {/* ══ LOADING & ERROR AREA ══ */}
+      <div className="mt-12">
         {isLoading && (
           <div className="loader">
             <div className="loader-dots">
@@ -275,65 +234,6 @@ function DashboardContent() {
         {error && (
           <div className="glass p-8 border-rose/30 text-rose text-center mb-10">
             <p className="text-lg font-semibold">{error}</p>
-          </div>
-        )}
-
-        {recommendations.length > 0 && (
-          <div className="results-section animate-fade-up">
-            <div className="results-header">
-              <div className="section-label">AI Analysis Complete</div>
-              <h2 className="text-3xl font-display font-bold">Your Personalized Career Paths</h2>
-            </div>
-
-            {/* Compare button */}
-            <div className="flex justify-center mb-10">
-              <button
-                onClick={handleCompare}
-                disabled={selectedCareers.length !== 2 || isComparing}
-                className="btn-primary py-2.5 px-8 shadow-glow-teal disabled:opacity-50"
-              >
-                {isComparing ? '⟳ Comparing...' : `Compare (${selectedCareers.length}/2 Selected)`}
-              </button>
-            </div>
-
-            {isComparing && (
-              <div className="loader py-10">
-                <div className="loader-dots">
-                  <div className="loader-dot"></div>
-                  <div className="loader-dot"></div>
-                  <div className="loader-dot"></div>
-                </div>
-              </div>
-            )}
-
-            {/* Comparison results */}
-            {!isComparing && (comparisonSummary || tableData.length > 0) && (
-              <div className="glass p-8 mb-14 animate-fade-in border-white/5">
-                <h2 className="text-2xl font-display font-bold text-teal mb-6">Career Comparison</h2>
-                <div className="bg-teal/5 border border-teal/20 rounded-radius p-6 mb-8">
-                  <div className="section-label mb-2">AI Recommendation</div>
-                  <p className="text-secondary leading-relaxed">{comparisonSummary}</p>
-                </div>
-                <ComparisonTable
-                  data={tableData}
-                  career1Title={selectedCareers[0]}
-                  career2Title={selectedCareers[1]}
-                />
-              </div>
-            )}
-
-            {/* Career cards */}
-            <div className="career-cards">
-              {recommendations.map((rec, index) => (
-                <CareerCard
-                  key={rec.title}
-                  {...rec}
-                  isSelected={selectedCareers.includes(rec.title)}
-                  onSelect={handleSelectCareer}
-                  className={`anim-delay-${index + 1}`}
-                />
-              ))}
-            </div>
           </div>
         )}
       </div>
@@ -364,7 +264,9 @@ function DashboardContent() {
 export default function Dashboard() {
   return (
     <ProtectedRoute>
-      <DashboardContent />
+      <Suspense fallback={<LoadingSpinner />}>
+        <DashboardContent />
+      </Suspense>
     </ProtectedRoute>
   );
 }

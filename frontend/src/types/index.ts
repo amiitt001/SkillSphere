@@ -4,6 +4,20 @@
  */
 
 // ─── Career Recommendations ───
+export interface SkillGapItem {
+  name: string;
+  level: number; // 0 to 100
+}
+
+export interface SkillGapAnalysis {
+  readinessScore: number;
+  estimatedTime: string;
+  currentSkills: string[];
+  missingSkills: SkillGapItem[];
+  topPrioritySkills: string[];
+  aiInsight: string;
+}
+
 export interface Recommendation {
   title: string;
   justification: string;
@@ -11,6 +25,7 @@ export interface Recommendation {
   estimatedSalary?: string;
   suggestedCertifications?: string[];
   keyCompanies?: string[];
+  skillGapAnalysis?: SkillGapAnalysis;
 }
 
 // ─── Skill Assessment Quiz ───
