@@ -5,6 +5,7 @@
  */
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { type NextRequest } from 'next/server';
+import { isGeminiBlocked, isNvidiaBlocked, blockGemini, blockNvidia } from '@/lib/apiManager';
 
 // This configuration ensures the function runs on every request.
 export const dynamic = 'force-dynamic';
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
     // 1. Try Google Gemini API (streaming)
     try {
       const API_KEY = process.env.GEMINI_API_KEY;
-      if (API_KEY) {
+      if (API_KEY && !isGeminiBlocked()) {
         const genAI = new GoogleGenerativeAI(API_KEY);
         const model = genAI.getGenerativeModel({
           model: "gemini-2.5-flash",
@@ -105,8 +106,12 @@ export async function GET(request: NextRequest) {
               console.error("Stream reading error in Gemini, retrying with NVIDIA DeepSeek:", streamErr);
               // In case stream reading fails midway, we try NVIDIA DeepSeek as a fallback
               try {
-                const nvidiaText = await callNvidiaComparison(prompt);
-                controller.enqueue(new TextEncoder().encode(nvidiaText));
+                if (!isNvidiaBlocked()) {
+                  const nvidiaText = await callNvidiaComparison(prompt);
+                  controller.enqueue(new TextEncoder().encode(nvidiaText));
+                } else {
+                  throw new Error("NVIDIA is currently blocked");
+                }
               } catch (fallbackErr) {
                 console.error("NVIDIA fallback inside stream start failed:", fallbackErr);
                 const fallbackJson = getFallbackComparison(career1, career2);
@@ -120,17 +125,26 @@ export async function GET(request: NextRequest) {
         return new Response(stream, {
           headers: { 'Content-Type': 'text/plain; charset=utf-8' },
         });
+      } else if (isGeminiBlocked()) {
+        console.info("[API Manager] Gemini API is currently blocked in compare-careers due to 24h limit check. Skipping Gemini call...");
       }
     } catch (geminiError: any) {
       console.warn("Gemini API compare-careers call failed, retrying with NVIDIA DeepSeek:", geminiError.message || geminiError);
+      if (geminiError.message && (geminiError.message.includes('429') || geminiError.message.toLowerCase().includes('resource_exhausted'))) {
+        blockGemini();
+      }
     }
 
     // 2. Try NVIDIA DeepSeek API
     try {
-      const nvidiaText = await callNvidiaComparison(prompt);
-      return new Response(nvidiaText, {
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      });
+      if (!isNvidiaBlocked()) {
+        const nvidiaText = await callNvidiaComparison(prompt);
+        return new Response(nvidiaText, {
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        });
+      } else {
+        console.info("[API Manager] NVIDIA DeepSeek API is currently blocked in compare-careers due to 24h limit check. Skipping NVIDIA call...");
+      }
     } catch (nvidiaError: any) {
       console.warn("NVIDIA DeepSeek API comparison failed, using static fallback comparison:", nvidiaError.message || nvidiaError);
     }
@@ -184,6 +198,9 @@ async function callNvidiaComparison(prompt: string): Promise<string> {
   });
 
   if (!response.ok) {
+    if (response.status === 429) {
+      blockNvidia();
+    }
     const errText = await response.text();
     throw new Error(`NVIDIA DeepSeek API failed: ${errText}`);
   }

@@ -1,4 +1,5 @@
 import { type NextRequest } from 'next/server';
+import { isGeminiBlocked, isNvidiaBlocked, blockGemini, blockNvidia } from '@/lib/apiManager';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
     // 1. Try Google Gemini API
     try {
       const API_KEY = process.env.GEMINI_API_KEY;
-      if (API_KEY) {
+      if (API_KEY && !isGeminiBlocked()) {
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
         const response = await fetch(API_URL, {
           method: 'POST',
@@ -71,8 +72,14 @@ export async function GET(request: NextRequest) {
           }
         } else {
           const errText = await response.text();
-          console.warn(`Gemini API failed with status ${response.status}: ${errText}. Retrying with NVIDIA DeepSeek API...`);
+          console.warn(`Gemini API failed with status ${response.status}: ${errText}.`);
+          if (response.status === 429) {
+            blockGemini();
+          }
+          console.warn("Retrying with NVIDIA DeepSeek API...");
         }
+      } else if (isGeminiBlocked()) {
+        console.info("[API Manager] Gemini API is currently blocked due to 24h limit check. Skipping Gemini call...");
       }
     } catch (geminiError: any) {
       console.warn("Gemini API call failed with exception:", geminiError.message || geminiError, ". Retrying with NVIDIA DeepSeek API...");
@@ -81,7 +88,7 @@ export async function GET(request: NextRequest) {
     // 2. Try NVIDIA DeepSeek API
     try {
       const nvidiaKey = process.env.NVIDIA_API_KEY;
-      if (nvidiaKey) {
+      if (nvidiaKey && !isNvidiaBlocked()) {
         const nvidiaBaseUrl = process.env.NVIDIA_BASE_URL || "https://integrate.api.nvidia.com/v1";
         const nvidiaModel = process.env.NVIDIA_MODEL || "deepseek-ai/deepseek-v4-flash";
 
@@ -113,8 +120,14 @@ export async function GET(request: NextRequest) {
           }
         } else {
           const errText = await response.text();
-          console.warn(`NVIDIA DeepSeek API failed with status ${response.status}: ${errText}. Falling back to static mock...`);
+          console.warn(`NVIDIA DeepSeek API failed with status ${response.status}: ${errText}.`);
+          if (response.status === 429) {
+            blockNvidia();
+          }
+          console.warn("Falling back to static mock...");
         }
+      } else if (isNvidiaBlocked()) {
+        console.info("[API Manager] NVIDIA DeepSeek API is currently blocked due to 24h limit check. Skipping NVIDIA call...");
       }
     } catch (nvidiaError: any) {
       console.warn("NVIDIA DeepSeek API call failed with exception:", nvidiaError.message || nvidiaError, ". Falling back to static mock...");
