@@ -38,7 +38,7 @@ const ChevronDown = ({ rotated }: { rotated: boolean }) => (
   </svg>
 );
 
-const Header = ({ onMenuClick, sidebarOpen = false }: HeaderProps) => {
+const Header = ({ onMenuClick, sidebarOpen = false, onCollapseToggle, isCollapsed }: HeaderProps) => {
   const pathname = usePathname();
   const { user } = useAuth();
   const isDashboard = pathname.startsWith('/dashboard') || pathname.startsWith('/history') || pathname.startsWith('/resume-helper') || pathname.startsWith('/profile') || pathname.startsWith('/profile-aggregator') || pathname.startsWith('/skill-quiz') || pathname.startsWith('/resume-analyzer') || pathname.startsWith('/project-generator') || pathname.startsWith('/interview-prep');
@@ -80,15 +80,6 @@ const Header = ({ onMenuClick, sidebarOpen = false }: HeaderProps) => {
           >
             S
           </div>
-          <span
-            style={{
-              fontFamily: 'var(--font-display)', fontSize: '1.15rem', fontWeight: 700,
-              color: 'var(--text-primary)',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            SkillSphere
-          </span>
         </Link>
 
         {/* Navigation Links — desktop only */}

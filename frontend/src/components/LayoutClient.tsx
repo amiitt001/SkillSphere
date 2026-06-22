@@ -60,9 +60,17 @@ export default function LayoutClient({
     );
   }
 
-  // DASHBOARD LAYOUT: Proper hierarchy with navbar at top, then flex container for sidebar + content
+  // DASHBOARD LAYOUT: Locked viewport — body never scrolls, only <main> does
   return (
-    <div className={`min-h-screen ${fontClassName || ''}`}>
+    <div
+      style={{
+        height: '100vh',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+      className={fontClassName || ''}
+    >
       {/* Top Navbar - Full width, spans entire top */}
       <Header
         onMenuClick={toggleSidebar}
@@ -71,17 +79,33 @@ export default function LayoutClient({
         isCollapsed={isSidebarCollapsed}
       />
 
-      {/* Flex Container: Sidebar + Main Content */}
-      <div className="flex h-[calc(100vh-64px)] overflow-hidden mt-16">
-        {/* Sidebar - Fixed width, no shrinking, collapsible on desktop */}
+      {/* Flex Container: Sidebar + Main Content — fills remaining height */}
+      <div
+        style={{
+          display: 'flex',
+          flex: 1,
+          overflow: 'hidden',
+          marginTop: '64px',
+        }}
+      >
+        {/* Sidebar - Fixed width, never scrolls the page */}
         <Sidebar
           isOpen={isSidebarOpen}
           onClose={closeSidebar}
           isCollapsed={isSidebarCollapsed}
+          onCollapseToggle={toggleSidebarCollapse}
         />
 
-        {/* Main Content Area - Takes remaining space */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+        {/* Main Content Area - ONLY this element scrolls */}
+        <main
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            overscrollBehavior: 'contain',
+            minWidth: 0,
+          }}
+        >
           <div className="p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto">
             {children}
           </div>

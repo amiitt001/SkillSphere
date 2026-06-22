@@ -3,9 +3,7 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:ital,opsz,wght@0,14..32,300..700;1,14..32,300..700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* ── CSS VARIABLES ── */
 :root {
@@ -41,26 +39,28 @@
 }
 
 /* ── BASE ── */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 
-html {
-  scroll-behavior: smooth;
-  font-size: 16px;
-}
+  html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+  }
 
-body {
-  font-family: var(--font-body);
-  background-color: var(--bg-void);
-  color: var(--text-primary);
-  min-height: 100vh;
-  overflow-x: hidden;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  body {
+    font-family: var(--font-body);
+    background-color: var(--bg-void);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 }
 
 /* ── BACKGROUND EFFECTS ── */
@@ -512,10 +512,24 @@ button {
   .header-nav-links { display: none !important; }
   .header-signin-link { display: none !important; }
   .header-mobile-menu { display: flex !important; }
+
+  /* Mobile: Sidebar overlays as fixed drawer */
+  .dashboard-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+  }
 }
 
 @media (min-width: 769px) {
   .hide-desktop { display: none !important; }
+
+  /* Desktop: Sidebar sits inside flex container */
+  .dashboard-sidebar {
+    position: relative !important;
+    height: 100% !important;
+  }
 }
 
 /* ═══════════════════════════════════════════════════

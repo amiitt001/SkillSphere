@@ -50,6 +50,7 @@ type SidebarProps = {
   isOpen: boolean;
   onClose: () => void;
   isCollapsed?: boolean;
+  onCollapseToggle?: () => void;
 };
 
 function formatRelativeTime(timestamp: any): string {
@@ -67,7 +68,7 @@ function formatRelativeTime(timestamp: any): string {
   return `${diffDays}d ago`;
 }
 
-const Sidebar = ({ isOpen, onClose, isCollapsed = false }: SidebarProps) => {
+const Sidebar = ({ isOpen, onClose, isCollapsed = false, onCollapseToggle }: SidebarProps) => {
   const pathname = usePathname();
   const { user } = useAuth();
 
@@ -133,35 +134,63 @@ const Sidebar = ({ isOpen, onClose, isCollapsed = false }: SidebarProps) => {
       />
 
       <aside
-        className={`fixed md:sticky top-0 left-0 h-screen z-[100] flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-[250px]'
-          } ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
+        className={`dashboard-sidebar transition-all duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
         style={{
+          width: isCollapsed ? 72 : 250,
+          minWidth: isCollapsed ? 72 : 250,
+          left: 0,
+          zIndex: 100,
+          display: 'flex',
+          flexDirection: 'column',
+          flexShrink: 0,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          overscrollBehavior: 'contain',
           backgroundColor: 'rgba(15, 13, 11, 0.95)',
           backdropFilter: 'blur(24px)',
           borderRight: '1px solid rgba(196, 112, 75, 0.08)',
+          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
-        <div className="p-5 flex flex-col h-full">
-          {/* Brand */}
-          <div className="flex items-center gap-3 mb-8 overflow-hidden">
-            <div className="w-8 h-8 min-w-[32px] rounded-lg flex items-center justify-center font-bold text-sm"
+        <div
+          style={{ padding: isCollapsed ? '20px 12px' : '20px' }}
+          className="flex flex-col h-full"
+        >
+          {/* Brand — click logo to toggle sidebar */}
+          <div
+            className="flex items-center mb-8 overflow-hidden"
+            style={{
+              gap: 12,
+              justifyContent: isCollapsed ? 'center' : 'flex-start',
+            }}
+          >
+            <button
+              onClick={onCollapseToggle}
+              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="w-8 h-8 min-w-[32px] rounded-lg flex items-center justify-center font-bold text-sm"
               style={{
                 background: 'linear-gradient(135deg, #ffffff, #e5e5e5)',
                 fontFamily: 'var(--font-display)',
                 color: '#fff',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'transform 0.2s, box-shadow 0.2s',
               }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = '0 0 16px rgba(255,255,255,0.2)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
             >
               S
-            </div>
+            </button>
             {!isCollapsed && (
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
                 SkillSphere
               </span>
             )}
           </div>
 
           {/* Nav Links */}
-          <nav className="space-y-1 mb-8">
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 32 }}>
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -170,7 +199,12 @@ const Sidebar = ({ isOpen, onClose, isCollapsed = false }: SidebarProps) => {
                   key={item.href}
                   href={item.href}
                   onClick={onClose}
-                  className={`nav-pill ${isActive ? 'active' : ''} ${isCollapsed ? 'justify-center px-0' : ''}`}
+                  className={`nav-pill ${isActive ? 'active' : ''}`}
+                  style={{
+                    justifyContent: isCollapsed ? 'center' : 'flex-start',
+                    padding: isCollapsed ? '10px 0' : '10px 16px',
+                  }}
+                  title={isCollapsed ? item.label : undefined}
                 >
                   <Icon />
                   {!isCollapsed && <span>{item.label}</span>}
@@ -179,7 +213,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed = false }: SidebarProps) => {
             })}
           </nav>
 
-          {/* Recent Sessions List */}
+          {/* Recent Sessions List — hidden when collapsed */}
           {!isCollapsed && (
             <div className="flex-grow overflow-y-auto no-scrollbar">
               <div className="section-label mb-3" style={{ fontSize: '0.65rem' }}>Recent Sessions</div>
@@ -213,8 +247,13 @@ const Sidebar = ({ isOpen, onClose, isCollapsed = false }: SidebarProps) => {
           <div className="mt-auto pt-5 border-t" style={{ borderColor: 'rgba(196, 112, 75, 0.08)' }}>
             <button
               onClick={handleSignOut}
-              className={`nav-pill w-full ${isCollapsed ? 'justify-center px-0' : ''}`}
-              style={{ color: 'var(--text-secondary)' }}
+              className="nav-pill w-full"
+              style={{
+                color: 'var(--text-secondary)',
+                justifyContent: isCollapsed ? 'center' : 'flex-start',
+                padding: isCollapsed ? '10px 0' : '10px 16px',
+              }}
+              title={isCollapsed ? 'Logout' : undefined}
               onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent-rose)'; e.currentTarget.style.background = 'rgba(196, 94, 106, 0.08)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}
             >

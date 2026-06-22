@@ -221,9 +221,9 @@ function ResultsContent() {
   const comp2 = recommendations.find(r => r.title === selectedCareers[1]) || recommendations[1];
 
   return (
-    <div className="max-w-6xl mx-auto py-8 lg:py-12 relative pb-24 text-zinc-100">
+    <div className="max-w-6xl mx-auto py-2 lg:py-4 relative pb-24 text-zinc-100">
       {/* ══ HEADER / ACTION NAVIGATION ══ */}
-      <div className="flex justify-between items-center mb-10">
+      <div className="flex justify-between items-center mb-4">
         <Link href="/dashboard" className="text-xs text-zinc-400 hover:text-white transition-colors flex items-center gap-1.5 no-underline font-mono">
           <ArrowLeft size={12} />
           Modify Profile Inputs
@@ -231,7 +231,7 @@ function ResultsContent() {
       </div>
 
       {/* ══ HERO SECTION ══ */}
-      <div className="mb-10 text-left space-y-4">
+      <div className="mb-6 text-left space-y-4">
         <div className="flex items-center gap-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-full text-xs font-mono text-zinc-300">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -246,7 +246,7 @@ function ResultsContent() {
           Top Career Matches For You
         </h2>
 
-        <div className="flex items-center gap-6 flex-wrap text-xs text-zinc-400 pt-2 border-b border-zinc-900 pb-6">
+        <div className="flex items-center gap-6 flex-wrap text-xs text-zinc-400 pt-2 border-b border-zinc-900 pb-4">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-mono text-zinc-500 uppercase tracking-wider">Based on:</span>
             {profileChips.map((chip, idx) => (
@@ -368,7 +368,7 @@ function ResultsContent() {
             {/* Section 6: Learning Roadmap Timeline */}
             <div className="space-y-4">
               <span className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase flex items-center gap-1.5 border-b border-zinc-900 pb-3">
-                <Map size={12} /> Roadmap Roadmap Timeline
+                <Map size={12} /> Learning Roadmap Timeline
               </span>
               <div className="space-y-4 pt-2">
                 {activeRec.roadmap.map((step, idx) => (
