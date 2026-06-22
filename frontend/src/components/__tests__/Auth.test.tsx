@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import Auth from '../Auth';
 
 // We need to mock the useAuth hook that the Auth component depends on.
@@ -37,10 +37,10 @@ describe('Auth Component', () => {
     });
 
     // 2. Act: Render the Auth component.
-    render(<Auth />);
+    const { getByText } = render(<Auth />);
 
     // 3. Assert: Check if an element with the text "Sign In →" is visible on the screen.
-    expect(screen.getByText('Sign In →')).toBeInTheDocument();
+    expect(getByText('Sign In →')).toBeInTheDocument();
   });
 
   // Test case 2: When the user is logged in
@@ -55,13 +55,13 @@ describe('Auth Component', () => {
     });
 
     // 2. Act: Render the Auth component.
-    render(<Auth />);
+    const { getByText, queryByText } = render(<Auth />);
 
     // 3. Assert: Check if the user's name is visible.
-    expect(screen.getByText('Amit Verma')).toBeInTheDocument();
+    expect(getByText('Amit Verma')).toBeInTheDocument();
 
     // We can also assert that the "Sign In →" link is NOT there
-    expect(screen.queryByText('Sign In →')).not.toBeInTheDocument();
+    expect(queryByText('Sign In →')).not.toBeInTheDocument();
   });
 
 });
