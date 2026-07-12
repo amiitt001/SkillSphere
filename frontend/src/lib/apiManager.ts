@@ -1,8 +1,20 @@
 import { getFirestore } from 'firebase-admin/firestore';
 import './firebaseAdmin';
 
-const db = getFirestore();
-const docRef = db.collection('system').doc('api_limits');
+let db: any;
+let docRef: any;
+
+function getDocRef() {
+  if (!docRef) {
+    try {
+      db = getFirestore();
+      docRef = db.collection('system').doc('api_limits');
+    } catch (e) {
+      console.error("Failed to initialize Firestore Admin client in apiManager:", e);
+    }
+  }
+  return docRef;
+}
 
 interface LimitStatus {
   geminiBlockedUntil?: string;
@@ -11,9 +23,12 @@ interface LimitStatus {
 
 async function getLimitStatus(): Promise<LimitStatus> {
   try {
-    const docSnap = await docRef.get();
-    if (docSnap.exists) {
-      return docSnap.data() as LimitStatus;
+    const ref = getDocRef();
+    if (ref) {
+      const docSnap = await ref.get();
+      if (docSnap.exists) {
+        return docSnap.data() as LimitStatus;
+      }
     }
   } catch (e) {
     console.error("Error reading limit status from Firestore:", e);
@@ -23,7 +38,10 @@ async function getLimitStatus(): Promise<LimitStatus> {
 
 async function saveLimitStatus(status: LimitStatus) {
   try {
-    await docRef.set(status, { merge: true });
+    const ref = getDocRef();
+    if (ref) {
+      await ref.set(status, { merge: true });
+    }
   } catch (e) {
     console.error("Error writing limit status to Firestore:", e);
   }
