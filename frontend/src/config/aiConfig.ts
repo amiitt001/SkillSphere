@@ -7,7 +7,7 @@ import { HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 export const AI_CONFIG = {
   providers: {
     gemini: {
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.5-flash',
       apiKeyEnv: 'GEMINI_API_KEY',
       baseUrl: 'https://generativelanguage.googleapis.com',
       safetySettings: [
