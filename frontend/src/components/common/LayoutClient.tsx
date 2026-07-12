@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import Chatbot from './Chatbot';
+import Chatbot from '../chatbot/Chatbot';
 
 export default function LayoutClient({
   children,

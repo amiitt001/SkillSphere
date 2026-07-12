@@ -89,7 +89,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed = false, onCollapseToggle }: Sid
     { href: '/resume-helper', label: 'Resume AI', icon: ResumeIcon },
     { href: '/project-generator', label: 'Projects', icon: ProjectIcon },
     { href: '/interview-prep', label: 'Interview', icon: InterviewIcon },
-    { href: '/history', label: 'Compare', icon: CompareIcon },
+    { href: '/history', label: 'History', icon: CompareIcon },
     { href: '/profile', label: 'Profile', icon: ProfileIcon },
     { href: '/profile-aggregator', label: 'Aggregator', icon: AggregatorIcon },
   ];

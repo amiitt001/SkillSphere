@@ -5,7 +5,7 @@
  */
 import React from 'react';
 import { render } from '@testing-library/react';
-import CareerCard from '../CareerCard';
+import CareerCard from '../career/CareerCard';
 import { Recommendation } from '@/types';
 
 // --- TEST SUITE ---

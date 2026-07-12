@@ -5,9 +5,10 @@
 'use client';
 
 import { useState } from 'react';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import FileUpload from '@/components/FileUpload';
-import ScoreGauge from '@/components/ScoreGauge';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
+import FileUpload from '@/components/ui/FileUpload';
+import ScoreGauge from '@/components/charts/ScoreGauge';
+import { auth } from '@/lib/firebase';
 import type { ResumeAnalysis } from '@/types';
 
 function ResumeAnalyzerContent() {
@@ -38,9 +39,17 @@ function ResumeAnalyzerContent() {
         setAnalysis(null);
 
         try {
+            const idToken = await auth.currentUser?.getIdToken();
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+            };
+            if (idToken) {
+                headers['Authorization'] = `Bearer ${idToken}`;
+            }
+
             const response = await fetch('/api/resume-analyzer', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ resumeText }),
             });
             if (!response.ok) throw new Error('Failed to analyze resume');

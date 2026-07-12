@@ -5,8 +5,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import TagInput from '@/components/TagInput';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
+import TagInput from '@/components/ui/TagInput';
+import { auth } from '@/lib/firebase';
 import type { QuizQuestion, SkillScore } from '@/types';
 
 type QuizStep = 'setup' | 'quiz' | 'results';
@@ -70,9 +71,17 @@ function SkillQuizContent() {
         setLoading(true);
         setError('');
         try {
+            const idToken = await auth.currentUser?.getIdToken();
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+            };
+            if (idToken) {
+                headers['Authorization'] = `Bearer ${idToken}`;
+            }
+
             const response = await fetch('/api/skill-quiz', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ skills, difficulty, questionCount: 10 }),
             });
             if (!response.ok) throw new Error('Failed to generate quiz');
@@ -93,9 +102,17 @@ function SkillQuizContent() {
     const submitQuiz = async () => {
         setLoading(true);
         try {
+            const idToken = await auth.currentUser?.getIdToken();
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+            };
+            if (idToken) {
+                headers['Authorization'] = `Bearer ${idToken}`;
+            }
+
             const response = await fetch('/api/skill-quiz/evaluate', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ questions, answers: [...answers] }),
             });
             if (!response.ok) throw new Error('Failed to evaluate quiz');

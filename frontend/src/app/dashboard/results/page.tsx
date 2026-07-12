@@ -12,13 +12,13 @@ import {
   Sparkles, AlertCircle, ArrowLeft, ArrowRight, ShieldCheck, 
   Map, Award, BookOpen, Layers, BarChart4, CheckCircle2, AlertTriangle, Calendar 
 } from 'lucide-react';
-import CareerCard from "@/components/CareerCard";
-import CompareDrawer from "@/components/CompareDrawer";
-import AnalyticsSection from "@/components/AnalyticsSection";
-import LoadingSpinner from '@/components/LoadingSpinner';
+import CareerCard from "@/components/career/CareerCard";
+import CompareDrawer from "@/components/career/CompareDrawer";
+import AnalyticsSection from "@/components/dashboard/AnalyticsSection";
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { Recommendation, SkillGapAnalysis } from '@/types';
-import { useAuth } from '@/context/AuthContext';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/hooks';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
@@ -77,6 +77,7 @@ const getFallbackSkillGap = (title: string): SkillGapAnalysis => {
 
 function ResultsContent() {
   const { user } = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session');
 
@@ -435,7 +436,7 @@ function ResultsContent() {
           </div>
 
           <button
-            onClick={() => setIsCompareOpen(true)}
+            onClick={() => router.push(`/dashboard/compare?session=${sessionId}&c1=${selectedCareers[0]}&c2=${selectedCareers[1]}`)}
             disabled={selectedCareers.length !== 2}
             className="btn-primary py-2 px-5 text-[11px] font-semibold tracking-wider uppercase disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
           >

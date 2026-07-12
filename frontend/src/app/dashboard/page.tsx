@@ -8,13 +8,13 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import TagInput from '@/components/TagInput';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import { useAuth } from '@/context/AuthContext';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import SimpleCaptcha from '@/components/SimpleCaptcha';
-import { db } from '@/lib/firebase';
+import TagInput from '@/components/ui/TagInput';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
+import SimpleCaptcha from '@/components/ui/SimpleCaptcha';
+import { db, auth } from '@/lib/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useAuth, useCaptcha } from '@/hooks';
 
 function DashboardContent() {
   // --- STATE MANAGEMENT ---
@@ -32,8 +32,18 @@ function DashboardContent() {
   // State for managing UI and API loading state
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
-  const [showCaptchaModal, setShowCaptchaModal] = useState(false);
+
+  // --- ACTIONS ---
+  const {
+    isCaptchaVerified,
+    showCaptchaModal,
+    setShowCaptchaModal,
+    captchaParams,
+    handleCaptchaVerify,
+  } = useCaptcha((num1, num2, answer) => {
+    const form = document.querySelector('form');
+    if (form) form.requestSubmit();
+  });
 
   // past session ID redirect
   useEffect(() => {
@@ -43,17 +53,6 @@ function DashboardContent() {
   }, [sessionId, router]);
 
   // --- HANDLER FUNCTIONS ---
-
-  const handleCaptchaVerify = (verified: boolean) => {
-    if (verified) {
-      setIsCaptchaVerified(true);
-      setShowCaptchaModal(false);
-      setTimeout(() => {
-        const form = document.querySelector('form');
-        if (form) form.requestSubmit();
-      }, 100);
-    }
-  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -71,11 +70,20 @@ function DashboardContent() {
         academicStream,
         skills: skills.join(','),
         interests: interests.join(','),
-        additionalContext
+        additionalContext,
+        cNum1: captchaParams?.num1.toString() || '0',
+        cNum2: captchaParams?.num2.toString() || '0',
+        cAns: captchaParams?.answer.toString() || '0',
       });
       const url = `/api/generate-recommendations?${params.toString()}`;
 
-      const response = await fetch(url);
+      const idToken = await auth.currentUser?.getIdToken();
+      const headers: Record<string, string> = {};
+      if (idToken) {
+        headers['Authorization'] = `Bearer ${idToken}`;
+      }
+
+      const response = await fetch(url, { headers });
       if (response.status === 429) {
         throw new Error("SkillSphere AI is currently experiencing high request volumes. Please wait a few seconds and try again.");
       }

@@ -7,8 +7,10 @@
 
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import SimpleCaptcha from '@/components/SimpleCaptcha';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
+import { auth } from '@/lib/firebase';
+import SimpleCaptcha from '@/components/ui/SimpleCaptcha';
+import { useCaptcha } from '@/hooks';
 
 function ResumeHelperContent() {
   // --- STATE MANAGEMENT ---
@@ -17,13 +19,25 @@ function ResumeHelperContent() {
   const [isHelping, setIsHelping] = useState(false);
   const [resumePoints, setResumePoints] = useState('');
   const [error, setError] = useState('');
-  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
-  const [showCaptchaModal, setShowCaptchaModal] = useState(false);
 
-  const handleResumeHelper = async () => {
-    if (!jobDescription) return;
+  // --- ACTIONS ---
+  const {
+    isCaptchaVerified,
+    showCaptchaModal,
+    setShowCaptchaModal,
+    captchaParams,
+    handleCaptchaVerify,
+    resetCaptcha,
+  } = useCaptcha((num1, num2, answer) => {
+    handleResumeHelper(num1, num2, answer);
+  });
 
-    if (!isCaptchaVerified) {
+  const handleResumeHelper = async (cNum1?: number, cNum2?: number, cAns?: number) => {
+    const finalCNum1 = cNum1 !== undefined ? cNum1 : (captchaParams?.num1 || 0);
+    const finalCNum2 = cNum2 !== undefined ? cNum2 : (captchaParams?.num2 || 0);
+    const finalCAns = cAns !== undefined ? cAns : (captchaParams?.answer || 0);
+
+    if (!isCaptchaVerified && !cNum1) {
       setShowCaptchaModal(true);
       return;
     }
@@ -33,10 +47,24 @@ function ResumeHelperContent() {
     setError('');
 
     try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (idToken) {
+        headers['Authorization'] = `Bearer ${idToken}`;
+      }
+
       const response = await fetch('/api/resume-helper', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ skills, jobDescription }),
+        headers,
+        body: JSON.stringify({
+          skills,
+          jobDescription,
+          cNum1: finalCNum1,
+          cNum2: finalCNum2,
+          cAns: finalCAns
+        }),
       });
 
       if (!response.ok || !response.body) {
@@ -51,22 +79,12 @@ function ResumeHelperContent() {
         const decodedChunk = decoder.decode(value);
         setResumePoints((prev) => prev + decodedChunk);
       }
-      setIsCaptchaVerified(false);
+      resetCaptcha();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'An unknown error occurred.';
       setError(message);
     } finally {
       setIsHelping(false);
-    }
-  };
-
-  const handleCaptchaVerify = (verified: boolean) => {
-    if (verified) {
-      setIsCaptchaVerified(true);
-      setShowCaptchaModal(false);
-      setTimeout(() => {
-        handleResumeHelper();
-      }, 100);
     }
   };
 
@@ -97,7 +115,7 @@ function ResumeHelperContent() {
 
           <div className="form-footer">
             <button
-              onClick={handleResumeHelper}
+              onClick={() => handleResumeHelper()}
               disabled={isHelping || !jobDescription}
               className="btn-primary py-3 px-10 shadow-glow-teal"
             >

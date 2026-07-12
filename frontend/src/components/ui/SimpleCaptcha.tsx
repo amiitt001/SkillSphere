@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 interface SimpleCaptchaProps {
-  onVerify: (verified: boolean) => void;
+  onVerify: (verified: boolean, num1?: number, num2?: number, answer?: number) => void;
   isModal?: boolean;
 }
 
@@ -21,7 +21,7 @@ export default function SimpleCaptcha({ onVerify, isModal = false }: SimpleCaptc
     if (userAnswer === correctAnswer) {
       setIsVerified(true);
       setError(false);
-      onVerify(true);
+      onVerify(true, num1, num2, userAnswer);
     } else {
       setError(true);
       setIsVerified(false);

@@ -5,8 +5,9 @@
 'use client';
 
 import { useState } from 'react';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import ScoreGauge from '@/components/ScoreGauge';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
+import ScoreGauge from '@/components/charts/ScoreGauge';
+import { auth } from '@/lib/firebase';
 import type { InterviewQuestion, InterviewFeedback } from '@/types';
 
 type TabType = 'technical' | 'behavioral' | 'coding';
@@ -36,9 +37,17 @@ function InterviewPrepContent() {
         setFeedback(null);
 
         try {
+            const idToken = await auth.currentUser?.getIdToken();
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+            };
+            if (idToken) {
+                headers['Authorization'] = `Bearer ${idToken}`;
+            }
+
             const response = await fetch('/api/interview-prep', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ career, companyType, experienceLevel }),
             });
             if (!response.ok) throw new Error('Failed to generate questions');
@@ -58,9 +67,17 @@ function InterviewPrepContent() {
         setFeedback(null);
 
         try {
+            const idToken = await auth.currentUser?.getIdToken();
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+            };
+            if (idToken) {
+                headers['Authorization'] = `Bearer ${idToken}`;
+            }
+
             const response = await fetch('/api/interview-prep', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({
                     career,
                     companyType,

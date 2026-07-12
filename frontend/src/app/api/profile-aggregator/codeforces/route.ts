@@ -3,9 +3,18 @@
  * Uses official Codeforces API (no auth required)
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyAuth } from '@/lib/authMiddleware';
 
 export async function POST(req: NextRequest) {
     try {
+        const authResult = await verifyAuth(req);
+        if (authResult.error) {
+            return new Response(JSON.stringify({ error: authResult.error }), {
+                status: authResult.status || 401,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+
         const { handle } = await req.json();
         if (!handle) {
             return NextResponse.json({ error: 'Codeforces handle is required' }, { status: 400 });

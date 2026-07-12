@@ -3,7 +3,7 @@ import "./globals.css";
 
 // --- FIX: Using relative paths for all component imports ---
 import { AuthProvider } from '../context/AuthContext';
-import LayoutClient from '@/components/LayoutClient';
+import LayoutClient from '@/components/common/LayoutClient';
 
 export const metadata: Metadata = {
   title: "SkillSphere - AI Career Advisor",

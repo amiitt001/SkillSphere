@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { auth } from '@/lib/firebase';
 
 type Message = {
   id: string;
@@ -27,17 +28,18 @@ export default function Chatbot() {
   }, [messages]);
 
   useEffect(() => {
+    // Initial welcome message
     if (isOpen && messages.length === 0) {
-      // Welcome message when chatbot opens
-      const welcomeMessage: Message = {
-        id: Date.now().toString(),
-        text: `Hi ${user?.displayName || 'there'}! 👋 I'm your SkillSphere AI assistant. I can help you with career guidance, skill recommendations, and answer questions about your career path. How can I assist you today?`,
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-      setMessages([welcomeMessage]);
+      setMessages([
+        {
+          id: 'welcome',
+          text: `Hi ${user?.displayName || 'there'}! I am your SkillSphere AI assistant. How can I help you with your career diagnostics, roadmap, projects, or resume today?`,
+          sender: 'bot',
+          timestamp: new Date(),
+        },
+      ]);
     }
-  }, [isOpen, user]);
+  }, [isOpen, user, messages.length]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +47,7 @@ export default function Chatbot() {
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: input,
+      text: input.trim(),
       sender: 'user',
       timestamp: new Date(),
     };
@@ -55,12 +57,18 @@ export default function Chatbot() {
     setIsTyping(true);
 
     try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (idToken) {
+        headers['Authorization'] = `Bearer ${idToken}`;
+      }
+
       // Call the chatbot API
       const response = await fetch('/api/chatbot', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           message: input,
           userId: user?.uid,

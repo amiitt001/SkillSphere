@@ -8,11 +8,11 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import CompareRadarChart from '@/components/CompareRadarChart';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import { useAuth } from '@/context/AuthContext';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import { db } from '@/lib/firebase';
+import CompareRadarChart from '@/components/charts/CompareRadarChart';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { useAuth } from '@/hooks';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
+import { db, auth } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 interface TableRow {
@@ -66,7 +66,13 @@ function CompareContent() {
       const params = new URLSearchParams({ career1: c1, career2: c2 });
       const url = `/api/compare-careers?${params.toString()}`;
 
-      const response = await fetch(url);
+      const idToken = await auth.currentUser?.getIdToken();
+      const headers: Record<string, string> = {};
+      if (idToken) {
+        headers['Authorization'] = `Bearer ${idToken}`;
+      }
+
+      const response = await fetch(url, { headers });
       if (response.status === 429) {
         throw new Error("The career comparison AI service is currently busy due to rate limits. Please wait a few seconds and try again.");
       }

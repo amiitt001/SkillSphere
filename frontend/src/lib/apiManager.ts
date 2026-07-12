@@ -1,35 +1,36 @@
-import fs from 'fs';
-import path from 'path';
+import { getFirestore } from 'firebase-admin/firestore';
+import './firebaseAdmin';
 
-const STATUS_FILE = path.join(process.cwd(), 'limit_status.json');
+const db = getFirestore();
+const docRef = db.collection('system').doc('api_limits');
 
 interface LimitStatus {
   geminiBlockedUntil?: string;
   nvidiaBlockedUntil?: string;
 }
 
-function getLimitStatus(): LimitStatus {
+async function getLimitStatus(): Promise<LimitStatus> {
   try {
-    if (fs.existsSync(STATUS_FILE)) {
-      const content = fs.readFileSync(STATUS_FILE, 'utf-8');
-      return JSON.parse(content);
+    const docSnap = await docRef.get();
+    if (docSnap.exists) {
+      return docSnap.data() as LimitStatus;
     }
   } catch (e) {
-    // Fail silently or log
+    console.error("Error reading limit status from Firestore:", e);
   }
   return {};
 }
 
-function saveLimitStatus(status: LimitStatus) {
+async function saveLimitStatus(status: LimitStatus) {
   try {
-    fs.writeFileSync(STATUS_FILE, JSON.stringify(status, null, 2), 'utf-8');
+    await docRef.set(status, { merge: true });
   } catch (e) {
-    console.error("Error writing limit status file:", e);
+    console.error("Error writing limit status to Firestore:", e);
   }
 }
 
-export function isGeminiBlocked(): boolean {
-  const status = getLimitStatus();
+export async function isGeminiBlocked(): Promise<boolean> {
+  const status = await getLimitStatus();
   if (status.geminiBlockedUntil) {
     const blockedUntil = new Date(status.geminiBlockedUntil);
     if (new Date() < blockedUntil) {
@@ -39,8 +40,8 @@ export function isGeminiBlocked(): boolean {
   return false;
 }
 
-export function isNvidiaBlocked(): boolean {
-  const status = getLimitStatus();
+export async function isNvidiaBlocked(): Promise<boolean> {
+  const status = await getLimitStatus();
   if (status.nvidiaBlockedUntil) {
     const blockedUntil = new Date(status.nvidiaBlockedUntil);
     if (new Date() < blockedUntil) {
@@ -50,20 +51,18 @@ export function isNvidiaBlocked(): boolean {
   return false;
 }
 
-export function blockGemini() {
-  const status = getLimitStatus();
+export async function blockGemini() {
   const blockedUntil = new Date();
   blockedUntil.setHours(blockedUntil.getHours() + 24); // Block for 24 hours
-  status.geminiBlockedUntil = blockedUntil.toISOString();
-  saveLimitStatus(status);
-  console.log(`[API Manager] Google Gemini API has been blocked until ${status.geminiBlockedUntil} due to rate limits.`);
+  const blockTimeStr = blockedUntil.toISOString();
+  await saveLimitStatus({ geminiBlockedUntil: blockTimeStr });
+  console.log(`[API Manager] Google Gemini API has been blocked until ${blockTimeStr} due to rate limits.`);
 }
 
-export function blockNvidia() {
-  const status = getLimitStatus();
+export async function blockNvidia() {
   const blockedUntil = new Date();
   blockedUntil.setHours(blockedUntil.getHours() + 24); // Block for 24 hours
-  status.nvidiaBlockedUntil = blockedUntil.toISOString();
-  saveLimitStatus(status);
-  console.log(`[API Manager] NVIDIA DeepSeek API has been blocked until ${status.nvidiaBlockedUntil} due to rate limits.`);
+  const blockTimeStr = blockedUntil.toISOString();
+  await saveLimitStatus({ nvidiaBlockedUntil: blockTimeStr });
+  console.log(`[API Manager] NVIDIA DeepSeek API has been blocked until ${blockTimeStr} due to rate limits.`);
 }

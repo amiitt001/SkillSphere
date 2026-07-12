@@ -1,95 +1,88 @@
-/**
- * This API endpoint powers the "AI Resume Co-Pilot" feature.
- * It receives a user's skills and a job description, constructs a prompt
- * for the Google Gemini AI to generate tailored resume bullet points,
- * and streams the response back to the client.
- */
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
-import { type NextRequest, NextResponse } from 'next/server';
+import { type NextRequest } from 'next/server';
+import { verifyAuth } from '@/lib/authMiddleware';
+import { resumeAi } from '@/services/ai';
+import { logger } from '@/services/logger';
+import { errorResponse } from '@/utils';
+import { resumeHelperSchema } from '@/lib/validation';
+import { globalRateLimiter } from '@/lib/rateLimit';
 
-// This configuration ensures the function runs on every request.
 export const dynamic = 'force-dynamic';
 
 /**
  * Handles the POST request to generate resume bullet points.
- * @param request The incoming Next.js request object.
- * @returns A streaming response with the AI-generated markdown text.
  */
 export async function POST(request: NextRequest) {
-  try {
-    // --- 1. PARSE USER INPUT ---
-    // Extract the user's skills and the target job description from the request body.
-    const { skills, jobDescription } = await request.json();
+  const start = Date.now();
+  const requestId = Math.random().toString(36).substring(7);
 
-    // Validate that the required data was provided.
-    if (!skills || !jobDescription) {
-      return NextResponse.json({ error: 'Missing skills or job description.' }, { status: 400 });
+  try {
+    const authResult = await verifyAuth(request);
+    if (authResult.error) {
+      logger.auth(undefined, `resume-helper [ReqId: ${requestId}]`, false, authResult.error);
+      return errorResponse(authResult.error, authResult.status || 401);
     }
 
-    // --- 2. INITIALIZE THE AI MODEL ---
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      safetySettings: [
-        {
-          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-      ],
+    const userId = authResult.user?.uid || 'anonymous';
+
+    // Rate limiting check
+    const rateLimitKey = `resume-helper:${userId}`;
+    if (!globalRateLimiter.check(rateLimitKey, 5, 60000)) {
+      logger.warn(`[Resume Helper API] [ReqId: ${requestId}] Rate limit exceeded for user: ${userId}`);
+      return errorResponse("Too many requests. Please try again later.", 429);
+    }
+
+    // --- 1. PARSE & VALIDATE USER INPUT ---
+    const body = await request.json();
+    const result = resumeHelperSchema.safeParse(body);
+
+    if (!result.success) {
+      const errorMsg = result.error.issues.map((e) => e.message).join(', ');
+      logger.warn(`[Resume Helper API] [ReqId: ${requestId}] Validation failed: ${errorMsg}`);
+      return errorResponse(errorMsg, 400);
+    }
+
+    const { skills, jobDescription, cNum1, cNum2, cAns } = result.data;
+
+    // Server-side CAPTCHA verification
+    if (cNum1 + cNum2 !== cAns) {
+      logger.warn(`[Resume Helper API] [ReqId: ${requestId}] CAPTCHA verification failed`);
+      return errorResponse('Security check failed. Please verify CAPTCHA.', 400);
+    }
+
+    logger.info(`[Resume Helper API] [ReqId: ${requestId}] Generating optimized bullets stream for user: ${userId}`, {
+      skillsCount: skills.length,
+      jobDescriptionLength: jobDescription.length,
     });
 
-    // --- 3. CONSTRUCT THE DETAILED PROMPT ---
-    // This prompt instructs the AI to act as a career coach and generate
-    // powerful, action-oriented resume bullet points that connect the user's
-    // skills to the specific requirements of the job description.
-    const prompt = `
-      Act as an expert career coach. Based on the user's list of skills and the provided job description, generate 3 to 5 powerful, action-oriented bullet points for their resume.
-      Each bullet point should directly connect one or more of the user's skills to a requirement or responsibility in the job description.
-      The response should be formatted as simple markdown text with each bullet point starting with a '*'.
+    const rawStream = await resumeAi.optimizeResumeStream(skills, jobDescription);
 
-      **User's Skills:**
-      - ${skills.join('\n- ')}
-
-      **Job Description:**
-      ---
-      ${jobDescription}
-      ---
-    `;
-
-    // --- 4. CALL THE AI AND GET A STREAMING RESPONSE ---
-    const result = await model.generateContentStream(prompt);
-
-    // --- 5. FORWARD THE STREAM TO THE CLIENT ---
-    const stream = new ReadableStream({
+    // Transform string stream into encoded Uint8Array stream
+    const encoder = new TextEncoder();
+    const encodedStream = new ReadableStream({
       async start(controller) {
-        for await (const chunk of result.stream) {
-          const chunkText = chunk.text();
-          controller.enqueue(new TextEncoder().encode(chunkText));
+        const reader = rawStream.getReader();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            controller.enqueue(encoder.encode(value));
+          }
+          controller.close();
+          const latency = Date.now() - start;
+          logger.info(`[Resume Helper API] [ReqId: ${requestId}] Stream completed successfully in ${latency}ms`);
+        } catch (streamErr) {
+          logger.error(`[Resume Helper API] [ReqId: ${requestId}] Streaming error:`, streamErr);
+          controller.error(streamErr);
         }
-        controller.close();
       },
     });
 
-    return new Response(stream, {
+    return new Response(encodedStream, {
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
     });
 
   } catch (error) {
-    // Log the error for debugging on the server
-    console.error("Error in resume-helper API route:", error);
-    // Return a generic error response to the client
-    return NextResponse.json({ error: 'Failed to generate resume points.' }, { status: 500 });
+    logger.error(`[Resume Helper API] [ReqId: ${requestId}] Unhandled error:`, error);
+    return errorResponse("Error optimizing resume.", 500);
   }
 }

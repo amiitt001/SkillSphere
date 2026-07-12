@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * FileUpload — Drag-and-drop file upload component.
+ * FileUpload — Drag-and-drop file upload component with advanced security hardening.
  * Supports visual states: idle, hover/dragover, has-file, error.
  */
 
@@ -30,12 +30,56 @@ export default function FileUpload({
     const handleFile = useCallback(
         (file: File) => {
             setError('');
+
+            // 1. File size validation
             if (file.size > maxSizeMB * 1024 * 1024) {
                 setError(`File size exceeds ${maxSizeMB}MB limit`);
                 return;
             }
-            setSelectedFile(file);
-            onFileSelect(file);
+
+            // 2. Path traversal & name sanitization
+            const cleanName = file.name.replace(/\\/g, '/').split('/').pop() || '';
+            if (cleanName !== file.name || cleanName.includes('..')) {
+                setError('Invalid characters or path traversal elements in file name');
+                return;
+            }
+
+            // 3. Dangerous extensions block
+            const ext = cleanName.split('.').pop()?.toLowerCase();
+            const dangerousExtensions = ['exe', 'bat', 'sh', 'cmd', 'js', 'jar', 'vbs', 'scr', 'msi', 'com', 'scr', 'pif'];
+            if (ext && dangerousExtensions.includes(ext)) {
+                setError('Executable file extensions are strictly prohibited.');
+                return;
+            }
+
+            // 4. Inspect file header signatures (Magic Numbers)
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const arr = new Uint8Array(reader.result as ArrayBuffer).subarray(0, 4);
+                let hexHeader = '';
+                for (let i = 0; i < arr.length; i++) {
+                    hexHeader += arr[i].toString(16).padStart(2, '0');
+                }
+
+                // MZ header = '4d5a' (Windows exe/dll)
+                // ELF header = '7f454c46' (Linux executable)
+                // Script #! shebang = '2321'
+                const isExecutableHeader = 
+                    hexHeader.startsWith('4d5a') || 
+                    hexHeader.startsWith('7f454c46') || 
+                    hexHeader.startsWith('2321');
+
+                if (isExecutableHeader) {
+                    setError('Security Alert: Dangerous binary/executable header detected.');
+                    return;
+                }
+
+                // Validation passed
+                setSelectedFile(file);
+                onFileSelect(file);
+            };
+            
+            reader.readAsArrayBuffer(file.slice(0, 4));
         },
         [maxSizeMB, onFileSelect]
     );

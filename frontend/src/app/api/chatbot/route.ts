@@ -1,125 +1,59 @@
-import { NextRequest, NextResponse } from 'next/server';
-
-// Rate limiting map (simple in-memory solution)
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-
-function getRateLimitKey(request: NextRequest): string {
-  // Use IP address for rate limiting
-  const ip = request.headers.get('x-forwarded-for') || 
-             request.headers.get('x-real-ip') || 
-             'unknown';
-  return ip;
-}
-
-function checkRateLimit(key: string, maxRequests: number = 10, windowMs: number = 60000): boolean {
-  const now = Date.now();
-  const record = rateLimitMap.get(key);
-
-  if (!record || now > record.resetTime) {
-    rateLimitMap.set(key, { count: 1, resetTime: now + windowMs });
-    return true;
-  }
-
-  if (record.count < maxRequests) {
-    record.count++;
-    return true;
-  }
-
-  return false;
-}
+import { NextRequest } from 'next/server';
+import { verifyAuth } from '@/lib/authMiddleware';
+import { chatbotAi } from '@/services/ai';
+import { logger } from '@/services/logger';
+import { successResponse, errorResponse } from '@/utils';
+import { chatbotSchema } from '@/lib/validation';
+import { globalRateLimiter } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
+  const start = Date.now();
+  const requestId = Math.random().toString(36).substring(7);
+
   try {
+    const authResult = await verifyAuth(req);
+    if (authResult.error) {
+      logger.auth(undefined, `chatbot [ReqId: ${requestId}]`, false, authResult.error);
+      return errorResponse(authResult.error, authResult.status || 401);
+    }
+
+    const userId = authResult.user?.uid || 'anonymous';
+
     // Rate limiting check
-    const rateLimitKey = getRateLimitKey(req);
-    if (!checkRateLimit(rateLimitKey, 10, 60000)) {
-      return NextResponse.json(
-        { response: "Too many requests. Please try again later." },
-        { status: 429 }
-      );
+    const rateLimitKey = `chatbot:${userId}`;
+    if (!globalRateLimiter.check(rateLimitKey, 10, 60000)) {
+      logger.warn(`[Chatbot API] [ReqId: ${requestId}] Rate limit exceeded for user: ${userId}`);
+      return errorResponse("Too many requests. Please try again later.", 429);
     }
 
-    const { message, userId, userName } = await req.json();
+    const body = await req.json();
+    const result = chatbotSchema.safeParse(body);
 
-    // Input validation
-    if (!message || typeof message !== 'string') {
-      return NextResponse.json({
-        response: "Please send a valid message.",
-      });
+    if (!result.success) {
+      const errorMsg = result.error.issues.map((e) => e.message).join(', ');
+      logger.warn(`[Chatbot API] [ReqId: ${requestId}] Validation failed: ${errorMsg}`);
+      return errorResponse(errorMsg, 400);
     }
 
-    // Sanitize input - limit length
-    const sanitizedMessage = message.trim().substring(0, 500);
-    if (!sanitizedMessage) {
-      return NextResponse.json({
-        response: "Please send a non-empty message.",
-      });
-    }
+    const { message, userName } = result.data;
 
-    // Get API key from environment
-    const apiKey = process.env.GEMINI_API_KEY;
-    
-    if (!apiKey) {
-      console.error('GEMINI_API_KEY environment variable is not set');
-      return NextResponse.json({
-        response: "I'm currently unavailable. The API key is not configured on the server.",
-      });
-    }
+    logger.info(`[Chatbot API] [ReqId: ${requestId}] Generating response for user: ${userId}`, {
+      userName,
+      messageLength: message.length,
+    });
 
-    const userPrompt = `You are SkillSphere AI, a friendly and knowledgeable career guidance assistant. You help users with career path recommendations, skill development, resume tips, and educational guidance.
+    const aiRes = await chatbotAi.respond(userName || 'User', message);
+    const latency = Date.now() - start;
 
-User: ${userName || 'User'}
-Question: ${sanitizedMessage}
+    logger.info(`[Chatbot API] [ReqId: ${requestId}] Completed successfully in ${latency}ms`);
 
-Provide a helpful, concise response (2-3 paragraphs max). Be conversational and supportive.`;
-
-    console.log('Calling Gemini API...');
-
-    // Call Gemini API - Using gemini-2.5-flash which is the latest and fastest model
-    const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: userPrompt,
-                },
-              ],
-            },
-          ],
-        }),
-      }
-    );
-
-    const responseData = await geminiResponse.json();
-
-    if (!geminiResponse.ok) {
-      console.error('Gemini API error:', geminiResponse.status, responseData);
-      return NextResponse.json({
-        response: "I'm having difficulty processing your request. Please try again in a moment.",
-      });
-    }
-
-    const botResponse = responseData.candidates?.[0]?.content?.parts?.[0]?.text || 
-      "I apologize, I couldn't generate a response. Please try again.";
-
-    return NextResponse.json({
-      response: botResponse,
+    return successResponse({
+      response: aiRes.data,
       timestamp: new Date().toISOString(),
     });
 
   } catch (error) {
-    console.error('Chatbot API error:', error);
-    return NextResponse.json(
-      { 
-        response: "I'm experiencing technical difficulties. Please try again in a moment."
-      }
-    );
+    logger.error(`[Chatbot API] [ReqId: ${requestId}] Unhandled error:`, error);
+    return errorResponse("I'm experiencing technical difficulties. Please try again in a moment.", 500);
   }
 }

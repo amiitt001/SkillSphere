@@ -5,8 +5,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/hooks';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
 import type { UserProfile, Achievement } from '@/types';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';

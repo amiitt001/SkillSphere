@@ -1,91 +1,63 @@
 import { type NextRequest } from 'next/server';
+import { verifyAuth } from '@/lib/authMiddleware';
+import { quizAi } from '@/services/ai';
+import { logger } from '@/services/logger';
+import { successResponse, errorResponse } from '@/utils';
+import { skillQuizSchema } from '@/lib/validation';
+import { globalRateLimiter } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/skill-quiz
  * Generates quiz questions based on selected skills and difficulty level.
- * Supports adaptive difficulty with previous answers context.
  */
 export async function POST(request: NextRequest) {
-    try {
-        const body = await request.json();
-        const { skills, difficulty = 'intermediate', questionCount = 10 } = body;
+  const start = Date.now();
+  const requestId = Math.random().toString(36).substring(7);
 
-        if (!skills || !Array.isArray(skills) || skills.length === 0) {
-            return new Response(
-                JSON.stringify({ error: 'Please provide at least one skill to assess' }),
-                { status: 400, headers: { 'Content-Type': 'application/json' } }
-            );
-        }
-
-        const prompt = `
-      You are an expert skill assessment engine. Generate exactly ${questionCount} multiple-choice quiz questions to assess a user's proficiency in the following skills: ${skills.join(', ')}.
-
-      Difficulty level: ${difficulty}
-
-      Your ENTIRE response must be a single valid JSON object with this exact structure:
-      {
-        "questions": [
-          {
-            "id": "q1",
-            "question": "The question text",
-            "options": ["Option A", "Option B", "Option C", "Option D"],
-            "correctAnswer": 0,
-            "explanation": "Why this answer is correct",
-            "skill": "Which skill this tests",
-            "difficulty": "${difficulty}"
-          }
-        ]
-      }
-
-      Rules:
-      - Generate exactly ${questionCount} questions
-      - Distribute questions across all provided skills evenly
-      - Each question must have exactly 4 options
-      - correctAnswer is the 0-based index of the correct option
-      - Questions should be practical and test real-world understanding
-      - Include a mix of conceptual, practical, and scenario-based questions
-      - Do NOT include any markdown or text outside the JSON
-    `;
-
-        const API_KEY = process.env.GEMINI_API_KEY;
-        if (!API_KEY) {
-            throw new Error('GEMINI_API_KEY is not defined');
-        }
-
-        const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
-
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-            }),
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Error from Google AI API:', errorText);
-            return new Response(errorText, { status: response.status });
-        }
-
-        const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-        if (!text) {
-            throw new Error('Invalid response structure from AI API');
-        }
-
-        const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-
-        return new Response(cleanedText, {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-        });
-    } catch (error: unknown) {
-        console.error('Error in skill-quiz API route:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Error generating quiz.';
-        return new Response(JSON.stringify({ error: errorMessage }), { status: 500 });
+  try {
+    const authResult = await verifyAuth(request);
+    if (authResult.error) {
+      logger.auth(undefined, `skill-quiz [ReqId: ${requestId}]`, false, authResult.error);
+      return errorResponse(authResult.error, authResult.status || 401);
     }
+
+    const userId = authResult.user?.uid || 'anonymous';
+
+    // Rate limiting check
+    const rateLimitKey = `skill-quiz:${userId}`;
+    if (!globalRateLimiter.check(rateLimitKey, 5, 60000)) {
+      logger.warn(`[Skill Quiz API] [ReqId: ${requestId}] Rate limit exceeded for user: ${userId}`);
+      return errorResponse("Too many requests. Please try again later.", 429);
+    }
+
+    const body = await request.json();
+    const result = skillQuizSchema.safeParse(body);
+
+    if (!result.success) {
+      const errorMsg = result.error.issues.map((e) => e.message).join(', ');
+      logger.warn(`[Skill Quiz API] [ReqId: ${requestId}] Validation failed: ${errorMsg}`);
+      return errorResponse(errorMsg, 400);
+    }
+
+    const { skills, difficulty, questionCount } = result.data;
+
+    logger.info(`[Skill Quiz API] [ReqId: ${requestId}] Generating quiz questions for user: ${userId}`, {
+      skillsCount: skills.length,
+      difficulty,
+      questionCount,
+    });
+
+    const aiRes = await quizAi.generateQuiz(skills, difficulty, questionCount);
+    const latency = Date.now() - start;
+
+    logger.info(`[Skill Quiz API] [ReqId: ${requestId}] Completed successfully in ${latency}ms`);
+
+    return successResponse(aiRes.data);
+
+  } catch (error) {
+    logger.error(`[Skill Quiz API] [ReqId: ${requestId}] Unhandled error:`, error);
+    return errorResponse("Error generating quiz.", 500);
+  }
 }

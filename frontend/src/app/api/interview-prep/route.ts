@@ -1,147 +1,73 @@
 import { type NextRequest } from 'next/server';
+import { verifyAuth } from '@/lib/authMiddleware';
+import { interviewAi } from '@/services/ai';
+import { logger } from '@/services/logger';
+import { successResponse, errorResponse } from '@/utils';
+import { interviewPrepSchema } from '@/lib/validation';
+import { globalRateLimiter } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/interview-prep
- * Generates interview questions based on career, company type, and experience level.
+ * Generates interview questions or evaluates user answers based on career parameters.
  */
 export async function POST(request: NextRequest) {
-    try {
-        const body = await request.json();
-        const { career, companyType = 'MNC', experienceLevel = 'fresher', action } = body;
+  const start = Date.now();
+  const requestId = Math.random().toString(36).substring(7);
 
-        if (!career) {
-            return new Response(
-                JSON.stringify({ error: 'Please provide a target career' }),
-                { status: 400, headers: { 'Content-Type': 'application/json' } }
-            );
-        }
-
-        // If action is 'evaluate', evaluate a user's answer
-        if (action === 'evaluate') {
-            const { question, answer } = body;
-            if (!question || !answer) {
-                return new Response(
-                    JSON.stringify({ error: 'Please provide both question and answer' }),
-                    { status: 400, headers: { 'Content-Type': 'application/json' } }
-                );
-            }
-
-            const evalPrompt = `
-        You are an expert interview coach. Evaluate the following interview answer.
-
-        Career: ${career}
-        Company type: ${companyType}
-        Question: ${question}
-        User's Answer: ${answer}
-
-        Your ENTIRE response must be a valid JSON object:
-        {
-          "structureScore": 75,
-          "clarityScore": 80,
-          "technicalScore": 70,
-          "overallScore": 75,
-          "strengths": ["Good use of examples", "Clear structure"],
-          "improvements": ["Add more technical depth", "Use STAR method"],
-          "revisedAnswer": "A better version of their answer"
-        }
-
-        Rules:
-        - Scores are 0-100
-        - Be constructive but honest
-        - Provide 2-3 strengths and 2-3 improvements
-        - The revised answer should be concise but comprehensive
-        - Do NOT include markdown or text outside JSON
-      `;
-
-            const API_KEY = process.env.GEMINI_API_KEY;
-            if (!API_KEY) throw new Error('GEMINI_API_KEY is not defined');
-
-            const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
-            const evalResponse = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: evalPrompt }] }] }),
-            });
-
-            if (!evalResponse.ok) {
-                const errorText = await evalResponse.text();
-                return new Response(errorText, { status: evalResponse.status });
-            }
-
-            const evalData = await evalResponse.json();
-            const evalText = evalData.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!evalText) throw new Error('Invalid AI response');
-
-            const cleanedEval = evalText.replace(/```json/g, '').replace(/```/g, '').trim();
-            return new Response(cleanedEval, {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' },
-            });
-        }
-
-        // Generate interview questions
-        const prompt = `
-      You are an expert interview coach specializing in ${career} roles.
-      Generate interview questions for a ${experienceLevel} candidate applying at a ${companyType} company.
-
-      Your ENTIRE response must be a valid JSON object:
-      {
-        "questions": [
-          {
-            "id": "t1",
-            "question": "The question text",
-            "type": "technical",
-            "difficulty": "medium",
-            "expectedPoints": ["Point 1 they should cover", "Point 2", "Point 3"],
-            "sampleAnswer": "A brief sample answer"
-          }
-        ]
-      }
-
-      Generate:
-      - 4 technical questions
-      - 3 behavioral questions (use STAR method framework)
-      - 2 coding/problem-solving questions
-
-      Rules:
-      - type: "technical", "behavioral", or "coding"
-      - difficulty: "easy", "medium", or "hard"
-      - expectedPoints: 3-4 key points the answer should cover
-      - sampleAnswer: A concise but comprehensive answer
-      - Questions should be realistic for the specified company type and level
-      - Do NOT include markdown or text outside JSON
-    `;
-
-        const API_KEY = process.env.GEMINI_API_KEY;
-        if (!API_KEY) throw new Error('GEMINI_API_KEY is not defined');
-
-        const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
-
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            return new Response(errorText, { status: response.status });
-        }
-
-        const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!text) throw new Error('Invalid AI response');
-
-        const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return new Response(cleanedText, {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-        });
-    } catch (error: unknown) {
-        console.error('Error in interview-prep API route:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Error generating interview prep.';
-        return new Response(JSON.stringify({ error: errorMessage }), { status: 500 });
+  try {
+    const authResult = await verifyAuth(request);
+    if (authResult.error) {
+      logger.auth(undefined, `interview-prep [ReqId: ${requestId}]`, false, authResult.error);
+      return errorResponse(authResult.error, authResult.status || 401);
     }
+
+    const userId = authResult.user?.uid || 'anonymous';
+
+    // Rate limiting check
+    const rateLimitKey = `interview-prep:${userId}`;
+    if (!globalRateLimiter.check(rateLimitKey, 5, 60000)) {
+      logger.warn(`[Interview Prep API] [ReqId: ${requestId}] Rate limit exceeded for user: ${userId}`);
+      return errorResponse("Too many requests. Please try again later.", 429);
+    }
+
+    const body = await request.json();
+    const result = interviewPrepSchema.safeParse(body);
+
+    if (!result.success) {
+      const errorMsg = result.error.issues.map((e) => e.message).join(', ');
+      logger.warn(`[Interview Prep API] [ReqId: ${requestId}] Validation failed: ${errorMsg}`);
+      return errorResponse(errorMsg, 400);
+    }
+
+    const { career, companyType, experienceLevel, action, question, answer } = result.data;
+
+    // Evaluate user's answer
+    if (action === 'evaluate') {
+      logger.info(`[Interview Prep API] [ReqId: ${requestId}] Evaluating answer for user: ${userId}`, {
+        career,
+        companyType,
+      });
+      const aiRes = await interviewAi.evaluateAnswer(career, companyType, question!, answer!);
+      const latency = Date.now() - start;
+      logger.info(`[Interview Prep API] [ReqId: ${requestId}] Evaluation completed in ${latency}ms`);
+      return successResponse(aiRes.data);
+    }
+
+    // Generate interview questions
+    logger.info(`[Interview Prep API] [ReqId: ${requestId}] Generating questions for user: ${userId}`, {
+      career,
+      companyType,
+      experienceLevel,
+    });
+    const aiRes = await interviewAi.generateQuestions(career, companyType, experienceLevel);
+    const latency = Date.now() - start;
+    logger.info(`[Interview Prep API] [ReqId: ${requestId}] Generation completed in ${latency}ms`);
+    return successResponse(aiRes.data);
+
+  } catch (error) {
+    logger.error(`[Interview Prep API] [ReqId: ${requestId}] Unhandled error:`, error);
+    return errorResponse("Error generating interview prep content.", 500);
+  }
 }

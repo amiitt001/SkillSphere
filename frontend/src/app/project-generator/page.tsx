@@ -6,8 +6,9 @@
 'use client';
 
 import { useState } from 'react';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import TagInput from '@/components/TagInput';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
+import TagInput from '@/components/ui/TagInput';
+import { auth } from '@/lib/firebase';
 import type { GeneratedProject } from '@/types';
 
 function ProjectGeneratorContent() {
@@ -31,7 +32,14 @@ function ProjectGeneratorContent() {
 
         try {
             const params = new URLSearchParams({ career, skillLevel, skills: skills.join(', ') });
-            const response = await fetch(`/api/project-generator?${params}`);
+            
+            const idToken = await auth.currentUser?.getIdToken();
+            const headers: Record<string, string> = {};
+            if (idToken) {
+                headers['Authorization'] = `Bearer ${idToken}`;
+            }
+
+            const response = await fetch(`/api/project-generator?${params}`, { headers });
             if (!response.ok) throw new Error('Failed to generate projects');
             const data = await response.json();
             setProjects(data.projects || []);

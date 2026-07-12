@@ -3,9 +3,18 @@
  * Uses GitHub REST API (no auth required for public data)
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyAuth } from '@/lib/authMiddleware';
 
 export async function POST(req: NextRequest) {
     try {
+        const authResult = await verifyAuth(req);
+        if (authResult.error) {
+            return new Response(JSON.stringify({ error: authResult.error }), {
+                status: authResult.status || 401,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+
         const { username } = await req.json();
         if (!username) {
             return NextResponse.json({ error: 'GitHub username is required' }, { status: 400 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react';
-import Auth from '../Auth';
+import Auth from '../common/Auth';
 
 // We need to mock the useAuth hook that the Auth component depends on.
 // This tells Jest: "Whenever any component tries to call useAuth,
