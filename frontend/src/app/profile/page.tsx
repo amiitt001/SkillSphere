@@ -54,9 +54,58 @@ function getInitials(name: string): string {
         .slice(0, 2) || '??';
 }
 
+function calculateCompleteness(profile: any): number {
+    let score = 0;
+    if (!profile) return 0;
+
+    // 1. Personal Info (15%)
+    let personalScore = 0;
+    if (profile.personalInfo?.fullName) personalScore += 5;
+    if (profile.personalInfo?.email) personalScore += 5;
+    if (profile.personalInfo?.githubUrl || profile.personalInfo?.linkedinUrl || profile.personalInfo?.location) personalScore += 5;
+    score += personalScore;
+
+    // 2. Education (15%)
+    if (profile.education && profile.education.length > 0 && profile.education[0].institution && profile.education[0].degree) {
+        score += 15;
+    }
+
+    // 3. Technical Skills (20%)
+    if (profile.skills && profile.skills.length > 0) {
+        score += 20;
+    }
+
+    // 4. Projects (15%)
+    if (profile.projects && profile.projects.length > 0 && profile.projects[0].title) {
+        score += 15;
+    }
+
+    // 5. Professional Experience (15%)
+    if (profile.experience && profile.experience.length > 0) {
+        score += 15;
+    }
+
+    // 6. Career Goals (10%)
+    let goalScore = 0;
+    if (profile.careerGoals?.preferredRoles && profile.careerGoals.preferredRoles.length > 0) goalScore += 5;
+    if (profile.careerGoals?.preferredLocations && profile.careerGoals.preferredLocations.length > 0) goalScore += 5;
+    score += goalScore;
+
+    // 7. Connected Accounts (10%)
+    if (profile.personalInfo?.githubUrl || profile.personalInfo?.leetcodeUsername || profile.personalInfo?.codeforcesHandle || profile.personalInfo?.linkedinUrl) {
+        score += 10;
+    }
+
+    return score;
+}
+
+interface ExtendedUserProfile extends UserProfile {
+    unifiedProfile?: any;
+}
+
 export default function ProfilePage() {
     const { user } = useAuth();
-    const [profile, setProfile] = useState<UserProfile>(defaultProfile);
+    const [profile, setProfile] = useState<ExtendedUserProfile>(defaultProfile);
     const [saved, setSaved] = useState(false);
     const [headerSaved, setHeaderSaved] = useState(false);
 
@@ -82,6 +131,7 @@ export default function ProfilePage() {
                         stats: data.stats || defaultProfile.stats,
                         achievements: defaultAchievements,
                         preferences: data.preferences || defaultProfile.preferences,
+                        unifiedProfile: data.unifiedProfile || null
                     });
                 } else {
                     // LocalStorage fallback for legacy users
@@ -108,7 +158,57 @@ export default function ProfilePage() {
     const saveProfile = async () => {
         if (!user) return;
         try {
-            await setDoc(doc(db, 'users', user.uid), {
+            const userDocRef = doc(db, 'users', user.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            let existingUnified = {};
+            if (userDocSnap.exists()) {
+                const data = userDocSnap.data();
+                existingUnified = data.unifiedProfile || {};
+            }
+
+            const existingPersonalInfo = (existingUnified as any).personalInfo || {};
+            const newPersonalInfo = {
+                ...existingPersonalInfo,
+                fullName: profile.fullName,
+                email: profile.email,
+                location: profile.location,
+            };
+
+            const existingEducation = (existingUnified as any).education || [];
+            const newEducation = [...existingEducation];
+            if (profile.college) {
+                if (newEducation.length > 0) {
+                    newEducation[0] = {
+                        ...newEducation[0],
+                        institution: profile.college,
+                        stream: profile.stream,
+                        degree: profile.year
+                    };
+                } else {
+                    newEducation.push({
+                        institution: profile.college,
+                        stream: profile.stream,
+                        degree: profile.year
+                    });
+                }
+            }
+
+            const newUnifiedProfile = {
+                ...existingUnified,
+                uid: user.uid,
+                personalInfo: newPersonalInfo,
+                education: newEducation,
+                skills: (existingUnified as any).skills || [],
+                projects: (existingUnified as any).projects || [],
+                experience: (existingUnified as any).experience || [],
+                careerGoals: (existingUnified as any).careerGoals || {},
+                lastUpdated: new Date().toISOString(),
+                profileCompleteness: 0,
+            };
+
+            newUnifiedProfile.profileCompleteness = calculateCompleteness(newUnifiedProfile);
+
+            await setDoc(userDocRef, {
                 name: profile.fullName,
                 fullName: profile.fullName,
                 email: profile.email,
@@ -119,6 +219,7 @@ export default function ProfilePage() {
                 location: profile.location,
                 stats: profile.stats,
                 preferences: profile.preferences,
+                unifiedProfile: newUnifiedProfile,
                 updatedAt: serverTimestamp(),
                 createdAt: serverTimestamp() // setDoc merge preserves if already exists, but rule requires name/email/createdAt at creation time
             }, { merge: true });
@@ -134,13 +235,63 @@ export default function ProfilePage() {
     const saveHeader = async () => {
         if (!user) return;
         try {
-            await setDoc(doc(db, 'users', user.uid), {
+            const userDocRef = doc(db, 'users', user.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            let existingUnified = {};
+            if (userDocSnap.exists()) {
+                const data = userDocSnap.data();
+                existingUnified = data.unifiedProfile || {};
+            }
+
+            const existingPersonalInfo = (existingUnified as any).personalInfo || {};
+            const newPersonalInfo = {
+                ...existingPersonalInfo,
+                fullName: profile.fullName,
+                location: profile.location,
+            };
+
+            const existingEducation = (existingUnified as any).education || [];
+            const newEducation = [...existingEducation];
+            if (profile.college) {
+                if (newEducation.length > 0) {
+                    newEducation[0] = {
+                        ...newEducation[0],
+                        institution: profile.college,
+                        stream: profile.stream,
+                        degree: profile.year
+                    };
+                } else {
+                    newEducation.push({
+                        institution: profile.college,
+                        stream: profile.stream,
+                        degree: profile.year
+                    });
+                }
+            }
+
+            const newUnifiedProfile = {
+                ...existingUnified,
+                uid: user.uid,
+                personalInfo: newPersonalInfo,
+                education: newEducation,
+                skills: (existingUnified as any).skills || [],
+                projects: (existingUnified as any).projects || [],
+                experience: (existingUnified as any).experience || [],
+                careerGoals: (existingUnified as any).careerGoals || {},
+                lastUpdated: new Date().toISOString(),
+                profileCompleteness: 0,
+            };
+
+            newUnifiedProfile.profileCompleteness = calculateCompleteness(newUnifiedProfile);
+
+            await setDoc(userDocRef, {
                 name: profile.fullName,
                 fullName: profile.fullName,
                 college: profile.college,
                 stream: profile.stream,
                 year: profile.year,
                 location: profile.location,
+                unifiedProfile: newUnifiedProfile,
                 updatedAt: serverTimestamp(),
                 createdAt: serverTimestamp()
             }, { merge: true });
@@ -422,6 +573,146 @@ export default function ProfilePage() {
                         </div>
                     </div>
                 </div>
+
+                {/* ══ AI PARSED RESUME SUMMARY SECTIONS ══ */}
+                {profile.unifiedProfile && (
+                    <div style={{ marginTop: '2.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                        {/* Skills Section */}
+                        {profile.unifiedProfile.skills && profile.unifiedProfile.skills.length > 0 && (
+                            <div className="profile-section animate-fade-up">
+                                <div className="profile-section-title">
+                                    <span>⚡</span> AI-Parsed Skills
+                                </div>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '1rem' }}>
+                                    These technical competencies were extracted and verified from your uploaded resume.
+                                </p>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                    {profile.unifiedProfile.skills.map((skill: any, idx: number) => {
+                                        const skillName = typeof skill === 'string' ? skill : skill.name;
+                                        const isLowConfidence = skill && typeof skill === 'object' && skill.confidence < 70;
+                                        return (
+                                          <span
+                                              key={idx}
+                                              style={{
+                                                  fontSize: '0.75rem',
+                                                  background: isLowConfidence ? 'rgba(239, 68, 68, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                                                  border: isLowConfidence ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid var(--border-subtle)',
+                                                  color: isLowConfidence ? '#ef4444' : 'var(--text-secondary)',
+                                                  padding: '6px 12px',
+                                                  borderRadius: 8,
+                                                  display: 'inline-flex',
+                                                  alignItems: 'center',
+                                                  gap: 6
+                                              }}
+                                          >
+                                              {skillName}
+                                              {isLowConfidence && <span title="Low confidence extraction" style={{ fontSize: '0.7rem' }}>⚠️</span>}
+                                          </span>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Projects Section */}
+                        {profile.unifiedProfile.projects && profile.unifiedProfile.projects.length > 0 && (
+                            <div className="profile-section animate-fade-up">
+                                <div className="profile-section-title">
+                                    <span>💻</span> AI-Parsed Projects
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+                                    {profile.unifiedProfile.projects.map((proj: any, idx: number) => (
+                                        <div
+                                            key={idx}
+                                            style={{
+                                                background: 'rgba(255, 255, 255, 0.01)',
+                                                border: '1px solid var(--border-subtle)',
+                                                borderRadius: 12,
+                                                padding: '1.25rem',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                justifyContent: 'space-between',
+                                                gap: '0.75rem'
+                                            }}
+                                        >
+                                            <div>
+                                                <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                                                    {proj.title}
+                                                </h4>
+                                                <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.5rem', lineHeight: '1.4' }}>
+                                                    {proj.description}
+                                                </p>
+                                            </div>
+                                            {proj.technologies && proj.technologies.length > 0 && (
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                                    {proj.technologies.map((tech: string, techIdx: number) => (
+                                                        <span
+                                                            key={techIdx}
+                                                            style={{
+                                                                fontSize: '0.68rem',
+                                                                background: 'rgba(255, 255, 255, 0.02)',
+                                                                border: '1px solid var(--border-subtle)',
+                                                                color: 'var(--text-dim)',
+                                                                padding: '2px 6px',
+                                                                borderRadius: 4
+                                                            }}
+                                                        >
+                                                            {tech}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Experience Section */}
+                        {profile.unifiedProfile.experience && profile.unifiedProfile.experience.length > 0 && (
+                            <div className="profile-section animate-fade-up">
+                                <div className="profile-section-title">
+                                    <span>💼</span> AI-Parsed Experience
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1.25rem' }}>
+                                    {profile.unifiedProfile.experience.map((exp: any, idx: number) => (
+                                        <div
+                                            key={idx}
+                                            style={{
+                                                background: 'rgba(255, 255, 255, 0.01)',
+                                                border: '1px solid var(--border-subtle)',
+                                                borderRadius: 12,
+                                                padding: '1.25rem',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '0.5rem'
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                <div>
+                                                    <h4 style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                                                        {exp.role}
+                                                    </h4>
+                                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>
+                                                        {exp.company}
+                                                    </span>
+                                                </div>
+                                                <span style={{ fontSize: '0.72rem', background: 'rgba(196,112,75,0.08)', border: '1px solid rgba(196,112,75,0.15)', color: 'var(--accent-terra)', padding: '4px 8px', borderRadius: 6 }}>
+                                                    {exp.duration}
+                                                </span>
+                                            </div>
+                                            {exp.description && (
+                                                <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0 0', lineHeight: '1.4' }}>
+                                                    {exp.description}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </ProtectedRoute>
     );

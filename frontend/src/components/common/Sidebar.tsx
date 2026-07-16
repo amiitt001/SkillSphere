@@ -45,12 +45,38 @@ const AggregatorIcon = () => (
 const LogoutIcon = () => (
   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
 );
+const RecommendationIcon = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
+);
+const CopilotIcon = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+);
+const EcosystemIcon = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+);
+const IntelligenceIcon = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+);
+const WorkspaceIcon = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+);
+const GrowthIcon = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+);
+const EnterpriseIcon = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+);
+const BillingIcon = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+);
 
 type SidebarProps = {
   isOpen: boolean;
   onClose: () => void;
   isCollapsed?: boolean;
   onCollapseToggle?: () => void;
+  isHidden?: boolean;
+  onHideToggle?: () => void;
 };
 
 function formatRelativeTime(timestamp: any): string {
@@ -68,7 +94,7 @@ function formatRelativeTime(timestamp: any): string {
   return `${diffDays}d ago`;
 }
 
-const Sidebar = ({ isOpen, onClose, isCollapsed = false, onCollapseToggle }: SidebarProps) => {
+const Sidebar = ({ isOpen, onClose, isCollapsed = false, onCollapseToggle, isHidden = false, onHideToggle }: SidebarProps) => {
   const pathname = usePathname();
   const { user } = useAuth();
 
@@ -81,17 +107,49 @@ const Sidebar = ({ isOpen, onClose, isCollapsed = false, onCollapseToggle }: Sid
     }
   };
 
-  const navItems = [
-    { href: '/', label: 'Home', icon: HomeIcon },
-    { href: '/dashboard', label: 'Advisor', icon: DashboardIcon },
-    { href: '/skill-quiz', label: 'Skill Quiz', icon: QuizIcon },
-    { href: '/resume-analyzer', label: 'Resume Scan', icon: ResumeAnalyzerIcon },
-    { href: '/resume-helper', label: 'Resume AI', icon: ResumeIcon },
-    { href: '/project-generator', label: 'Projects', icon: ProjectIcon },
-    { href: '/interview-prep', label: 'Interview', icon: InterviewIcon },
-    { href: '/history', label: 'History', icon: CompareIcon },
-    { href: '/profile', label: 'Profile', icon: ProfileIcon },
-    { href: '/profile-aggregator', label: 'Aggregator', icon: AggregatorIcon },
+  const navSections = [
+    {
+      title: 'Dashboard',
+      items: [
+        { href: '/dashboard', label: 'Advisor', icon: DashboardIcon },
+        { href: '/copilot', label: 'Copilot', icon: CopilotIcon },
+        { href: '/intelligence', label: 'Career GPS', icon: IntelligenceIcon },
+      ],
+    },
+    {
+      title: 'Career',
+      items: [
+        { href: '/recommendations', label: 'Recommend', icon: RecommendationIcon },
+        { href: '/resume-analyzer', label: 'Resume Scan', icon: ResumeAnalyzerIcon },
+        { href: '/resume-helper', label: 'Resume AI', icon: ResumeIcon },
+        { href: '/interview-prep', label: 'Interview', icon: InterviewIcon },
+        { href: '/skill-quiz', label: 'Skill Quiz', icon: QuizIcon },
+        { href: '/project-generator', label: 'Projects', icon: ProjectIcon },
+      ],
+    },
+    {
+      title: 'Workspace',
+      items: [
+        { href: '/workspace', label: 'Workspace', icon: WorkspaceIcon },
+        { href: '/profile-aggregator', label: 'Aggregator', icon: AggregatorIcon },
+        { href: '/history', label: 'History', icon: CompareIcon },
+      ],
+    },
+    {
+      title: 'Enterprise',
+      items: [
+        { href: '/intelligence-platform', label: 'Growth Admin', icon: GrowthIcon },
+        { href: '/enterprise', label: 'Enterprise Hub', icon: EnterpriseIcon },
+        { href: '/billing', label: 'SaaS Billing', icon: BillingIcon },
+        { href: '/ecosystem', label: 'Ecosystem', icon: EcosystemIcon },
+      ],
+    },
+    {
+      title: 'Account',
+      items: [
+        { href: '/profile', label: 'Profile', icon: ProfileIcon },
+      ],
+    },
   ];
 
   const [recentSessions, setRecentSessions] = useState<{ id: string; title: string; date: string }[]>([]);
@@ -125,6 +183,21 @@ const Sidebar = ({ isOpen, onClose, isCollapsed = false, onCollapseToggle }: Sid
     return () => unsubscribe();
   }, [user]);
 
+  const handleNavKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const focusable = Array.from(e.currentTarget.querySelectorAll('.nav-pill')) as HTMLElement[];
+      const activeIdx = focusable.indexOf(document.activeElement as HTMLElement);
+      let nextIdx = activeIdx;
+      if (e.key === 'ArrowDown') {
+        nextIdx = activeIdx === -1 ? 0 : (activeIdx + 1) % focusable.length;
+      } else {
+        nextIdx = activeIdx === -1 ? focusable.length - 1 : (activeIdx - 1 + focusable.length) % focusable.length;
+      }
+      focusable[nextIdx]?.focus();
+    }
+  };
+
   return (
     <>
       <div
@@ -136,8 +209,10 @@ const Sidebar = ({ isOpen, onClose, isCollapsed = false, onCollapseToggle }: Sid
       <aside
         className={`dashboard-sidebar transition-all duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
         style={{
-          width: isCollapsed ? 72 : 250,
-          minWidth: isCollapsed ? 72 : 250,
+          width: isHidden ? 0 : (isCollapsed ? 72 : 250),
+          minWidth: isHidden ? 0 : (isCollapsed ? 72 : 250),
+          opacity: isHidden ? 0 : 1,
+          pointerEvents: isHidden ? 'none' : 'auto',
           left: 0,
           zIndex: 100,
           display: 'flex',
@@ -148,69 +223,108 @@ const Sidebar = ({ isOpen, onClose, isCollapsed = false, onCollapseToggle }: Sid
           overscrollBehavior: 'contain',
           backgroundColor: 'rgba(15, 13, 11, 0.95)',
           backdropFilter: 'blur(24px)',
-          borderRight: '1px solid rgba(196, 112, 75, 0.08)',
-          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          borderRight: isHidden ? 'none' : '1px solid rgba(196, 112, 75, 0.08)',
+          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s, border-right 0.3s',
         }}
       >
         <div
           style={{ padding: isCollapsed ? '20px 12px' : '20px' }}
           className="flex flex-col h-full"
         >
-          {/* Brand — click logo to toggle sidebar */}
+          {/* Brand — click logo to toggle collapse / hide sidebar */}
           <div
             className="flex items-center mb-8 overflow-hidden"
             style={{
               gap: 12,
-              justifyContent: isCollapsed ? 'center' : 'flex-start',
+              justifyContent: isCollapsed ? 'center' : 'space-between',
             }}
           >
-            <button
-              onClick={onCollapseToggle}
-              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              className="w-8 h-8 min-w-[32px] rounded-lg flex items-center justify-center font-bold text-sm"
-              style={{
-                background: 'linear-gradient(135deg, #ffffff, #e5e5e5)',
-                fontFamily: 'var(--font-display)',
-                color: '#fff',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = '0 0 16px rgba(255,255,255,0.2)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
-            >
-              S
-            </button>
-            {!isCollapsed && (
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
-                SkillSphere
-              </span>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={onCollapseToggle}
+                aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                className="w-8 h-8 min-w-[32px] rounded-lg flex items-center justify-center font-bold text-sm"
+                style={{
+                  background: 'linear-gradient(135deg, #ffffff, #e5e5e5)',
+                  fontFamily: 'var(--font-display)',
+                  color: '#fff',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = '0 0 16px rgba(255,255,255,0.2)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                S
+              </button>
+              {!isCollapsed && (
+                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
+                  SkillSphere
+                </span>
+              )}
+            </div>
+
+            {!isCollapsed && onHideToggle && (
+              <button
+                onClick={onHideToggle}
+                title="Hide sidebar"
+                aria-label="Hide sidebar"
+                className="hidden md:block"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-dim)',
+                  cursor: 'pointer',
+                  padding: 4,
+                  borderRadius: 6,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-dim)'}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                </svg>
+              </button>
             )}
           </div>
 
-          {/* Nav Links */}
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 32 }}>
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onClose}
-                  className={`nav-pill ${isActive ? 'active' : ''}`}
-                  style={{
-                    justifyContent: isCollapsed ? 'center' : 'flex-start',
-                    padding: isCollapsed ? '10px 0' : '10px 16px',
-                  }}
-                  title={isCollapsed ? item.label : undefined}
-                >
-                  <Icon />
-                  {!isCollapsed && <span>{item.label}</span>}
-                </Link>
-              );
-            })}
+          {/* Nav Links Grouped into Sections */}
+          <nav 
+            onKeyDown={handleNavKeyDown}
+            style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}
+          >
+            {navSections.map((section) => (
+              <div key={section.title} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {!isCollapsed && (
+                  <div className="sidebar-section-header">
+                    {section.title}
+                  </div>
+                )}
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={onClose}
+                      className={`nav-pill ${isActive ? 'active' : ''}`}
+                      style={{
+                        justifyContent: isCollapsed ? 'center' : 'flex-start',
+                        padding: isCollapsed ? '10px 0' : '10px 16px',
+                      }}
+                      title={isCollapsed ? item.label : undefined}
+                    >
+                      <Icon />
+                      {!isCollapsed && <span>{item.label}</span>}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
 
           {/* Recent Sessions List — hidden when collapsed */}

@@ -3,6 +3,7 @@
  * It uses the Base64 encoded service account for secure initialization.
  */
 import { getApps, initializeApp, cert, getApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 
 let adminApp: any;
 
@@ -27,6 +28,11 @@ if (!getApps().length) {
     } else {
       throw new Error('Firebase service account (BASE64) and project ID are not set in environment variables.');
     }
+
+    // Configure Firestore to ignore undefined fields (optional fields like leetcodeUsername)
+    // instead of throwing "Cannot use undefined as a Firestore value"
+    const firestoreInstance = getFirestore(adminApp);
+    firestoreInstance.settings({ ignoreUndefinedProperties: true });
 
   } catch (error) {
     console.error("CRITICAL ERROR: Initializing Firebase Admin SDK failed!", error);

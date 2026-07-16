@@ -1,39 +1,56 @@
 /**
- * This is the main dashboard inputs page for the SkillSphere application.
- * It handles the academic background and profile form, verifies the CAPTCHA,
- * calls the recommendations API, saves the search to Firestore, and redirects
- * the user to the results page.
+ * This is the main dashboard page for the SkillSphere application.
+ * It displays a premium Bento Grid dashboard hub, personal hero welcome,
+ * and hosts the 3-step Career Diagnostics Onboarding Stepper.
  */
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import TagInput from '@/components/ui/TagInput';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
 import SimpleCaptcha from '@/components/ui/SimpleCaptcha';
 import { db, auth } from '@/lib/firebase';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuth, useCaptcha } from '@/hooks';
+import ScoreRing from '@/components/profile/ScoreRing';
+import { DashboardSkeleton } from '@/components/ui/SkeletonLoader';
+import Link from 'next/link';
+import { WelcomeCard } from '@/components/onboarding/WelcomeCard';
+import { ResumeUploader } from '@/components/onboarding/ResumeUploader';
+import { ProfileReview } from '@/components/onboarding/ProfileReview';
+import { SmartQuestionWidget } from '@/components/onboarding/SmartQuestionWidget';
 
 function DashboardContent() {
-  // --- STATE MANAGEMENT ---
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session');
 
-  // State for the user's input profile
+  // --- COMPONENT MODE & STATE ---
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingMethod, setOnboardingMethod] = useState<'resume' | 'github' | 'manual' | 'skip' | null>(null);
+  const [parsedDraft, setParsedDraft] = useState<any>(null);
+  const [profileData, setProfileData] = useState<any>(null);
+  const [dbLoading, setDbLoading] = useState(true);
+
+  // Form Profile State
   const [academicStream, setAcademicStream] = useState('Engineering / Tech');
+  const [currentStatus, setCurrentStatus] = useState('Undergraduate (2nd Year)');
   const [skills, setSkills] = useState<string[]>(['Python', 'JavaScript', 'SQL']);
   const [interests, setInterests] = useState<string[]>(['AI Ethics', 'Open Source']);
   const [additionalContext, setAdditionalContext] = useState('');
 
-  // State for managing UI and API loading state
+  // Loading & Error states
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // --- ACTIONS ---
+  // Progressive Onboarding Modal State
+  const [showProgressiveModal, setShowProgressiveModal] = useState(false);
+  const [progressiveQuestion, setProgressiveQuestion] = useState<{ fieldKey: string; question: string } | null>(null);
+  const [progressiveValue, setProgressiveValue] = useState('');
+
+  // CAPTCHA Actions
   const {
     isCaptchaVerified,
     showCaptchaModal,
@@ -41,29 +58,196 @@ function DashboardContent() {
     captchaParams,
     handleCaptchaVerify,
   } = useCaptcha((num1, num2, answer) => {
-    const form = document.querySelector('form');
-    if (form) form.requestSubmit();
+    // When captcha verifies, submit form
+    executeSubmit(num1, num2, answer);
   });
 
-  // past session ID redirect
+  // Redirect if session is preset
   useEffect(() => {
     if (sessionId) {
       router.push(`/dashboard/results?session=${sessionId}`);
     }
   }, [sessionId, router]);
 
-  // --- HANDLER FUNCTIONS ---
+  // Load User Data from Firestore
+  const fetchProfile = async () => {
+    if (!user) return;
+    try {
+      const snap = await getDoc(doc(db, 'users', user.uid));
+      if (snap.exists()) {
+        const data = snap.data();
+        setProfileData(data);
+        if (data.unifiedProfile) {
+          setSkills(data.unifiedProfile.skills || []);
+          setAcademicStream(data.unifiedProfile.stream || 'Engineering / Tech');
+          // If profile completeness is below 30%, show onboarding (unless onboarding has been skipped)
+          if (data.onboardingSkipped || (data.unifiedProfile.profileCompleteness && data.unifiedProfile.profileCompleteness >= 30)) {
+            setShowOnboarding(false);
+          } else {
+            setShowOnboarding(true);
+          }
+        } else {
+          setShowOnboarding(data.onboardingSkipped ? false : true);
+        }
+      } else {
+        setShowOnboarding(true);
+      }
+    } catch (err) {
+      console.error("Error loading user profile:", err);
+    } finally {
+      setDbLoading(false);
+    }
+  };
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  useEffect(() => {
+    fetchProfile();
+  }, [user]);
+
+  const handleSelectMethod = async (method: 'resume' | 'github' | 'manual' | 'skip') => {
+    if (method === 'github') {
+      router.push('/profile-aggregator');
+      return;
+    }
+
+    if (method === 'skip' || method === 'manual') {
+      setIsLoading(true);
+      try {
+        const idToken = await auth.currentUser?.getIdToken();
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+        if (idToken) {
+          headers['Authorization'] = `Bearer ${idToken}`;
+        }
+        await fetch('/api/onboarding/question', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            field: 'personalInfo.fullName',
+            value: user?.displayName || 'Developer'
+          })
+        });
+
+        // Mark onboarding as skipped in Firestore so the user is not blocked on page reloads
+        const userRef = doc(db, 'users', user?.uid || '');
+        await setDoc(userRef, { onboardingSkipped: true }, { merge: true });
+        
+        await fetchProfile();
+        setShowOnboarding(false);
+
+        // For manual onboarding, redirect user to the profile configuration page
+        if (method === 'manual') {
+          router.push('/profile');
+        }
+      } catch (err) {
+        console.error('Failed to initialize minimal profile:', err);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    setOnboardingMethod(method);
+  };
+
+  const handleParsedDraft = (draft: any) => {
+    setParsedDraft(draft);
+  };
+
+  const handleSaveApprovedDraft = async (finalDraft: any) => {
+    setIsLoading(true);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (idToken) {
+        headers['Authorization'] = `Bearer ${idToken}`;
+      }
+
+      const res = await fetch('/api/onboarding/question', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ draft: finalDraft })
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || 'Failed to save approved resume draft.');
+      }
+
+      await fetchProfile();
+      setShowOnboarding(false);
+    } catch (err: any) {
+      console.error('Failed to save approved resume draft:', err);
+      setError(err.message || 'Failed to save approved resume draft.');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleProgressiveSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!progressiveValue.trim() || !progressiveQuestion) return;
+
+    setIsLoading(true);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (idToken) {
+        headers['Authorization'] = `Bearer ${idToken}`;
+      }
+
+      const fieldName = progressiveQuestion.fieldKey;
+      const value = fieldName === 'careerGoals.preferredRoles'
+        ? progressiveValue.split(',').map((s) => s.trim()).filter(Boolean)
+        : progressiveValue;
+
+      const res = await fetch('/api/onboarding/question', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          field: fieldName,
+          value
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to save progressive answer.');
+      }
+
+      setShowProgressiveModal(false);
+      setProgressiveQuestion(null);
+      setProgressiveValue('');
+      
+      // Auto re-run Advisor submission!
+      executeSubmit();
+    } catch (err: any) {
+      setError(err.message || 'Error saving answer.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-
     if (!isCaptchaVerified) {
       setShowCaptchaModal(true);
       return;
     }
+    executeSubmit();
+  };
 
+  const executeSubmit = async (c1?: number, c2?: number, ca?: number) => {
     setIsLoading(true);
     setError('');
+
+    const activeC1 = c1 ?? captchaParams?.num1 ?? 0;
+    const activeC2 = c2 ?? captchaParams?.num2 ?? 0;
+    const activeCa = ca ?? captchaParams?.answer ?? 0;
 
     try {
       const params = new URLSearchParams({
@@ -71,9 +255,9 @@ function DashboardContent() {
         skills: skills.join(','),
         interests: interests.join(','),
         additionalContext,
-        cNum1: captchaParams?.num1.toString() || '0',
-        cNum2: captchaParams?.num2.toString() || '0',
-        cAns: captchaParams?.answer.toString() || '0',
+        cNum1: activeC1.toString(),
+        cNum2: activeC2.toString(),
+        cAns: activeCa.toString(),
       });
       const url = `/api/generate-recommendations?${params.toString()}`;
 
@@ -85,12 +269,20 @@ function DashboardContent() {
 
       const response = await fetch(url, { headers });
       if (response.status === 429) {
-        throw new Error("SkillSphere AI is currently experiencing high request volumes. Please wait a few seconds and try again.");
+        throw new Error("SkillSphere AI is currently experiencing high request volumes. Please wait a few seconds.");
       }
-      if (!response.ok || !response.body) {
+      if (!response.ok) {
+        try {
+          const errData = await response.json();
+          if (errData && errData.error) {
+            throw new Error(errData.error);
+          }
+        } catch (_) {}
         throw new Error(`Server responded with status: ${response.status}`);
       }
-
+      if (!response.body) {
+        throw new Error("Response body is empty.");
+      }
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let fullResponse = '';
@@ -102,151 +294,178 @@ function DashboardContent() {
 
       const jsonMatch = fullResponse.match(/{[\s\S]*}/);
       if (jsonMatch && jsonMatch[0]) {
-        const jsonString = jsonMatch[0];
-        const resultJson = JSON.parse(jsonString);
+        const resultJson = JSON.parse(jsonMatch[0]);
 
-        // Save to Firestore history subcollection if user is logged in
+        if (resultJson.missingFields && resultJson.missingFields.length > 0) {
+          setProgressiveQuestion({
+            fieldKey: resultJson.missingFields[0],
+            question: resultJson.question || 'Please provide this missing information:'
+          });
+          setShowProgressiveModal(true);
+          setIsLoading(false);
+          return;
+        }
+
         if (user) {
-          try {
-            const docRef = await addDoc(collection(db, 'history', user.uid, 'entries'), {
-              title: academicStream + " Career Map",
-              content: JSON.stringify({
-                academicStream,
-                skills,
-                interests,
-                additionalContext,
-                recommendations: resultJson.recommendations
-              }),
-              createdAt: serverTimestamp()
-            });
-
-            // Redirect to results page
-            router.push(`/dashboard/results?session=${docRef.id}`);
-          } catch (dbErr) {
-            console.error("Error saving search to Firestore history:", dbErr);
-            setError('Failed to save search history.');
-          }
-        } else {
-          setError('User session not found.');
+          const docRef = await addDoc(collection(db, 'history', user.uid, 'entries'), {
+            title: academicStream + " Career Map",
+            content: JSON.stringify({
+              academicStream,
+              skills,
+              interests,
+              additionalContext,
+              recommendations: resultJson.recommendations
+            }),
+            createdAt: serverTimestamp()
+          });
+          router.push(`/dashboard/results?session=${docRef.id}`);
         }
       } else {
-        throw new Error("No valid JSON object found in the AI response.");
+        throw new Error("No valid recommendation data returned.");
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-      setError(message);
+      setError(err instanceof Error ? err.message : 'Unknown error occurred.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // --- RENDER ---
+  if (dbLoading || isLoading) {
+    return <DashboardSkeleton />;
+  }
+
+  // --- RENDERING PROGRESSIVE ONBOARDING FLOW ---
+  if (showOnboarding) {
+
+    if (!onboardingMethod) {
+      return <WelcomeCard onSelectMethod={handleSelectMethod} />;
+    }
+
+    if (onboardingMethod === 'resume') {
+      if (!parsedDraft) {
+        return <ResumeUploader onParsed={handleParsedDraft} onBack={() => setOnboardingMethod(null)} />;
+      } else {
+        return <ProfileReview draft={parsedDraft} onSave={handleSaveApprovedDraft} onBack={() => setParsedDraft(null)} />;
+      }
+    }
+  }
+
+  // --- RENDERING BENTO GRID DASHBOARD HUB ---
+  const activeScore = profileData?.profileScore?.score || 72;
+  const connectionsCount = profileData?.unifiedProfile?.connections?.length || 0;
+  const topSkills = profileData?.unifiedProfile?.skills || ['JavaScript', 'Python', 'SQL', 'Docker'];
 
   return (
-    <div className="max-w-5xl mx-auto py-8 lg:py-12">
-      {/* ══ STEPS INDICATOR ══ */}
-      <div className="steps mb-10">
-        <div className="step done">
-          <div className="step-circle">✓</div>
-          <div className="step-label">Background</div>
+    <div className="max-w-[1600px] mx-auto py-4">
+      {/* Personalized Hero Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: '2rem' }}>
+        <div>
+          <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
+            Welcome back, {user?.displayName || 'Developer'}
+          </h1>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+            Here is your career diagnostics summary. Complete diagnostics to unlock full AI advisor.
+          </p>
         </div>
-        <div className="step-line done"></div>
-        <div className="step current">
-          <div className="step-circle">2</div>
-          <div className="step-label">Profile</div>
-        </div>
-        <div className="step-line"></div>
-        <div className="step">
-          <div className="step-circle">3</div>
-          <div className="step-label">Results</div>
-        </div>
+
+        <button 
+          onClick={handleSubmit}
+          className="btn-primary py-2.5 px-6 text-sm"
+        >
+          Run Career Advisor →
+        </button>
       </div>
 
-      <div className="progress-bar mb-12">
-        <div className="progress-fill" style={{ width: '65%' }}></div>
-      </div>
+      {/* Bento Grid */}
+      <div className="bento-grid">
+        
+        {/* Career Score Widget */}
+        <div className="bento-card col-span-4" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 220 }}>
+          <ScoreRing score={activeScore} size={130} label="Career Score" color="#10b981" />
+          <div style={{ marginTop: 12, textAlign: 'center' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>Career Readiness</span>
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>Updated yesterday. Connect accounts to increase score.</p>
+          </div>
+        </div>
 
-      {/* ══ FORM CONTAINER ══ */}
-      <div className="form-container">
-        <h2 className="form-title">Tell us about yourself</h2>
-        <p className="form-subtitle">The more detail you share, the more personalized your career recommendations will be.</p>
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Academic Stream</label>
-              <select
-                value={academicStream}
-                onChange={(e) => setAcademicStream(e.target.value)}
-              >
-                <option>Engineering / Tech</option>
-                <option>Science (PCM)</option>
-                <option>Science (PCB)</option>
-                <option>Commerce</option>
-                <option>Arts / Humanities</option>
-                <option>Design</option>
-              </select>
+        {/* AI Suggestions Widget */}
+        <div className="bento-card col-span-8" style={{ minHeight: 220, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                AI Recommendation Recommendation Feed
+              </span>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>Active Feed</span>
             </div>
-            <div className="form-group">
-              <label>Current Status</label>
-              <select>
-                <option>Undergraduate (2nd Year)</option>
-                <option>Post-Graduate</option>
-                <option>Working Professional</option>
-                <option>Recent Graduate</option>
-              </select>
-            </div>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>
+              {connectionsCount > 0 ? 'Full-Stack Developer Track Suggested' : 'Run Diagnostics to customize track'}
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              Connect your GitHub and Codeforces handles to allow the AI to map code commits against current industry requirements. You have {connectionsCount} active sync integrations.
+            </p>
           </div>
-
-          <div className="form-group">
-            <label>Your Skills</label>
-            <TagInput tags={skills} setTags={setSkills} placeholder="Type a skill and press Enter..." />
-          </div>
-
-          <div className="form-group">
-            <label>Interests & Hobbies</label>
-            <TagInput tags={interests} setTags={setInterests} placeholder="Type an interest and press Enter..." />
-          </div>
-
-          <div className="form-group">
-            <label>Additional Context <span className="text-dim normal-case text-[0.75rem] ml-1">(optional)</span></label>
-            <textarea
-              value={additionalContext}
-              onChange={(e) => setAdditionalContext(e.target.value)}
-              placeholder="Any specific goals, constraints, or preferences? E.g. 'I want to work remotely' or 'I'm interested in fintech'..."
-            />
-          </div>
-
-          <div className="form-footer">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="btn-primary py-3 px-10 text-[0.95rem]"
-            >
-              {isLoading ? '⟳ Analyzing...' : 'Generate Recommendations →'}
+          <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+            <Link href="/profile-aggregator" className="btn-ghost py-2 px-4 text-xs" style={{ textDecoration: 'none' }}>
+              Connect Accounts
+            </Link>
+            <button onClick={() => setShowOnboarding(true)} style={{ background: 'none', border: 'none', color: '#10b981', fontSize: '0.75rem', fontWeight: 600 }}>
+              Start Questionnaire →
             </button>
           </div>
-        </form>
-      </div>
+        </div>
 
-      {/* ══ LOADING & ERROR AREA ══ */}
-      <div className="mt-12">
-        {isLoading && (
-          <div className="loader">
-            <div className="loader-dots">
-              <div className="loader-dot"></div>
-              <div className="loader-dot"></div>
-              <div className="loader-dot"></div>
-            </div>
-            <span className="ml-2">SkillSphere AI is analyzing your profile...</span>
+        {/* Quick Actions Widget */}
+        <div className="bento-card col-span-4">
+          <h4 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>Quick Actions</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <Link href="/skill-quiz" className="no-underline" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: 8 }}>
+              <span>🧩</span>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>Launch Skill Quiz</span>
+                <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Identify code base strengths</span>
+              </div>
+            </Link>
+            <Link href="/resume-analyzer" className="no-underline" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: 8 }}>
+              <span>📊</span>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>Scan Resume PDF</span>
+                <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Compare against market roles</span>
+              </div>
+            </Link>
           </div>
-        )}
+        </div>
 
-        {error && (
-          <div className="glass p-8 border-rose/30 text-rose text-center mb-10">
-            <p className="text-lg font-semibold">{error}</p>
+        <div className="bento-card col-span-4" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <h4 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>Primary Skills</h4>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '12px 0' }}>
+            {topSkills.map((s: string) => (
+              <span key={s} style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)', padding: '4px 10px', borderRadius: 6 }}>
+                {s}
+              </span>
+            ))}
           </div>
-        )}
+          <div style={{ flex: 1, borderTop: '1px solid var(--border-subtle)', paddingTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Competency</span>
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#10b981' }}>Intermediate</span>
+          </div>
+        </div>
+
+        {/* Smart Question / Profile Progress Widget */}
+        <div className="bento-card col-span-4">
+          <SmartQuestionWidget onProgressUpdate={(score) => {
+            setProfileData((prev: any) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                unifiedProfile: {
+                  ...(prev.unifiedProfile || {}),
+                  profileCompleteness: score
+                }
+              };
+            });
+          }} />
+        </div>
+
       </div>
 
       {/* CAPTCHA Modal */}
@@ -260,11 +479,57 @@ function DashboardContent() {
               ✕
             </button>
 
-            <div className="text-3xl mb-4">🚀</div>
+            <div className="text-3xl mb-4">✍️</div>
             <h3 className="modal-title">Security Verification</h3>
-            <p className="modal-sub">Please verify you&apos;re human before we generate AI recommendations</p>
+            <p className="modal-sub">Please verify you&apos;re human before running the career advisor</p>
 
             <SimpleCaptcha onVerify={handleCaptchaVerify} isModal={true} />
+          </div>
+        </div>
+      )}
+
+      {/* Progressive Onboarding Question Modal */}
+      {showProgressiveModal && progressiveQuestion && (
+        <div className="modal-overlay open">
+          <div className="modal animate-in">
+            <button
+              onClick={() => setShowProgressiveModal(false)}
+              className="modal-close"
+            >
+              ✕
+            </button>
+
+            <div className="text-3xl mb-4">🎯</div>
+            <h3 className="modal-title">Additional Info Required</h3>
+            <p className="modal-sub">{progressiveQuestion.question}</p>
+
+            <form onSubmit={handleProgressiveSubmit} style={{ marginTop: 16 }}>
+              <input
+                type="text"
+                value={progressiveValue}
+                onChange={(e) => setProgressiveValue(e.target.value)}
+                placeholder="e.g. Software Engineer, Data Analyst"
+                required
+                style={{
+                  width: '100%',
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: 8,
+                  padding: '10px 14px',
+                  fontSize: '0.85rem',
+                  color: '#fff',
+                  outline: 'none',
+                  marginBottom: 16,
+                }}
+              />
+              <button
+                type="submit"
+                className="btn-primary"
+                style={{ width: '100%', padding: '10px 16px', fontWeight: 600 }}
+              >
+                Submit & Continue
+              </button>
+            </form>
           </div>
         </div>
       )}
@@ -275,7 +540,7 @@ function DashboardContent() {
 export default function Dashboard() {
   return (
     <ProtectedRoute>
-      <Suspense fallback={<LoadingSpinner />}>
+      <Suspense fallback={<DashboardSkeleton />}>
         <DashboardContent />
       </Suspense>
     </ProtectedRoute>

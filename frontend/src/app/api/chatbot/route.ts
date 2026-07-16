@@ -5,6 +5,7 @@ import { logger } from '@/services/logger';
 import { successResponse, errorResponse } from '@/utils';
 import { chatbotSchema } from '@/lib/validation';
 import { globalRateLimiter } from '@/lib/rateLimit';
+import { contextBuilder } from '@/services/onboarding/contextBuilder';
 
 export async function POST(req: NextRequest) {
   const start = Date.now();
@@ -42,7 +43,13 @@ export async function POST(req: NextRequest) {
       messageLength: message.length,
     });
 
-    const aiRes = await chatbotAi.respond(userName || 'User', message);
+    // Build profile memory context
+    let context = '';
+    if (userId !== 'anonymous') {
+      context = await contextBuilder.getChatbotAIContext(userId);
+    }
+
+    const aiRes = await chatbotAi.respond(userName || 'User', message, context);
     const latency = Date.now() - start;
 
     logger.info(`[Chatbot API] [ReqId: ${requestId}] Completed successfully in ${latency}ms`);

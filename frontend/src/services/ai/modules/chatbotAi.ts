@@ -9,8 +9,8 @@ export function getFallbackChatResponse() {
  * Chatbot AI Business Domain Module
  */
 export class ChatbotAi {
-  async respond(userName: string, message: string): Promise<StandardAiResponse<string>> {
-    const prompt = getChatbotPrompt(userName, message);
+  async respond(userName: string, message: string, context?: string): Promise<StandardAiResponse<string>> {
+    const prompt = getChatbotPrompt(userName, message) + (context ? `\n\nContext about the user profile:\n${context}` : '');
     const fallback = getFallbackChatResponse();
 
     return await aiService.generateText(prompt, fallback);

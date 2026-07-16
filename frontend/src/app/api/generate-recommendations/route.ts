@@ -5,6 +5,7 @@ import { logger } from '@/services/logger';
 import { successResponse, errorResponse } from '@/utils';
 import { generateRecommendationsSchema } from '@/lib/validation';
 import { globalRateLimiter } from '@/lib/rateLimit';
+import { contextBuilder } from '@/services/onboarding/contextBuilder';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,17 +58,35 @@ export async function GET(request: NextRequest) {
       return errorResponse('Security check failed. Please verify CAPTCHA.', 400);
     }
 
-    // Convert comma strings into arrays
-    const skillsList = skills ? skills.split(',').map((s) => s.trim()).filter(Boolean) : [];
-    const interestsList = interests ? interests.split(',').map((s) => s.trim()).filter(Boolean) : [];
+    // Check and load dynamic profile context
+    let activeStream = academicStream;
+    let activeSkills = skills ? skills.split(',').map((s) => s.trim()).filter(Boolean) : [];
+    let activeInterests = interests ? interests.split(',').map((s) => s.trim()).filter(Boolean) : [];
+
+    if (userId !== 'anonymous') {
+      const userContext = await contextBuilder.getCareerAIContext(userId);
+      if (userContext) {
+        // If preferred roles are completely missing, ask the user progressively
+        if (!userContext.preferredRoles || userContext.preferredRoles.length === 0) {
+          return successResponse({
+            missingFields: ['careerGoals.preferredRoles'],
+            question: 'What professional role(s) are you targeting?'
+          });
+        }
+        
+        if (userContext.academicStream) activeStream = userContext.academicStream;
+        if (userContext.skills.length > 0) activeSkills = userContext.skills;
+        if (userContext.interests.length > 0) activeInterests = userContext.interests;
+      }
+    }
 
     logger.info(`[Generate Recommendations API] [ReqId: ${requestId}] Generating recommendations for user: ${userId}`, {
-      academicStream,
-      skillsCount: skillsList.length,
-      interestsCount: interestsList.length,
+      academicStream: activeStream,
+      skillsCount: activeSkills.length,
+      interestsCount: activeInterests.length,
     });
 
-    const aiRes = await careerAi.generateRecommendations(academicStream, skillsList, interestsList);
+    const aiRes = await careerAi.generateRecommendations(activeStream, activeSkills, activeInterests);
     const latency = Date.now() - start;
 
     logger.info(`[Generate Recommendations API] [ReqId: ${requestId}] Completed successfully in ${latency}ms`);

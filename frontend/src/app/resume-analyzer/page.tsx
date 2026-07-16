@@ -4,28 +4,130 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
 import FileUpload from '@/components/ui/FileUpload';
 import ScoreGauge from '@/components/charts/ScoreGauge';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { useAuth } from '@/hooks';
 import type { ResumeAnalysis } from '@/types';
 
 function ResumeAnalyzerContent() {
+    const { user } = useAuth();
     const [resumeText, setResumeText] = useState('');
+    const [resumeUploadedFilename, setResumeUploadedFilename] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [analysis, setAnalysis] = useState<ResumeAnalysis | null>(null);
     const [copiedSummary, setCopiedSummary] = useState(false);
 
+    useEffect(() => {
+        if (!user) return;
+
+        const loadResume = async () => {
+            setLoading(true);
+            try {
+                const userDocRef = doc(db, 'users', user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                if (userDocSnap.exists()) {
+                    const data = userDocSnap.data();
+                    if (data.currentResumeText) {
+                        setResumeText(data.currentResumeText);
+                        if (data.currentResumeFilename) {
+                            setResumeUploadedFilename(data.currentResumeFilename);
+                        }
+                        
+                        // Auto-run analysis if resume exists
+                        const idToken = await auth.currentUser?.getIdToken();
+                        const headers: Record<string, string> = {
+                            'Content-Type': 'application/json',
+                        };
+                        if (idToken) {
+                            headers['Authorization'] = `Bearer ${idToken}`;
+                        }
+
+                        const response = await fetch('/api/resume-analyzer', {
+                            method: 'POST',
+                            headers,
+                            body: JSON.stringify({ resumeText: data.currentResumeText }),
+                        });
+                        if (response.ok) {
+                            const result = await response.json();
+                            setAnalysis(result);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Error loading resume details:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadResume();
+    }, [user]);
+
     const handleFileSelect = async (file: File) => {
-        // Read file as text for .txt / .doc, or just set the name for PDF
-        if (file.name.endsWith('.txt')) {
-            const text = await file.text();
-            setResumeText(text);
-        } else {
-            // For PDF/DOCX, show file name — in production this would parse the file
-            setResumeText(`[Uploaded: ${file.name}] — PDF parsing requires server-side processing. Please also paste your resume text below for best results.`);
+        setLoading(true);
+        setError('');
+        try {
+            if (file.name.endsWith('.txt')) {
+                const text = await file.text();
+                setResumeText(text);
+            } else {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const idToken = await auth.currentUser?.getIdToken();
+                const headers: Record<string, string> = {};
+                if (idToken) {
+                    headers['Authorization'] = `Bearer ${idToken}`;
+                }
+
+                const res = await fetch('/api/onboarding/parse-resume', {
+                    method: 'POST',
+                    headers,
+                    body: formData,
+                });
+
+                if (!res.ok) {
+                    const errJson = await res.json().catch(() => ({}));
+                    throw new Error(errJson.error || 'Failed to parse resume document.');
+                }
+
+                const responseData = await res.json();
+                const draft = responseData.data;
+
+                if (draft) {
+                    const draftText = `Name: ${draft.personalInfo.fullName || ''}
+Email: ${draft.personalInfo.email || ''}
+Location: ${draft.personalInfo.location || ''}
+GitHub: ${draft.personalInfo.githubUrl || ''}
+LinkedIn: ${draft.personalInfo.linkedinUrl || ''}
+
+SKILLS:
+${(draft.skills || []).join(', ')}
+
+EXPERIENCE:
+${(draft.experience || []).map((e: any) => `${e.role || ''} at ${e.company || ''} (${e.duration || ''})\n${e.description || ''}`).join('\n\n')}
+
+PROJECTS:
+${(draft.projects || []).map((p: any) => `${p.title || ''} (${(p.technologies || []).join(', ')})\n${p.description || ''}`).join('\n\n')}
+
+EDUCATION:
+${(draft.education || []).map((ed: any) => `${ed.degree || ''} - ${ed.institution || ''} (${ed.graduationYear || ''})`).join('\n')}`;
+
+                    setResumeText(draftText);
+                    setResumeUploadedFilename(file.name);
+                } else {
+                    throw new Error('Could not parse resume data structure.');
+                }
+            }
+        } catch (err: any) {
+            setError(err.message || 'Failed to parse uploaded file.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -110,14 +212,19 @@ function ResumeAnalyzerContent() {
                     {/* Upload Resume */}
                     <div className="ra-section animate-fade-up">
                         <div className="ra-section-title">
-                            <span>📎</span> Upload Resume
+                            <span>📎</span> {resumeUploadedFilename ? "Upload Updated Resume" : "Upload Resume"}
                         </div>
                         <FileUpload
                             accept=".pdf,.doc,.docx"
                             onFileSelect={handleFileSelect}
-                            label="Drop your PDF here"
-                            hint="or click to browse · PDF, DOC, DOCX"
+                            label={resumeUploadedFilename ? "Upload Updated Resume" : "Drop your PDF here"}
+                            hint={resumeUploadedFilename ? `✓ Resume uploaded: ${resumeUploadedFilename} — using this for all features` : "or click to browse · PDF, DOC, DOCX"}
                         />
+                        {resumeUploadedFilename && (
+                            <div style={{ fontSize: '0.78rem', color: 'var(--accent-teal)', marginTop: '8px', fontWeight: 600 }}>
+                                ✓ Resume uploaded: {resumeUploadedFilename} — using this for all features
+                            </div>
+                        )}
                         <button
                             className="btn-primary"
                             onClick={handleAnalyze}

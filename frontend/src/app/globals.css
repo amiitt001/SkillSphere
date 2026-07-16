@@ -1964,3 +1964,290 @@ button {
   border-radius: 4px;
   white-space: nowrap;
 }
+
+/* ═══════════════════════════════════════════════════
+   ── SPRINT 2.0 PREMIUM PRIMITIVES ──
+   ═══════════════════════════════════════════════════ */
+
+/* Grouped Sidebar headers */
+.sidebar-section-header {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  padding: 0.75rem 0.5rem 0.25rem;
+  margin-top: 1rem;
+}
+
+/* Active navigation pill indicator */
+.nav-pill.active {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary) !important;
+  border-left: 3px solid #10b981; /* emerald accent indicator */
+  border-radius: 0 12px 12px 0;
+  padding-left: 13px !important; /* adjust for border */
+  box-shadow: inset 10px 0 20px -10px rgba(16, 185, 129, 0.15);
+}
+
+.nav-pill.active svg {
+  color: #10b981 !important;
+  transform: scale(1.05);
+}
+
+/* Bento Grid System */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.5rem;
+}
+
+.bento-card {
+  background: rgba(18, 18, 18, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 1.5rem;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.bento-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(16, 185, 129, 0.02);
+}
+
+/* Bento Grid Column Span Helpers */
+.col-span-12 { grid-column: span 12; }
+.col-span-8 { grid-column: span 8; }
+.col-span-6 { grid-column: span 6; }
+.col-span-4 { grid-column: span 4; }
+.col-span-3 { grid-column: span 3; }
+
+@media (max-width: 1024px) {
+  .bento-grid { grid-template-columns: 1fr; }
+  .col-span-12, .col-span-8, .col-span-6, .col-span-4, .col-span-3 { grid-column: span 12; }
+}
+
+/* Command Palette Overlay */
+.cmd-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+}
+
+.cmd-container {
+  width: 100%;
+  max-width: 600px;
+  background: rgba(20, 20, 20, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cmd-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cmd-search-input {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  font-size: 1.05rem !important;
+  color: var(--text-primary) !important;
+  box-shadow: none !important;
+}
+
+.cmd-results {
+  max-height: 350px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.cmd-group-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 8px 12px 4px;
+}
+
+.cmd-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.cmd-item.active, .cmd-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.cmd-shortcut {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--text-dim);
+}
+
+/* Notification Center Dropdown */
+.notif-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 360px;
+  background: rgba(20, 20, 20, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  padding: 8px;
+  z-index: 1010;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.notif-item {
+  padding: 12px;
+  border-radius: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  transition: background 0.15s;
+}
+
+.notif-item:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.notif-item:last-child {
+  border-bottom: none;
+}
+
+.notif-dot {
+  width: 6px;
+  height: 6px;
+  background: #10b981;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Skeleton Loading Pulsing Waves */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.02) 25%,
+    rgba(255, 255, 255, 0.06) 50%,
+    rgba(255, 255, 255, 0.02) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-animation 1.5s infinite linear;
+  border-radius: 8px;
+}
+
+@keyframes shimmer-animation {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Tag Input Autocomplete suggestions */
+.tag-autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(18, 18, 18, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  z-index: 50;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+.tag-autocomplete-item {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.tag-autocomplete-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+/* Premium Stepper Styles */
+.stepper-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.stepper-step {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  opacity: 0.5;
+  transition: opacity 0.3s;
+}
+
+.stepper-step.active {
+  opacity: 1;
+}
+
+.stepper-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  transition: all 0.3s;
+}
+
+.stepper-step.active .stepper-circle {
+  background: #10b981;
+  border-color: #10b981;
+  color: var(--bg-void);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+}
+
+.stepper-step.completed .stepper-circle {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}

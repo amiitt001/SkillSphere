@@ -5,20 +5,41 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { useAuth, useCaptcha } from '@/hooks';
 import SimpleCaptcha from '@/components/ui/SimpleCaptcha';
-import { useCaptcha } from '@/hooks';
 
 function ResumeHelperContent() {
+  const { user } = useAuth();
   // --- STATE MANAGEMENT ---
-  const [skills] = useState<string[]>(['Python', 'JavaScript', 'SQL']);
+  const [skills, setSkills] = useState<string[]>(['Python', 'JavaScript', 'SQL']);
   const [jobDescription, setJobDescription] = useState('');
   const [isHelping, setIsHelping] = useState(false);
   const [resumePoints, setResumePoints] = useState('');
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!user) return;
+    const loadProfileSkills = async () => {
+      try {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.unifiedProfile && data.unifiedProfile.skills && data.unifiedProfile.skills.length > 0) {
+            const list = data.unifiedProfile.skills.map((s: any) => typeof s === 'string' ? s : s.name);
+            setSkills(list);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading user profile skills:", err);
+      }
+    };
+    loadProfileSkills();
+  }, [user]);
 
   // --- ACTIONS ---
   const {

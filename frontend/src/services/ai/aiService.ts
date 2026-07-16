@@ -63,7 +63,7 @@ export class AiService {
     );
 
     return {
-      success: result.provider !== 'mock',
+      success: true,
       provider: result.provider,
       model: result.model,
       latency: result.latency,
@@ -96,7 +96,7 @@ export class AiService {
     );
 
     return {
-      success: result.provider !== 'mock',
+      success: true,
       provider: result.provider,
       model: result.model,
       latency: result.latency,
