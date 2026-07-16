@@ -157,11 +157,12 @@ export class CareerAi {
   async generateRecommendations(
     academicStream: string,
     skills: string[],
-    interests: string[]
+    interests: string[],
+    generateMore?: boolean
   ): Promise<StandardAiResponse<any>> {
     const skillsStr = skills.map((s) => s.trim()).sort().join(',');
     const interestsStr = interests.map((i) => i.trim()).sort().join(',');
-    const cacheKey = `recommendations:${academicStream}:${skillsStr}:${interestsStr}`;
+    const cacheKey = `recommendations:${academicStream}:${skillsStr}:${interestsStr}${generateMore ? ':more' : ''}`;
 
     try {
       const cached = await cacheStore.get<any>(cacheKey);
@@ -180,14 +181,17 @@ export class CareerAi {
       logger.error('[CareerAi] Cache read failed', err);
     }
 
-    const prompt = getRecommendationsPrompt(academicStream, skillsStr, interestsStr);
+    let prompt = getRecommendationsPrompt(academicStream, skillsStr, interestsStr);
+    if (generateMore) {
+      prompt += "\n\nCRITICAL HINT: Generate 3 ALTERNATIVE career recommendations that are completely different from typical paths. Do not recommend standard paths like Web Developer or generic ML Developer if they were likely suggested before. Focus on other relevant niche career opportunities that match the user's skillset and interests.";
+    }
     const fallback = getFallbackRecommendations(academicStream, skillsStr, interestsStr);
 
     const res = await aiService.generateJSON(prompt, fallback);
 
     if (res.success && res.provider !== 'mock') {
       try {
-        await cacheStore.set(cacheKey, res.data, 3600); // 1 hour TTL
+        await cacheStore.set(cacheKey, res.data);
       } catch (err) {
         logger.error('[CareerAi] Cache write failed', err);
       }

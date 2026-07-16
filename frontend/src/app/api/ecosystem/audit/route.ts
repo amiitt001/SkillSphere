@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     }
 
     const querySnap = await getDocs(collection(db, 'audit_logs'));
-    const logs = querySnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const logs: any[] = querySnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
     // Sort descending by timestamp
     logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());

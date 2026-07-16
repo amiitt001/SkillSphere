@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/authMiddleware';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, getDocs, collection } from 'firebase/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
+import '@/lib/firebaseAdmin';
 import { generateWeeklyReflection } from '@/services/copilot/reflectionEngine';
 import { getUserTasks } from '@/services/copilot/actionGenerator';
 import { logger } from '@/services/logger';
@@ -24,14 +24,15 @@ export async function GET(req: NextRequest) {
     }
 
     const uid = authResult.user!.uid;
-    const userRef = doc(db, 'users', uid);
-    const userSnap = await getDoc(userRef);
+    const db = getFirestore();
+    const userRef = db.collection('users').doc(uid);
+    const userSnap = await userRef.get();
 
-    if (!userSnap.exists() || !userSnap.data()?.unifiedProfile) {
+    if (!userSnap.exists || !userSnap.data()?.unifiedProfile) {
       return NextResponse.json({ error: 'Profile not initialized' }, { status: 400 });
     }
 
-    const userData = userSnap.data();
+    const userData = userSnap.data() || {};
     const currentWeekStr = getStartOfWeekString();
 
     // Check caching
@@ -45,13 +46,13 @@ export async function GET(req: NextRequest) {
     const activeTasks = tasks.filter(t => !t.completed);
 
     // Retrieve bookmarks
-    const bookmarksSnap = await getDocs(collection(db, 'users', uid, 'bookmarks'));
+    const bookmarksSnap = await userRef.collection('bookmarks').get();
     const bookmarks = bookmarksSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
     const reflection = await generateWeeklyReflection(completedTasks, activeTasks, bookmarks);
 
     // Save to Cache
-    await setDoc(userRef, {
+    await userRef.set({
       weeklyReflection: {
         week: currentWeekStr,
         data: reflection,

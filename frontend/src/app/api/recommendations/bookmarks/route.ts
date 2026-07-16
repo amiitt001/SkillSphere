@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/authMiddleware';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, deleteDoc, getDocs, collection, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import '@/lib/firebaseAdmin';
 import { logger } from '@/services/logger';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +15,8 @@ export async function GET(req: NextRequest) {
     }
 
     const uid = authResult.user!.uid;
-    const bookmarksSnap = await getDocs(collection(db, 'users', uid, 'bookmarks'));
+    const db = getFirestore();
+    const bookmarksSnap = await db.collection('users').doc(uid).collection('bookmarks').get();
     const bookmarks = bookmarksSnap.docs.map((doc) => ({
       id: doc.id,
       ...doc.data()
@@ -43,19 +44,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing opportunityId or type' }, { status: 400 });
     }
 
-    const bookmarkRef = doc(db, 'users', uid, 'bookmarks', opportunityId);
-    const bookmarkSnap = await getDoc(bookmarkRef);
+    const db = getFirestore();
+    const bookmarkRef = db.collection('users').doc(uid).collection('bookmarks').doc(opportunityId);
+    const bookmarkSnap = await bookmarkRef.get();
 
-    if (bookmarkSnap.exists()) {
+    if (bookmarkSnap.exists) {
       // Remove bookmark
-      await deleteDoc(bookmarkRef);
+      await bookmarkRef.delete();
       return NextResponse.json({ success: true, bookmarked: false });
     } else {
       // Save bookmark
-      await setDoc(bookmarkRef, {
+      await bookmarkRef.set({
         type,
         bookmarkedAt: new Date().toISOString(),
-        createdAt: serverTimestamp()
+        createdAt: FieldValue.serverTimestamp()
       });
       return NextResponse.json({ success: true, bookmarked: true });
     }

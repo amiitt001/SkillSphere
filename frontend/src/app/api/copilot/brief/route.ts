@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/authMiddleware';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, getDocs, collection, serverTimestamp } from 'firebase/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
+import '@/lib/firebaseAdmin';
 import { buildCopilotContext } from '@/services/copilot/contextBuilder';
 import { generateDailyBrief } from '@/services/copilot/recommendationPlanner';
 import { logger } from '@/services/logger';
@@ -16,14 +16,15 @@ export async function GET(req: NextRequest) {
     }
 
     const uid = authResult.user!.uid;
-    const userRef = doc(db, 'users', uid);
-    const userSnap = await getDoc(userRef);
+    const db = getFirestore();
+    const userRef = db.collection('users').doc(uid);
+    const userSnap = await userRef.get();
 
-    if (!userSnap.exists() || !userSnap.data()?.unifiedProfile) {
+    if (!userSnap.exists || !userSnap.data()?.unifiedProfile) {
       return NextResponse.json({ error: 'Profile not initialized' }, { status: 400 });
     }
 
-    const userData = userSnap.data();
+    const userData = userSnap.data() || {};
     const todayStr = new Date().toDateString();
 
     // Check caching
@@ -33,9 +34,9 @@ export async function GET(req: NextRequest) {
 
     // Load subcollections for context
     const [bookmarksSnap, applicationsSnap, progressSnap] = await Promise.all([
-      getDocs(collection(db, 'users', uid, 'bookmarks')),
-      getDocs(collection(db, 'users', uid, 'applications')),
-      getDocs(collection(db, 'users', uid, 'progress'))
+      userRef.collection('bookmarks').get(),
+      userRef.collection('applications').get(),
+      userRef.collection('progress').get()
     ]);
 
     const context = buildCopilotContext({
@@ -48,13 +49,15 @@ export async function GET(req: NextRequest) {
       aiAnalysis: userData.aiAnalysis || null,
       bookmarks: bookmarksSnap.docs.map(d => ({ id: d.id, ...d.data() })),
       applications: applicationsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
-      progress: progressSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+      progress: progressSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+      primaryCareerGoal: userData.primaryCareerGoal || undefined,
+      careerBlueprint: userData.careerBlueprint || undefined
     });
 
     const brief = await generateDailyBrief(context);
 
     // Save to Cache
-    await setDoc(userRef, {
+    await userRef.set({
       dailyBrief: {
         date: todayStr,
         data: brief,

@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
         const eligibility = checkGeneralEligibility(c.difficulty, userSkillCount);
         const impactScore = c.expectedImpact === 'Critical' ? 95 : c.expectedImpact === 'High' ? 80 : c.expectedImpact === 'Medium' ? 55 : 30;
         const scores = calculateRelevanceScores({
-          relevance: c.skillsGained.some(s => !profile.skills.map(us => us.toLowerCase()).includes(s.toLowerCase())) ? 85 : 40,
+          relevance: c.skillsGained.some(s => !profile.skills.map((us: string) => us.toLowerCase()).includes(s.toLowerCase())) ? 85 : 40,
           impact: impactScore,
           difficultyLevel: c.difficulty,
           timeToComplete: c.duration,

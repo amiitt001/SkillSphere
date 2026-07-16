@@ -80,13 +80,16 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const isGenerateMore = searchParams.get('generateMore') === 'true';
+
     logger.info(`[Generate Recommendations API] [ReqId: ${requestId}] Generating recommendations for user: ${userId}`, {
       academicStream: activeStream,
       skillsCount: activeSkills.length,
       interestsCount: activeInterests.length,
+      generateMore: isGenerateMore
     });
 
-    const aiRes = await careerAi.generateRecommendations(activeStream, activeSkills, activeInterests);
+    const aiRes = await careerAi.generateRecommendations(activeStream, activeSkills, activeInterests, isGenerateMore);
     const latency = Date.now() - start;
 
     logger.info(`[Generate Recommendations API] [ReqId: ${requestId}] Completed successfully in ${latency}ms`);

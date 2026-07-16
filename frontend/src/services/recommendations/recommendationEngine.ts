@@ -24,7 +24,8 @@ export async function generateRecommendationFeed(
   bookmarks: string[] = [],
   appliedJobIds: Record<string, string> = {}, // maps opportunityId -> applicationStatus
   completedItemIds: string[] = [],
-  ignoredIds: string[] = []
+  ignoredIds: string[] = [],
+  primaryCareerGoal?: string
 ): Promise<RecommendationFeed> {
   const userSkillCount = profile.skills.length;
 
@@ -34,8 +35,16 @@ export async function generateRecommendationFeed(
     .filter((j) => !ignoredIds.includes(j.id))
     .map((j) => {
       const eligibility = checkJobEligibility(j, j.missingSkills, profile);
+      let relevanceBooster = 0;
+      if (primaryCareerGoal && (
+        j.title.toLowerCase().includes(primaryCareerGoal.toLowerCase()) || 
+        j.skillsRequired.some((t: string) => t.toLowerCase().includes(primaryCareerGoal.toLowerCase())) ||
+        j.description.toLowerCase().includes(primaryCareerGoal.toLowerCase())
+      )) {
+        relevanceBooster = 25;
+      }
       const scores = calculateRelevanceScores({
-        relevance: j.matchPercentage,
+        relevance: Math.min(100, j.matchPercentage + relevanceBooster),
         impact: eligibility.status === 'Eligible' ? 80 : eligibility.status === 'Nearly Eligible' ? 50 : 20,
         difficultyLevel: j.difficultyLevel,
         timeToComplete: 'Immediate',
@@ -43,7 +52,10 @@ export async function generateRecommendationFeed(
       });
       return {
         ...j,
-        scores,
+        scores: {
+          ...scores,
+          overall: Math.min(100, scores.overall + (relevanceBooster > 0 ? 15 : 0))
+        },
         eligibility,
         isBookmarked: bookmarks.includes(j.id),
         applicationStatus: appliedJobIds[j.id] || undefined
@@ -57,8 +69,16 @@ export async function generateRecommendationFeed(
     .filter((i) => !ignoredIds.includes(i.id))
     .map((i) => {
       const eligibility = checkInternshipEligibility(i, i.missingSkills, userYear);
+      let relevanceBooster = 0;
+      if (primaryCareerGoal && (
+        i.title.toLowerCase().includes(primaryCareerGoal.toLowerCase()) || 
+        i.skillsRequired.some((t: string) => t.toLowerCase().includes(primaryCareerGoal.toLowerCase())) ||
+        i.description.toLowerCase().includes(primaryCareerGoal.toLowerCase())
+      )) {
+        relevanceBooster = 25;
+      }
       const scores = calculateRelevanceScores({
-        relevance: i.matchPercentage,
+        relevance: Math.min(100, i.matchPercentage + relevanceBooster),
         impact: i.tier === 'Dream' ? 90 : i.tier === 'Stretch' ? 65 : 45,
         difficultyLevel: 'Entry',
         timeToComplete: i.duration,
@@ -66,7 +86,10 @@ export async function generateRecommendationFeed(
       });
       return {
         ...i,
-        scores,
+        scores: {
+          ...scores,
+          overall: Math.min(100, scores.overall + (relevanceBooster > 0 ? 15 : 0))
+        },
         eligibility,
         isBookmarked: bookmarks.includes(i.id),
         applicationStatus: appliedJobIds[i.id] || undefined
@@ -81,8 +104,16 @@ export async function generateRecommendationFeed(
     .map((c) => {
       const eligibility = checkGeneralEligibility(c.difficulty, userSkillCount);
       const impactScore = c.expectedImpact === 'Critical' ? 95 : c.expectedImpact === 'High' ? 80 : c.expectedImpact === 'Medium' ? 55 : 30;
+      let relevanceBooster = 0;
+      if (primaryCareerGoal && (
+        c.title.toLowerCase().includes(primaryCareerGoal.toLowerCase()) ||
+        c.description.toLowerCase().includes(primaryCareerGoal.toLowerCase()) ||
+        c.skillsGained.some(s => s.toLowerCase().includes(primaryCareerGoal.toLowerCase()))
+      )) {
+        relevanceBooster = 25;
+      }
       const scores = calculateRelevanceScores({
-        relevance: c.skillsGained.some(s => !profile.skills.map(us => us.toLowerCase()).includes(s.toLowerCase())) ? 85 : 40,
+        relevance: Math.min(100, (c.skillsGained.some(s => !profile.skills.map(us => us.toLowerCase()).includes(s.toLowerCase())) ? 85 : 40) + relevanceBooster),
         impact: impactScore,
         difficultyLevel: c.difficulty,
         timeToComplete: c.duration,
@@ -90,7 +121,10 @@ export async function generateRecommendationFeed(
       });
       return {
         ...c,
-        scores,
+        scores: {
+          ...scores,
+          overall: Math.min(100, scores.overall + (relevanceBooster > 0 ? 15 : 0))
+        },
         eligibility,
         isBookmarked: bookmarks.includes(c.id),
         isCompleted: completedItemIds.includes(c.id)
@@ -104,8 +138,16 @@ export async function generateRecommendationFeed(
     .filter((cert) => !ignoredIds.includes(cert.id))
     .map((cert) => {
       const eligibility = checkGeneralEligibility('Intermediate', userSkillCount);
+      let relevanceBooster = 0;
+      if (primaryCareerGoal && (
+        cert.name.toLowerCase().includes(primaryCareerGoal.toLowerCase()) ||
+        cert.provider.toLowerCase().includes(primaryCareerGoal.toLowerCase()) ||
+        cert.skillsAddressed.some(s => s.toLowerCase().includes(primaryCareerGoal.toLowerCase()))
+      )) {
+        relevanceBooster = 25;
+      }
       const scores = calculateRelevanceScores({
-        relevance: cert.skillsAddressed.some(s => !profile.skills.map(us => us.toLowerCase()).includes(s.toLowerCase())) ? 75 : 50,
+        relevance: Math.min(100, (cert.skillsAddressed.some(s => !profile.skills.map(us => us.toLowerCase()).includes(s.toLowerCase())) ? 75 : 50) + relevanceBooster),
         impact: cert.roiScore,
         difficultyLevel: 'Intermediate',
         timeToComplete: cert.timeInvestment,
@@ -113,7 +155,10 @@ export async function generateRecommendationFeed(
       });
       return {
         ...cert,
-        scores,
+        scores: {
+          ...scores,
+          overall: Math.min(100, scores.overall + (relevanceBooster > 0 ? 15 : 0))
+        },
         eligibility,
         isBookmarked: bookmarks.includes(cert.id),
         isCompleted: completedItemIds.includes(cert.id)
@@ -127,8 +172,16 @@ export async function generateRecommendationFeed(
     .filter((p) => !ignoredIds.includes(p.id))
     .map((p) => {
       const eligibility = checkGeneralEligibility(p.difficulty, userSkillCount);
+      let relevanceBooster = 0;
+      if (primaryCareerGoal && (
+        p.title.toLowerCase().includes(primaryCareerGoal.toLowerCase()) ||
+        p.description.toLowerCase().includes(primaryCareerGoal.toLowerCase()) ||
+        p.skillsToGain.some(s => s.toLowerCase().includes(primaryCareerGoal.toLowerCase()))
+      )) {
+        relevanceBooster = 25;
+      }
       const scores = calculateRelevanceScores({
-        relevance: p.skillsToGain.length > 0 ? 85 : 45,
+        relevance: Math.min(100, (p.skillsToGain.length > 0 ? 85 : 45) + relevanceBooster),
         impact: p.impactScore,
         difficultyLevel: p.difficulty,
         timeToComplete: p.estimatedTime,
@@ -136,7 +189,10 @@ export async function generateRecommendationFeed(
       });
       return {
         ...p,
-        scores,
+        scores: {
+          ...scores,
+          overall: Math.min(100, scores.overall + (relevanceBooster > 0 ? 15 : 0))
+        },
         eligibility,
         isBookmarked: bookmarks.includes(p.id),
         isCompleted: completedItemIds.includes(p.id)

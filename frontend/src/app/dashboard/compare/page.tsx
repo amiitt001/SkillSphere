@@ -39,6 +39,7 @@ interface CompareData {
 
 function CompareContent() {
   const { user } = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session');
   const c1 = searchParams.get('c1');
@@ -51,6 +52,45 @@ function CompareContent() {
   // Roadmaps loaded from Firestore session
   const [career1Roadmap, setCareer1Roadmap] = useState<string[]>([]);
   const [career2Roadmap, setCareer2Roadmap] = useState<string[]>([]);
+
+  const [isCommitting, setIsCommitting] = useState(false);
+
+  const handleCommitPath = async (careerTitle: string) => {
+    if (!user) return;
+    setIsCommitting(true);
+    setError('');
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (idToken) {
+        headers['Authorization'] = `Bearer ${idToken}`;
+      }
+
+      const res = await fetch('/api/commit', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ careerTitle })
+      });
+
+      if (!res.ok) {
+        throw new Error(`Commit API failed: ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        router.push('/workspace');
+      } else {
+        throw new Error(data.error || 'Failed to select career path.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Error occurred while saving career selection.');
+    } finally {
+      setIsCommitting(false);
+    }
+  };
 
   const fetchComparisonData = async () => {
     if (!c1 || !c2) {
@@ -432,6 +472,47 @@ function CompareContent() {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══ 4. SELECT PRIMARY PATHWAY SELECTION ══ */}
+      <div className="bg-zinc-950/40 border border-zinc-800 rounded-2xl p-6 backdrop-blur-md space-y-6 mt-8">
+        <div className="text-center max-w-md mx-auto space-y-2">
+          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Commit to your Pathway</h3>
+          <p className="text-xs text-zinc-400">Lock in one of these career recommendations to custom-tailor your SkillSphere learning dashboard and roadmap execution workspace.</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+          {c1 && (
+            <button
+              onClick={() => handleCommitPath(c1)}
+              disabled={isCommitting}
+              className="btn-primary py-3 px-6 text-xs font-bold flex flex-col items-center justify-center gap-1 shadow-glow-terra"
+            >
+              <span>Focus on {c1}</span>
+              <span className="text-[10px] opacity-60 font-normal">Commit to this path & build blueprint</span>
+            </button>
+          )}
+          {c2 && (
+            <button
+              onClick={() => handleCommitPath(c2)}
+              disabled={isCommitting}
+              className="btn-ghost py-3 px-6 text-xs font-bold border border-zinc-800 flex flex-col items-center justify-center gap-1 text-white hover:bg-zinc-900/50"
+            >
+              <span>Focus on {c2}</span>
+              <span className="text-[10px] opacity-60 font-normal text-zinc-400">Commit to this path & build blueprint</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ══ AI LOADERS OVERLAYS ══ */}
+      {isCommitting && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex flex-col items-center justify-center space-y-6">
+          <div className="loading-spinner" style={{ border: '4px solid rgba(255,255,255,0.05)', borderTop: '4px solid var(--accent-clay)', borderRadius: '50%', width: '64px', height: '64px', animation: 'spin 1s linear infinite' }}></div>
+          <div className="text-center space-y-2 animate-pulse">
+            <h3 className="text-lg font-bold text-white">Generating AI Career Blueprint...</h3>
+            <p className="text-xs text-zinc-400 max-w-xs mx-auto font-sans">Evaluating health index, skill gap deltas, target companies, and learning roadmaps...</p>
           </div>
         </div>
       )}

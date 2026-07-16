@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/authMiddleware';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, getDocs, collection } from 'firebase/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
+import '@/lib/firebaseAdmin';
 import { generateRecommendationFeed } from '@/services/recommendations/recommendationEngine';
 import { logger } from '@/services/logger';
 
@@ -17,19 +17,20 @@ export async function GET(req: NextRequest) {
     }
 
     const uid = authResult.user!.uid;
+    const db = getFirestore();
 
     // 1. Fetch user data from Firestore
-    const userDocRef = doc(db, 'users', uid);
-    const userDocSnap = await getDoc(userDocRef);
+    const userDocSnap = await db.collection('users').doc(uid).get();
 
-    if (!userDocSnap.exists()) {
+    if (!userDocSnap.exists) {
       return NextResponse.json({ error: 'User profile not found. Please complete your profile first.' }, { status: 404 });
     }
 
-    const userData = userDocSnap.data();
+    const userData = userDocSnap.data() || {};
     const profile = userData.unifiedProfile;
     const aiAnalysis = userData.aiAnalysis || null;
     const userYear = userData.year || '3rd Year';
+    const primaryCareerGoal = userData.primaryCareerGoal || undefined;
 
     if (!profile) {
       return NextResponse.json({ error: 'Unified Profile not synchronized. Please sync via Aggregator page.' }, { status: 400 });
@@ -37,10 +38,10 @@ export async function GET(req: NextRequest) {
 
     // 2. Fetch user interaction subcollections in parallel
     const [bookmarksSnap, applicationsSnap, progressSnap, ignoredSnap] = await Promise.all([
-      getDocs(collection(db, 'users', uid, 'bookmarks')),
-      getDocs(collection(db, 'users', uid, 'applications')),
-      getDocs(collection(db, 'users', uid, 'progress')),
-      getDocs(collection(db, 'users', uid, 'ignored'))
+      db.collection('users').doc(uid).collection('bookmarks').get(),
+      db.collection('users').doc(uid).collection('applications').get(),
+      db.collection('users').doc(uid).collection('progress').get(),
+      db.collection('users').doc(uid).collection('ignored').get()
     ]);
 
     const bookmarks = bookmarksSnap.docs.map((doc) => doc.id);
@@ -66,7 +67,8 @@ export async function GET(req: NextRequest) {
       bookmarks,
       appliedJobIds,
       completedItemIds,
-      ignoredIds
+      ignoredIds,
+      primaryCareerGoal
     );
 
     return NextResponse.json({ success: true, feed });

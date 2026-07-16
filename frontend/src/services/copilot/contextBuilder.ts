@@ -14,8 +14,10 @@ export function buildCopilotContext(params: {
   bookmarks: any[];
   applications: any[];
   progress: any[];
+  primaryCareerGoal?: string;
+  careerBlueprint?: any;
 }): string {
-  const { name, stream, year, location, unifiedProfile, profileScore, aiAnalysis, bookmarks, applications, progress } = params;
+  const { name, stream, year, location, unifiedProfile, profileScore, aiAnalysis, bookmarks, applications, progress, primaryCareerGoal, careerBlueprint } = params;
 
   let context = `USER PROFILE CONTEXT:
 Name: ${name || 'Student'}
@@ -23,6 +25,14 @@ Stream: ${stream || 'Technology'}
 Academic Year: ${year || '3rd Year'}
 Location: ${location || 'India'}
 `;
+
+  if (primaryCareerGoal) {
+    context += `Committed Career Goal Focus: ${primaryCareerGoal}
+- Current readiness: ${careerBlueprint?.skillGap?.readinessScore || 50}%
+- High priority gaps: ${careerBlueprint?.skillGap?.missingSkills?.filter((m: any) => m.priority === 'high').map((m: any) => m.name).join(', ') || 'None'}
+- Short term target companies: ${careerBlueprint?.targetCompanies?.join(', ') || 'General'}
+`;
+  }
 
   if (profileScore) {
     context += `Career Readiness Score: ${profileScore.overall}/100

@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
       .map((cert) => {
         const eligibility = checkGeneralEligibility('Intermediate', userSkillCount);
         const scores = calculateRelevanceScores({
-          relevance: cert.skillsAddressed.some(s => !profile.skills.map(us => us.toLowerCase()).includes(s.toLowerCase())) ? 75 : 50,
+          relevance: cert.skillsAddressed.some(s => !profile.skills.map((us: string) => us.toLowerCase()).includes(s.toLowerCase())) ? 75 : 50,
           impact: cert.roiScore,
           difficultyLevel: 'Intermediate',
           timeToComplete: cert.timeInvestment,

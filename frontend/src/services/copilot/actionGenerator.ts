@@ -1,6 +1,6 @@
 import { aiService } from '../ai/aiService';
-import { db } from '@/lib/firebase';
-import { collection, doc, getDocs, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import '@/lib/firebaseAdmin';
 import type { CopilotTask } from './types';
 
 const DEFAULT_STEPS = [
@@ -10,6 +10,10 @@ const DEFAULT_STEPS = [
   { text: 'Implement a minimal working prototype on your system.', completed: false },
   { text: 'Deploy the working application to a cloud hosting platform.', completed: false }
 ];
+
+function getAdminDb() {
+  return getFirestore();
+}
 
 /**
  * Uses AI to break down a high-level recommendation/goal into 5 actionable steps.
@@ -65,9 +69,10 @@ Output a JSON response that maps EXACTLY to the following format. Do not add mar
 
   // Save to Firestore
   try {
-    await setDoc(doc(db, 'users', uid, 'copilot_tasks', taskId), {
+    const db = getAdminDb();
+    await db.collection('users').doc(uid).collection('copilot_tasks').doc(taskId).set({
       ...newTask,
-      serverTime: serverTimestamp()
+      serverTime: FieldValue.serverTimestamp()
     });
   } catch (error) {
     console.error('[Action Planner] Error saving task to DB:', error);
@@ -81,7 +86,8 @@ Output a JSON response that maps EXACTLY to the following format. Do not add mar
  */
 export async function getUserTasks(uid: string): Promise<CopilotTask[]> {
   try {
-    const querySnap = await getDocs(collection(db, 'users', uid, 'copilot_tasks'));
+    const db = getAdminDb();
+    const querySnap = await db.collection('users').doc(uid).collection('copilot_tasks').get();
     const tasks = querySnap.docs.map((doc) => ({
       ...doc.data()
     })) as CopilotTask[];
@@ -97,9 +103,10 @@ export async function getUserTasks(uid: string): Promise<CopilotTask[]> {
  */
 export async function toggleTaskStep(uid: string, taskId: string, stepIndex: number): Promise<CopilotTask | null> {
   try {
-    const taskRef = doc(db, 'users', uid, 'copilot_tasks', taskId);
-    const snap = await getDoc(taskRef);
-    if (!snap.exists()) return null;
+    const db = getAdminDb();
+    const taskRef = db.collection('users').doc(uid).collection('copilot_tasks').doc(taskId);
+    const snap = await taskRef.get();
+    if (!snap.exists) return null;
 
     const data = snap.data() as CopilotTask;
     const steps = [...data.steps];
@@ -115,9 +122,9 @@ export async function toggleTaskStep(uid: string, taskId: string, stepIndex: num
       updatedAt: new Date().toISOString()
     };
 
-    await setDoc(taskRef, {
+    await taskRef.set({
       ...updatedTask,
-      serverTime: serverTimestamp()
+      serverTime: FieldValue.serverTimestamp()
     }, { merge: true });
 
     return updatedTask;
@@ -132,7 +139,8 @@ export async function toggleTaskStep(uid: string, taskId: string, stepIndex: num
  */
 export async function deleteUserTask(uid: string, taskId: string): Promise<void> {
   try {
-    await deleteDoc(doc(db, 'users', uid, 'copilot_tasks', taskId));
+    const db = getAdminDb();
+    await db.collection('users').doc(uid).collection('copilot_tasks').doc(taskId).delete();
   } catch (error) {
     console.error('[Action Planner] Error deleting task:', error);
   }

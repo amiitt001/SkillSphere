@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/authMiddleware';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, getDocs, collection } from 'firebase/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
+import '@/lib/firebaseAdmin';
 import { planContextualNotifications } from '@/services/copilot/notificationPlanner';
 import { getUserTasks } from '@/services/copilot/actionGenerator';
 import { logger } from '@/services/logger';
@@ -16,20 +16,22 @@ export async function GET(req: NextRequest) {
     }
 
     const uid = authResult.user!.uid;
+    const db = getFirestore();
+    const userRef = db.collection('users').doc(uid);
+    const userDocSnap = await userRef.get();
 
-    const userDocSnap = await getDoc(doc(db, 'users', uid));
-    if (!userDocSnap.exists() || !userDocSnap.data()?.unifiedProfile) {
+    if (!userDocSnap.exists || !userDocSnap.data()?.unifiedProfile) {
       return NextResponse.json({ error: 'Profile not initialized' }, { status: 400 });
     }
 
-    const userData = userDocSnap.data();
+    const userData = userDocSnap.data() || {};
     const profile = userData.unifiedProfile;
 
     // Load active tasks & bookmarks
     const tasks = await getUserTasks(uid);
     const activeTasks = tasks.filter(t => !t.completed);
 
-    const bookmarksSnap = await getDocs(collection(db, 'users', uid, 'bookmarks'));
+    const bookmarksSnap = await userRef.collection('bookmarks').get();
     const bookmarks = bookmarksSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
     const notifications = planContextualNotifications(profile, activeTasks, bookmarks);

@@ -104,7 +104,7 @@ export const unifiedUserProfileSchema = z.object({
   careerScore: z.number().min(0).max(100),
   careerHealth: careerHealthMetricSchema.optional(),
   skillGraph: z.any().nullable().optional(),
-  aiMemory: z.record(z.any()),
+  aiMemory: z.record(z.string(), z.any()),
   lastSyncAt: z.string(),
   createdAt: z.string(),
 });

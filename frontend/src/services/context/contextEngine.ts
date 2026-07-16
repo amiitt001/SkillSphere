@@ -92,7 +92,7 @@ export const contextEngine = {
       contexts.push({
         text: `User: ${profile.personalInfo.fullName.value}. Location: ${profile.personalInfo.location?.value || 'India'}. Bio: ${profile.personalInfo.bio?.value || 'Developer'}.`,
         importance: 10,
-        timestamp: profile.personalInfo.fullName.meta.lastUpdated || lastUpdated,
+        timestamp: profile.personalInfo.fullName.meta.timestamp || lastUpdated,
         confidence: profile.personalInfo.fullName.meta.confidence,
       });
     }
@@ -102,7 +102,7 @@ export const contextEngine = {
         contexts.push({
           text: `Education details: Institution: ${edu.institution}, Degree: ${edu.degree}, stream: ${edu.stream}, graduation year: ${edu.graduationYear || 'N/A'}.`,
           importance: 8,
-          timestamp: edu.meta.lastUpdated || lastUpdated,
+          timestamp: edu.meta.timestamp || lastUpdated,
           confidence: edu.meta.confidence,
         });
       });
@@ -123,7 +123,7 @@ export const contextEngine = {
         contexts.push({
           text: `Completed Project: Title: ${proj.title}. Description: ${proj.description}. Technologies used: ${proj.technologies.join(', ')}.`,
           importance: 7,
-          timestamp: proj.meta.lastUpdated || lastUpdated,
+          timestamp: proj.meta.timestamp || lastUpdated,
           confidence: proj.meta.confidence,
         });
       });
@@ -134,7 +134,7 @@ export const contextEngine = {
         contexts.push({
           text: `Experience history: Company: ${exp.company}, role: ${exp.role}, duration: ${exp.duration}. details: ${exp.description || 'None'}.`,
           importance: 7,
-          timestamp: exp.meta.lastUpdated || lastUpdated,
+          timestamp: exp.meta.timestamp || lastUpdated,
           confidence: exp.meta.confidence,
         });
       });
@@ -144,7 +144,7 @@ export const contextEngine = {
       contexts.push({
         text: `Target Career Path: Roles: ${profile.careerGoals.preferredRoles.value.join(', ')}. Industries: ${profile.careerGoals.preferredIndustries?.value?.join(', ') || 'Any'}. Locations: ${profile.careerGoals.preferredLocations?.value?.join(', ') || 'Any'}.`,
         importance: 9,
-        timestamp: profile.careerGoals.preferredRoles.meta.lastUpdated || lastUpdated,
+        timestamp: profile.careerGoals.preferredRoles.meta.timestamp || lastUpdated,
         confidence: profile.careerGoals.preferredRoles.meta.confidence,
       });
     }

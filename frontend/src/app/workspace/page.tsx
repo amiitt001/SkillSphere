@@ -2,8 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
-import { auth } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { useAuth } from '@/hooks';
+import { useRouter } from 'next/navigation';
 import type { ConnectedAccount, WorkspaceWorkflow, CalendarEvent, SyncLog } from '@/services/integrations/types';
+import { Sparkles, Map, Award, BookOpen, Layers, CheckCircle2, AlertTriangle, ShieldCheck, Activity, Target, ArrowRight } from 'lucide-react';
 
 export default function WorkspacePage() {
   return (
@@ -14,6 +18,9 @@ export default function WorkspacePage() {
 }
 
 function WorkspaceDashboardContent() {
+  const { user } = useAuth();
+  const router = useRouter();
+
   // Accounts
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
@@ -39,6 +46,18 @@ function WorkspaceDashboardContent() {
   // Active Tab
   const [activeTab, setActiveTab] = useState<'workspace' | 'marketplace' | 'workflows'>('workspace');
 
+  // Career Goal & Blueprint State
+  const [profileGoal, setProfileGoal] = useState<string | null>(null);
+  const [blueprint, setBlueprint] = useState<any>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
+  // Switching Career Goal State
+  const [showSwitchModal, setShowSwitchModal] = useState(false);
+  const [newTargetCareer, setNewTargetCareer] = useState('');
+  const [isAnalyzingSwitch, setIsAnalyzingSwitch] = useState(false);
+  const [switchImpact, setSwitchImpact] = useState<any>(null);
+  const [isSwitchingCommit, setIsSwitchingCommit] = useState(false);
+
   useEffect(() => {
     loadAccounts();
     loadSyncLogs();
@@ -46,11 +65,96 @@ function WorkspaceDashboardContent() {
     loadWorkflows();
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      loadProfileGoal();
+    }
+  }, [user]);
+
+  const loadProfileGoal = async () => {
+    if (!user) return;
+    setLoadingProfile(true);
+    try {
+      const docRef = doc(db, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        setProfileGoal(data.primaryCareerGoal || null);
+        setBlueprint(data.careerBlueprint || null);
+      }
+    } catch (err) {
+      console.error('Error loading career goal:', err);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  const handleAnalyzeSwitch = async () => {
+    if (!newTargetCareer.trim()) return;
+    setIsAnalyzingSwitch(true);
+    setSwitchImpact(null);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+
+      const res = await fetch('/api/switch-impact', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ newCareerTitle: newTargetCareer })
+      });
+
+      if (res.ok) {
+        const d = await res.json();
+        if (d.success) setSwitchImpact(d.impact);
+      }
+    } catch (err) {
+      console.error('Error analyzing switch impact:', err);
+    } finally {
+      setIsAnalyzingSwitch(false);
+    }
+  };
+
+  const handleConfirmSwitch = async () => {
+    if (!newTargetCareer) return;
+    setIsSwitchingCommit(true);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+
+      const res = await fetch('/api/commit', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ careerTitle: newTargetCareer })
+      });
+
+      if (res.ok) {
+        const d = await res.json();
+        if (d.success) {
+          setProfileGoal(d.primaryCareerGoal);
+          setBlueprint(d.blueprint);
+          setShowSwitchModal(false);
+          setNewTargetCareer('');
+          setSwitchImpact(null);
+        }
+      }
+    } catch (err) {
+      console.error('Error switching career goal:', err);
+    } finally {
+      setIsSwitchingCommit(false);
+    }
+  };
+
   const loadAccounts = async () => {
     setLoadingAccounts(true);
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
 
       const res = await fetch('/api/integrations/connect', { headers });
       if (res.ok) {
@@ -67,7 +171,7 @@ function WorkspaceDashboardContent() {
   const loadSyncLogs = async () => {
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
       const res = await fetch('/api/integrations/logs', { headers });
       if (res.ok) {
         const d = await res.json();
@@ -81,7 +185,7 @@ function WorkspaceDashboardContent() {
   const loadCalendarEvents = async () => {
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
       const res = await fetch('/api/integrations/calendar', { headers });
       if (res.ok) {
         const d = await res.json();
@@ -95,7 +199,7 @@ function WorkspaceDashboardContent() {
   const loadWorkflows = async () => {
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
       const res = await fetch('/api/integrations/workflows', { headers });
       if (res.ok) {
         const d = await res.json();
@@ -110,7 +214,7 @@ function WorkspaceDashboardContent() {
     setSyncing(true);
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
       const res = await fetch('/api/integrations/sync', {
         method: 'POST',
         headers
@@ -271,7 +375,7 @@ function WorkspaceDashboardContent() {
       
       {/* Page Header */}
       <div className="page-header" style={{ marginBottom: '2.5rem' }}>
-        <div className="section-eyebrow" style={{ textTransform: 'uppercase', tracking: '0.1em', fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-clay)' }}>Connected Workspaces</div>
+        <div className="section-eyebrow" style={{ textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-clay)' }}>Connected Workspaces</div>
         <h1 className="page-title" style={{ fontSize: '2.25rem', color: 'var(--text-primary)', margin: '0.5rem 0' }}>Workspace & Connectors</h1>
         <p className="page-subtitle" style={{ color: 'var(--text-muted)' }}>
           Sync external developer profiles, verify credentials health, check upcoming calendar events, and build AI automation flows.
@@ -294,17 +398,205 @@ function WorkspaceDashboardContent() {
           {activeTab === 'workspace' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               
+              {loadingProfile ? (
+                <div style={{ padding: '4rem 0', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <div style={{ display: 'inline-block', width: '32px', height: '32px', border: '3px solid rgba(255,255,255,0.05)', borderTop: '3px solid var(--accent-clay)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                  <p style={{ fontSize: '0.85rem', marginTop: '1rem' }}>Synchronizing career workspace context...</p>
+                </div>
+              ) : profileGoal ? (
+                <>
+                  {/* 🎯 Primary Career Goal Status Banner */}
+                  <div className="quiz-card" style={{ background: 'linear-gradient(135deg, rgba(25, 23, 21, 0.9) 0%, rgba(15, 12, 10, 0.95) 100%)', border: '1px solid var(--accent-clay)', padding: '2rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.5rem' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-clay)', textTransform: 'uppercase', fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.1em' }}>
+                          <Target size={14} /> Active Career Pathway Focus
+                        </div>
+                        <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '0.35rem' }}>{profileGoal}</h2>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>SkillSphere has customized your entire learning path, mock interviews, and project suggestions for this goal.</p>
+                      </div>
+                      <button 
+                        onClick={() => setShowSwitchModal(true)}
+                        style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)', padding: '0.5rem 1.25rem', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
+                      >
+                        Switch Target Career
+                      </button>
+                    </div>
+
+                    {/* Health & Score Indices */}
+                    {blueprint && (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1.25rem', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontFamily: 'monospace' }}>Career Health Index</div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#10b981', marginTop: '0.2rem' }}>{blueprint.careerHealth?.overallScore || 60}%</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontFamily: 'monospace' }}>Skill Readiness</div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '0.2rem' }}>{blueprint.skillGap?.readinessScore || 50}%</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontFamily: 'monospace' }}>Time Investment</div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '0.2rem' }}>{blueprint.skillGap?.estimatedTime || '6 Months'}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 1. Skill Gaps Panel */}
+                  {blueprint?.skillGap && (
+                    <div className="quiz-card" style={{ background: 'rgba(25, 23, 21, 0.4)' }}>
+                      <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.75rem', marginBottom: '1.25rem' }}>
+                        <Layers size={18} className="text-zinc-400" /> Career Skill Gap Overlap
+                      </h3>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>{blueprint.skillGap.aiInsight}</p>
+                      
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
+                        <div>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Verified Skills ({blueprint.skillGap.currentSkills?.length || 0})</span>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                            {blueprint.skillGap.currentSkills?.map((s: string) => (
+                              <span key={s} style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', color: '#34d399', fontSize: '0.75rem', padding: '0.25rem 0.6rem', borderRadius: '100px' }}>✓ {s}</span>
+                            )) || <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>None synchronized yet</span>}
+                          </div>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Required Missing Gaps</span>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                            {blueprint.skillGap.missingSkills?.map((s: any) => (
+                              <span key={s.name} style={{ background: s.priority === 'high' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(212, 163, 115, 0.08)', border: s.priority === 'high' ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(212, 163, 115, 0.2)', color: s.priority === 'high' ? '#f87171' : '#f59e0b', fontSize: '0.75rem', padding: '0.25rem 0.6rem', borderRadius: '100px' }}>⚠ {s.name} ({s.priority})</span>
+                            )) || <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>No gaps! Ready to apply</span>}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 2. Interactive Roadmap Timeline */}
+                  {blueprint?.learningRoadmap && (
+                    <div className="quiz-card" style={{ background: 'rgba(25, 23, 21, 0.4)' }}>
+                      <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.75rem', marginBottom: '1.25rem' }}>
+                        <Map size={18} className="text-zinc-400" /> Active Learning Roadmap
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        {blueprint.learningRoadmap.map((phase: any, idx: number) => (
+                          <div key={idx} style={{ borderLeft: '2px solid rgba(212,163,115,0.2)', paddingLeft: '1.25rem', position: 'relative' }}>
+                            <div style={{ position: 'absolute', left: '-7px', top: '2px', width: '12px', height: '12px', borderRadius: '50%', background: 'var(--accent-clay)' }}></div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>{phase.phase}</h4>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.05)', padding: '0.1rem 0.5rem', borderRadius: '4px' }}>{phase.duration}</span>
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.5rem' }}>
+                              {phase.topics?.map((topic: string) => (
+                                <span key={topic} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-secondary)', fontSize: '0.7rem', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>{topic}</span>
+                              ))}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                              <strong>Suggested Resources:</strong> {phase.resources?.join(', ')}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3. Recommended Projects & Certifications */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                    {blueprint?.recommendedProjects && (
+                      <div className="quiz-card" style={{ background: 'rgba(25, 23, 21, 0.4)' }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
+                          ⚙ Practice Projects
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          {blueprint.recommendedProjects.map((p: any, idx: number) => (
+                            <div key={idx} style={{ background: 'rgba(0,0,0,0.15)', padding: '0.85rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <strong style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>{p.title}</strong>
+                                <span style={{ fontSize: '0.65rem', background: 'rgba(212,163,115,0.1)', color: 'var(--accent-clay)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>{p.difficulty}</span>
+                              </div>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem', lineHeight: 1.4 }}>{p.description}</p>
+                              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
+                                <strong>Tech:</strong> {p.technologies?.join(', ')}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {blueprint?.certifications && (
+                      <div className="quiz-card" style={{ background: 'rgba(25, 23, 21, 0.4)' }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
+                          🎖 Target Certifications
+                        </h3>
+                        <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', listStyle: 'none', padding: 0 }}>
+                          {blueprint.certifications.map((c: string, idx: number) => (
+                            <li key={idx} style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0,0,0,0.1)', padding: '0.6rem 0.85rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.02)' }}>
+                              <Award size={14} className="text-zinc-500" />
+                              <span>{c}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 4. Resume & GitHub Optimizations */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                    {blueprint?.resumeImprovements && (
+                      <div className="quiz-card" style={{ background: 'rgba(25, 23, 21, 0.4)' }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
+                          📄 Resume Improvements
+                        </h3>
+                        <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', paddingLeft: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                          {blueprint.resumeImprovements.map((imp: string, idx: number) => (
+                            <li key={idx}>{imp}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {blueprint?.githubImprovements && (
+                      <div className="quiz-card" style={{ background: 'rgba(25, 23, 21, 0.4)' }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
+                          🐙 GitHub Portfolio Improvements
+                        </h3>
+                        <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', paddingLeft: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                          {blueprint.githubImprovements.map((imp: string, idx: number) => (
+                            <li key={idx}>{imp}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                /* No goal committed yet fallback banner */
+                <div className="quiz-card" style={{ background: 'rgba(25, 23, 21, 0.4)', padding: '3rem', textAlign: 'center', border: '1px dashed rgba(212,163,115,0.2)' }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🎯</div>
+                  <h3 style={{ fontSize: '1.35rem', fontWeight: 600, color: 'var(--text-primary)' }}>No Primary Career Pathway Focus Selected</h3>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem', maxWidth: '420px', marginInline: 'auto', lineHeight: '1.5' }}>
+                    Unlock full SkillSphere continuous execution by committing to a primary career pathway. That tailor-customizes your learning, roadmap progress, projects, and AI support.
+                  </p>
+                  <button 
+                    onClick={() => router.push('/dashboard')} 
+                    style={{ background: 'var(--accent-clay)', border: 'none', color: 'var(--text-primary)', padding: '0.6rem 1.75rem', fontWeight: 600, marginTop: '1.5rem', cursor: 'pointer' }}
+                  >
+                    Explore Recommendations & Commit
+                  </button>
+                </div>
+              )}
+
               {/* Sync Trigger card */}
-              <div className="quiz-card" style={{ background: 'rgba(25, 23, 21, 0.4)' }}>
+              <div className="quiz-card" style={{ background: 'rgba(25, 23, 21, 0.25)', border: '1px solid rgba(255,255,255,0.03)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                   <div>
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)' }}>Synchronize developer accounts</h3>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>Pull commits and LeetCode problems solved delta changes directly into your active dashboard metrics.</p>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>Synchronize developer accounts</h3>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>Pull commits and LeetCode problems solved delta changes directly into your active dashboard metrics.</p>
                   </div>
                   <button 
                     onClick={handleRunManualSync}
                     disabled={syncing || connectedCount === 0}
-                    style={{ background: 'var(--accent-clay)', border: 'none', color: 'var(--text-primary)', padding: '0.5rem 1.5rem', fontWeight: 600 }}
+                    style={{ background: 'var(--accent-clay)', border: 'none', color: 'var(--text-primary)', padding: '0.4rem 1.25rem', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
                   >
                     {syncing ? 'Syncing...' : 'Sync All Accounts'}
                   </button>
@@ -554,6 +846,102 @@ function WorkspaceDashboardContent() {
         </div>
       )}
 
+      {/* ══ SWITCH CAREER GOAL DIALOG POPUP ══ */}
+      {showSwitchModal && (
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 100,
+            background: 'rgba(0,0,0,0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+            backdropFilter: 'blur(4px)'
+          }}
+          className="animate-fade-in"
+        >
+          <div className="quiz-card" style={{ width: '100%', maxWidth: '500px', background: 'rgba(25,23,21,0.98)', border: '1px solid var(--accent-clay)', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.75rem', marginBottom: '1.25rem' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)' }}>Switch Target Career Goal</h3>
+              <button onClick={() => { setShowSwitchModal(false); setNewTargetCareer(''); setSwitchImpact(null); }} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1rem', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                Enter the title of the new career you would like to target. SkillSphere will run a comparison analysis against your current goal to show your roadmap impact.
+              </p>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>New Career Goal Title</label>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. AI Engineer, DevOps Architect..." 
+                    value={newTargetCareer} 
+                    onChange={(e) => setNewTargetCareer(e.target.value)}
+                    style={{ flex: 1, padding: '0.5rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '0.85rem' }}
+                  />
+                  <button 
+                    onClick={handleAnalyzeSwitch}
+                    disabled={isAnalyzingSwitch || !newTargetCareer.trim()}
+                    style={{ background: 'var(--accent-clay)', border: 'none', color: 'var(--text-primary)', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    {isAnalyzingSwitch ? 'Analyzing...' : 'Analyze Switch'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Switch Impact Analysis Panel */}
+              {switchImpact && (
+                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <span style={{ color: 'var(--accent-clay)', fontWeight: 600 }}>Switch Impact Summary</span>
+                    <span style={{ background: 'rgba(255,255,255,0.05)', padding: '0.1rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem' }}>Timeline: {switchImpact.estimatedTimelineChange}</span>
+                  </div>
+                  <p style={{ color: 'var(--text-secondary)', lineHeight: 1.4, marginBottom: '0.75rem' }}>{switchImpact.impactSummary}</p>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div>
+                      <strong style={{ color: '#34d399', fontSize: '0.75rem' }}>✓ Transferable Skills Preserved:</strong>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.2rem' }}>
+                        {switchImpact.transferableSkills?.map((s: string) => (
+                          <span key={s} style={{ background: 'rgba(16,185,129,0.05)', color: '#34d399', fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>{s}</span>
+                        )) || 'None'}
+                      </div>
+                    </div>
+                    <div style={{ marginTop: '0.25rem' }}>
+                      <strong style={{ color: '#f87171', fontSize: '0.75rem' }}>⚠ New Skill Gaps Added:</strong>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.2rem' }}>
+                        {switchImpact.newGaps?.map((s: string) => (
+                          <span key={s} style={{ background: 'rgba(239,68,68,0.05)', color: '#f87171', fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>{s}</span>
+                        )) || 'None'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
+              <button 
+                onClick={() => { setShowSwitchModal(false); setNewTargetCareer(''); setSwitchImpact(null); }}
+                style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-primary)', padding: '0.4rem 1.25rem', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleConfirmSwitch}
+                disabled={isSwitchingCommit || !switchImpact}
+                style={{ background: 'var(--accent-clay)', border: 'none', color: 'var(--text-primary)', padding: '0.4rem 1.5rem', cursor: 'pointer', fontWeight: 600 }}
+              >
+                {isSwitchingCommit ? 'Generating Blueprint...' : 'Confirm Switch & Build Roadmap'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

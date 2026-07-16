@@ -134,6 +134,36 @@ export interface CareerHealthMetric {
   };
 }
 
+export interface CareerBlueprint {
+  careerHealth: CareerHealthMetric;
+  skillGap: {
+    readinessScore: number;
+    estimatedTime: string;
+    currentSkills: string[];
+    missingSkills: Array<{ name: string; priority: 'high' | 'medium' | 'low' }>;
+    aiInsight: string;
+  };
+  learningRoadmap: Array<{
+    phase: string;
+    duration: string;
+    topics: string[];
+    resources: string[];
+  }>;
+  recommendedProjects: Array<{
+    title: string;
+    description: string;
+    difficulty: string;
+    technologies: string[];
+  }>;
+  certifications: string[];
+  resumeImprovements: string[];
+  githubImprovements: string[];
+  interviewPlan: string[];
+  targetCompanies: string[];
+  recommendedJobs: string[];
+  recommendedInternships: string[];
+}
+
 export interface UnifiedUserProfile {
   uid: string;
   personalInfo: PersonalInfo;
@@ -157,6 +187,9 @@ export interface UnifiedUserProfile {
   aiMemory: Record<string, any>;
   lastSyncAt: string;
   createdAt: string;
+  primaryCareerGoal?: string;
+  careerBlueprint?: CareerBlueprint;
+  previousCareers?: string[];
 }
 
 export type ProfileEventType =

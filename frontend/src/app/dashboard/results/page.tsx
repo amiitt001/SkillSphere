@@ -19,8 +19,8 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { Recommendation, SkillGapAnalysis } from '@/types';
 import { useAuth } from '@/hooks';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
-import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
+import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 interface SessionData {
   academicStream?: string;
@@ -87,6 +87,185 @@ function ResultsContent() {
   const [selectedCareers, setSelectedCareers] = useState<string[]>([]);
   const [activeCareerIdx, setActiveCareerIdx] = useState(0);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
+
+  const [isGeneratingMore, setIsGeneratingMore] = useState(false);
+  const [isCommitting, setIsCommitting] = useState(false);
+  const [showRefineModal, setShowRefineModal] = useState(false);
+
+  // Existing committed career — used to show the "replacing" banner
+  const [existingCareer, setExistingCareer] = useState<string | null>(null);
+
+  const [refineStream, setRefineStream] = useState('');
+  const [refineSkills, setRefineSkills] = useState('');
+  const [refineInterests, setRefineInterests] = useState('');
+
+  useEffect(() => {
+    if (sessionData) {
+      setRefineStream(sessionData.academicStream || '');
+      setRefineSkills((sessionData.skills || []).join(', '));
+      setRefineInterests((sessionData.interests || []).join(', '));
+    }
+  }, [sessionData]);
+
+  // Load existing career commitment status for the replacement banner
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const idToken = await auth.currentUser?.getIdToken();
+        const headers: HeadersInit = idToken ? { Authorization: `Bearer ${idToken}` } : {};
+        const res = await fetch('/api/career-status', { headers });
+        if (res.ok) {
+          const d = await res.json();
+          if (d.hasCareer) setExistingCareer(d.primaryCareerGoal);
+        }
+      } catch (_) {}
+    })();
+  }, [user]);
+
+  const handleGenerateMore = async () => {
+    if (!user || !sessionData) return;
+    setIsGeneratingMore(true);
+    setError('');
+    try {
+      const stream = sessionData.academicStream || 'Engineering / Tech';
+      const sks = (sessionData.skills || []).join(',');
+      const ints = (sessionData.interests || []).join(',');
+      const context = sessionData.additionalContext || '';
+
+      const params = new URLSearchParams({
+        academicStream: stream,
+        skills: sks,
+        interests: ints,
+        generateMore: 'true',
+        cNum1: '3',
+        cNum2: '7',
+        cAns: '10'
+      });
+
+      const idToken = await auth.currentUser?.getIdToken();
+      const headers: Record<string, string> = {};
+      if (idToken) {
+        headers['Authorization'] = `Bearer ${idToken}`;
+      }
+
+      const res = await fetch(`/api/generate-recommendations?${params.toString()}`, { headers });
+      if (!res.ok) {
+        throw new Error(`Failed to generate alternative recommendations: ${res.status}`);
+      }
+
+      const result = await res.json();
+      if (result.success && result.data && result.data.recommendations) {
+        const docRef = await addDoc(collection(db, 'history', user.uid, 'entries'), {
+          title: stream + " Alternative Map",
+          content: JSON.stringify({
+            academicStream: stream,
+            skills: sessionData.skills || [],
+            interests: sessionData.interests || [],
+            additionalContext: context,
+            recommendations: result.data.recommendations
+          }),
+          createdAt: serverTimestamp()
+        });
+        router.push(`/dashboard/results?session=${docRef.id}`);
+      } else {
+        throw new Error(result.error || 'Failed to parse alternate recommendations.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Error occurred while generating alternative paths.');
+    } finally {
+      setIsGeneratingMore(false);
+    }
+  };
+
+  const handleRefineSubmit = async () => {
+    if (!user) return;
+    setShowRefineModal(false);
+    setIsGeneratingMore(true);
+    setError('');
+    try {
+      const skillsArray = refineSkills.split(',').map(s => s.trim()).filter(Boolean);
+      const interestsArray = refineInterests.split(',').map(i => i.trim()).filter(Boolean);
+
+      const params = new URLSearchParams({
+        academicStream: refineStream,
+        skills: skillsArray.join(','),
+        interests: interestsArray.join(','),
+        cNum1: '3',
+        cNum2: '7',
+        cAns: '10'
+      });
+
+      const idToken = await auth.currentUser?.getIdToken();
+      const headers: Record<string, string> = {};
+      if (idToken) {
+        headers['Authorization'] = `Bearer ${idToken}`;
+      }
+
+      const res = await fetch(`/api/generate-recommendations?${params.toString()}`, { headers });
+      if (!res.ok) throw new Error(`Refining failed: ${res.status}`);
+      const result = await res.json();
+      if (result.success && result.data && result.data.recommendations) {
+        const docRef = await addDoc(collection(db, 'history', user.uid, 'entries'), {
+          title: refineStream + " Refined Map",
+          content: JSON.stringify({
+            academicStream: refineStream,
+            skills: skillsArray,
+            interests: interestsArray,
+            additionalContext: sessionData?.additionalContext || '',
+            recommendations: result.data.recommendations
+          }),
+          createdAt: serverTimestamp()
+        });
+        router.push(`/dashboard/results?session=${docRef.id}`);
+      } else {
+        throw new Error(result.error || 'Failed to refine recommendations.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Error occurred while refining preferences.');
+    } finally {
+      setIsGeneratingMore(false);
+    }
+  };
+
+  const handleCommitPath = async (careerTitle: string) => {
+    if (!user) return;
+    setIsCommitting(true);
+    setError('');
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (idToken) {
+        headers['Authorization'] = `Bearer ${idToken}`;
+      }
+
+      const res = await fetch('/api/commit', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ careerTitle })
+      });
+
+      if (!res.ok) {
+        throw new Error(`Commit API failed: ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        router.push('/workspace');
+      } else {
+        throw new Error(data.error || 'Failed to select career path.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Error occurred while saving career selection.');
+    } finally {
+      setIsCommitting(false);
+    }
+  };
 
   // Load from Firestore
   const loadSession = async () => {
@@ -243,6 +422,24 @@ function ResultsContent() {
           </span>
         </div>
 
+        {/* ── Existing career replacement banner ── */}
+        {existingCareer && (
+          <div
+            className="flex items-start gap-3 rounded-xl border px-4 py-3 mb-4"
+            style={{
+              background: 'rgba(245,158,11,0.07)',
+              borderColor: 'rgba(245,158,11,0.25)',
+            }}
+          >
+            <span style={{ fontSize: '1rem', flexShrink: 0 }}>⚠️</span>
+            <p className="text-xs leading-relaxed" style={{ color: '#fcd34d', margin: 0 }}>
+              You are currently committed to{' '}
+              <strong className="text-white">{existingCareer}</strong>.{' '}
+              Committing to a new career below will replace this goal. Your completed learning, projects, and achievements are preserved.
+            </p>
+          </div>
+        )}
+
         <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white font-display">
           Top Career Matches For You
         </h2>
@@ -282,6 +479,29 @@ function ResultsContent() {
             <span className="text-[10px] font-mono text-zinc-600">Click to focus details</span>
           </div>
 
+          <div className="flex flex-col gap-2 mb-4 bg-zinc-900/30 p-4 border border-zinc-900 rounded-xl">
+            <button
+              onClick={handleGenerateMore}
+              className="btn-primary w-full text-xs py-2.5 font-bold flex items-center justify-center gap-1.5"
+            >
+              ✨ Generate 3 More Careers
+            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setShowRefineModal(true)}
+                className="btn-ghost text-xs py-2 font-semibold text-zinc-300 border border-zinc-800"
+              >
+                ⚙ Refine
+              </button>
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="btn-ghost text-xs py-2 font-semibold text-zinc-300 border border-zinc-800"
+              >
+                ✏ Change Prefs
+              </button>
+            </div>
+          </div>
+
           <div className="space-y-4">
             {recommendations.map((rec, index) => (
               <CareerCard
@@ -306,7 +526,25 @@ function ResultsContent() {
             </span>
           </div>
 
-          <div className="bg-zinc-950/40 border border-zinc-900 rounded-2xl p-6 space-y-8">
+          <div className="bg-zinc-955 border border-zinc-900 rounded-2xl p-6 space-y-8">
+            {/* Commit Pathway Callout */}
+            <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
+                  🎯 Focus on this Goal
+                </h4>
+                <p className="text-[11px] text-zinc-400 mt-1 max-w-md">
+                  Commit to {activeRec.title} as your primary path. This configures your learning workspace, dashboards, and AI support specifically for this career.
+                </p>
+              </div>
+              <button
+                onClick={() => handleCommitPath(activeRec.title)}
+                className="btn-primary shrink-0 py-2.5 px-6 text-xs font-bold shadow-glow-terra"
+              >
+                Commit to this Career →
+              </button>
+            </div>
+
             {/* Section 8: AI Insight Panel */}
             <div className="space-y-3">
               <span className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase flex items-center gap-1.5">
@@ -453,6 +691,88 @@ function ResultsContent() {
           career1={comp1}
           career2={comp2}
         />
+      )}
+      {/* ══ AI LOADERS OVERLAYS ══ */}
+      {isCommitting && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex flex-col items-center justify-center space-y-6">
+          <div className="loading-spinner" style={{ border: '4px solid rgba(255,255,255,0.05)', borderTop: '4px solid var(--accent-clay)', borderRadius: '50%', width: '64px', height: '64px', animation: 'spin 1s linear infinite' }}></div>
+          <div className="text-center space-y-2 animate-pulse">
+            <h3 className="text-lg font-bold text-white">Generating AI Career Blueprint...</h3>
+            <p className="text-xs text-zinc-400 max-w-xs mx-auto">Evaluating health index, skill gap deltas, target companies, and learning roadmaps for {activeRec.title}...</p>
+          </div>
+        </div>
+      )}
+      
+      {isGeneratingMore && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex flex-col items-center justify-center space-y-6">
+          <div className="loading-spinner" style={{ border: '4px solid rgba(255,255,255,0.05)', borderTop: '4px solid var(--accent-clay)', borderRadius: '50%', width: '64px', height: '64px', animation: 'spin 1s linear infinite' }}></div>
+          <div className="text-center space-y-2 animate-pulse">
+            <h3 className="text-lg font-bold text-white">Recalculating Career Options...</h3>
+            <p className="text-xs text-zinc-400 max-w-xs mx-auto">Querying Gemini AI for alternative paths or refined preferences...</p>
+          </div>
+        </div>
+      )}
+
+      {/* ══ REFINE MODAL DIALOG ══ */}
+      {showRefineModal && (
+        <div className="modal-overlay open">
+          <div className="modal" style={{ maxWidth: 500 }}>
+            <button
+              onClick={() => setShowRefineModal(false)}
+              className="modal-close"
+            >
+              ✕
+            </button>
+            <div className="text-2xl mb-2">⚙</div>
+            <h3 className="modal-title">Refine Recommendations</h3>
+            <p className="modal-sub">Update parameters to recalculate career suggestions</p>
+            
+            <div className="space-y-4 text-left mt-6">
+              <div className="form-group">
+                <label className="text-xs font-mono text-zinc-400">Academic Stream</label>
+                <input
+                  type="text"
+                  value={refineStream}
+                  onChange={(e) => setRefineStream(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-lg text-sm text-white"
+                />
+              </div>
+              <div className="form-group">
+                <label className="text-xs font-mono text-zinc-400">Skills (comma-separated)</label>
+                <textarea
+                  value={refineSkills}
+                  onChange={(e) => setRefineSkills(e.target.value)}
+                  rows={3}
+                  className="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-lg text-sm text-white"
+                />
+              </div>
+              <div className="form-group">
+                <label className="text-xs font-mono text-zinc-400">Interests (comma-separated)</label>
+                <textarea
+                  value={refineInterests}
+                  onChange={(e) => setRefineInterests(e.target.value)}
+                  rows={2}
+                  className="w-full bg-zinc-900 border border-zinc-800 p-2.5 rounded-lg text-sm text-white"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end mt-8">
+              <button
+                onClick={() => setShowRefineModal(false)}
+                className="btn-ghost py-2 px-5 text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRefineSubmit}
+                className="btn-primary py-2 px-5 text-xs font-bold"
+              >
+                Refine Paths
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

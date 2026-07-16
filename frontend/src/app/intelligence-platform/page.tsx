@@ -52,7 +52,7 @@ function GrowthPlatformContent() {
     setLoadingConfig(true);
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
 
       const [flagsRes, expRes] = await Promise.all([
         fetch('/api/intelligence-platform/flags', { headers }),
@@ -78,7 +78,7 @@ function GrowthPlatformContent() {
     setLoadingAnalytics(true);
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
 
       const res = await fetch('/api/intelligence-platform/analytics', { headers });
       if (res.ok) {

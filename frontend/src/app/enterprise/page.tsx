@@ -66,7 +66,7 @@ function EnterprisePlatformContent() {
   const loadOrgDetails = async () => {
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
 
       const res = await fetch('/api/enterprise/organization', { headers });
       if (res.ok) {
@@ -81,7 +81,7 @@ function EnterprisePlatformContent() {
   const loadBillingInfo = async () => {
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
 
       const res = await fetch('/api/enterprise/billing', { headers });
       if (res.ok) {
@@ -96,7 +96,7 @@ function EnterprisePlatformContent() {
   const loadDeveloperKeys = async () => {
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
 
       const res = await fetch('/api/enterprise/developer', { headers });
       if (res.ok) {
@@ -112,7 +112,7 @@ function EnterprisePlatformContent() {
     setLoadingPlugins(true);
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
 
       const res = await fetch('/api/enterprise/marketplace', { headers });
       if (res.ok) {
@@ -129,7 +129,7 @@ function EnterprisePlatformContent() {
   const loadAuditLogs = async () => {
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
 
       const res = await fetch('/api/enterprise/compliance', { headers });
       if (res.ok) {
@@ -271,7 +271,7 @@ function EnterprisePlatformContent() {
     setSearching(true);
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
 
       const res = await fetch(`/api/enterprise/search?q=${searchQuery}`, { headers });
       if (res.ok) {
@@ -290,7 +290,7 @@ function EnterprisePlatformContent() {
     setExportData(null);
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
 
       const res = await fetch('/api/enterprise/compliance?action=export', { headers });
       if (res.ok) {
@@ -313,7 +313,7 @@ function EnterprisePlatformContent() {
       {/* Page Header with Translation locale switcher */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2.5rem' }}>
         <div>
-          <div className="section-eyebrow" style={{ textTransform: 'uppercase', tracking: '0.1em', fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-clay)' }}>Global Scale Platform</div>
+          <div className="section-eyebrow" style={{ textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-clay)' }}>Global Scale Platform</div>
           <h1 className="page-title" style={{ fontSize: '2.25rem', color: 'var(--text-primary)', margin: '0.5rem 0' }}>Enterprise Workspace</h1>
           <p className="page-subtitle" style={{ color: 'var(--text-muted)' }}>
             {translate('welcome', locale)}

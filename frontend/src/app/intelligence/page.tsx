@@ -56,7 +56,7 @@ function AutonomousIntelligenceContent() {
     setLoadingStats(true);
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
 
       const [healthRes, predRes, coachRes] = await Promise.all([
         fetch('/api/intelligence/health', { headers }),
@@ -86,7 +86,7 @@ function AutonomousIntelligenceContent() {
   const loadWorkflows = async () => {
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
       const res = await fetch('/api/intelligence/workflows', { headers });
       if (res.ok) {
         const d = await res.json();
@@ -100,7 +100,7 @@ function AutonomousIntelligenceContent() {
   const loadEventLogs = async () => {
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
       const res = await fetch('/api/intelligence/events', { headers });
       if (res.ok) {
         const d = await res.json();
@@ -204,7 +204,7 @@ function AutonomousIntelligenceContent() {
     setReport(null);
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
 
       const res = await fetch(`/api/intelligence/reports?type=${reportType}`, { headers });
       if (res.ok) {

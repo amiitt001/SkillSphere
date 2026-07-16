@@ -283,7 +283,7 @@ function RecommendationsDashboard() {
   return (
     <div className="page-container" style={{ paddingBottom: '3rem' }}>
       <div className="page-header" style={{ marginBottom: '2rem' }}>
-        <div className="section-eyebrow" style={{ textTransform: 'uppercase', tracking: '0.1em', fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-clay)' }}>Execution Layer</div>
+        <div className="section-eyebrow" style={{ textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-clay)' }}>Execution Layer</div>
         <h1 className="page-title" style={{ fontSize: '2.25rem', color: 'var(--text-primary)', margin: '0.5rem 0' }}>Recommendation Hub</h1>
         <p className="page-subtitle" style={{ color: 'var(--text-muted)' }}>
           Transforming Career Intelligence into immediate action. Continuous jobs, internships, coursework, certifications, and portfolio projects matched to your coding profile.

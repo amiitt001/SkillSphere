@@ -70,7 +70,9 @@ export async function runCopilotConversation(params: {
         aiAnalysis: userData.aiAnalysis || null,
         bookmarks: bookmarksSnap.docs.map(d => ({ id: d.id, ...d.data() })),
         applications: applicationsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
-        progress: progressSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+        progress: progressSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+        primaryCareerGoal: userData.primaryCareerGoal || undefined,
+        careerBlueprint: userData.careerBlueprint || undefined
       });
     }
   } catch (err) {

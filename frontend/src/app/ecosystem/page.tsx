@@ -68,7 +68,7 @@ function EcosystemDashboardContent() {
     setRoleLoading(true);
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
 
       const res = await fetch('/api/ecosystem/profile', { headers });
       if (res.ok) {
@@ -114,7 +114,7 @@ function EcosystemDashboardContent() {
   const loadJobsData = async () => {
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
       const res = await fetch('/api/ecosystem/jobs', { headers });
       if (res.ok) {
         const d = await res.json();
@@ -129,7 +129,7 @@ function EcosystemDashboardContent() {
     setCandidatesLoading(true);
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
       const queryStr = skillsQuery ? `?skills=${skillsQuery}` : '';
 
       const res = await fetch(`/api/ecosystem/candidates${queryStr}`, { headers });
@@ -147,7 +147,7 @@ function EcosystemDashboardContent() {
   const loadMentorData = async () => {
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
       const res = await fetch('/api/ecosystem/mentor', { headers });
       if (res.ok) {
         const d = await res.json();
@@ -166,7 +166,7 @@ function EcosystemDashboardContent() {
     setAnalyticsLoading(true);
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
       const res = await fetch('/api/ecosystem/analytics', { headers });
       if (res.ok) {
         const d = await res.json();
@@ -185,7 +185,7 @@ function EcosystemDashboardContent() {
   const loadAuditLogs = async () => {
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
       const res = await fetch('/api/ecosystem/audit', { headers });
       if (res.ok) {
         const d = await res.json();

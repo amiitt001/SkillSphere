@@ -61,7 +61,7 @@ function CopilotDashboardContent() {
     setBriefLoading(true);
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
 
       const [briefRes, planRes, reflectRes] = await Promise.all([
         fetch('/api/copilot/brief', { headers }),
@@ -91,7 +91,7 @@ function CopilotDashboardContent() {
   const loadTasks = async () => {
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
       const res = await fetch('/api/copilot/tasks', { headers });
       if (res.ok) {
         const d = await res.json();
@@ -105,7 +105,7 @@ function CopilotDashboardContent() {
   const loadNotifications = async () => {
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
       const res = await fetch('/api/copilot/notifications', { headers });
       if (res.ok) {
         const d = await res.json();
@@ -168,7 +168,7 @@ function CopilotDashboardContent() {
   const handleDeleteTask = async (taskId: string) => {
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      const headers = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
+      const headers: HeadersInit = idToken ? { 'Authorization': `Bearer ${idToken}` } : {};
 
       const res = await fetch(`/api/copilot/tasks?taskId=${taskId}`, {
         method: 'DELETE',
