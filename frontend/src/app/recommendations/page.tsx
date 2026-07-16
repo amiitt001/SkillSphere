@@ -45,7 +45,8 @@ function RecommendationsDashboard() {
 
       const res = await fetch('/api/recommendations', { headers });
       if (!res.ok) {
-        throw new Error('Failed to retrieve recommendations feed');
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || 'Failed to retrieve recommendations feed');
       }
       const data = await res.json();
       if (data.success) {
@@ -937,7 +938,21 @@ function RecommendationsDashboard() {
 
         </div>
       ) : (
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>Could not load recommendation feed details.</p>
+        <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '4rem 2rem', background: 'rgba(25, 23, 21, 0.2)', border: '1px dashed var(--border-subtle)', borderRadius: 16, maxWidth: 500, margin: '2rem auto' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⚡</div>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.75rem' }}>Profile Setup Required</h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5', marginBottom: '1.5rem' }}>
+            {error || "We couldn't retrieve your recommendations feed. Please make sure your profile is fully set up and synchronized."}
+          </p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <button onClick={() => window.location.href = '/dashboard'} className="btn-primary" style={{ padding: '8px 20px', fontSize: '0.8rem' }}>
+              Go to Dashboard
+            </button>
+            <button onClick={() => window.location.href = '/profile'} className="btn-ghost" style={{ padding: '8px 20px', fontSize: '0.8rem' }}>
+              Complete Profile
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
