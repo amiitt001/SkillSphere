@@ -1,4 +1,5 @@
-import { aiService, StandardAiResponse } from '../aiService';
+import { modelRouter as aiService } from '../orchestrator/modelRouter';
+import { StandardAiResponse } from '../aiService';
 import { getChatbotPrompt } from '../prompts/chatbot';
 
 export function getFallbackChatResponse() {

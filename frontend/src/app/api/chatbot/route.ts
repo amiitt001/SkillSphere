@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   try {
     const authResult = await verifyAuth(req);
     if (authResult.error) {
-      logger.auth(undefined, `chatbot [ReqId: ${requestId}]`, false, authResult.error);
+      logger.audit(`chatbot [ReqId: ${requestId}]`, 'anonymous', false, { error: authResult.error });
       return errorResponse(authResult.error, authResult.status || 401);
     }
 

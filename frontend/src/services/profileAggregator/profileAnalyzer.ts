@@ -4,7 +4,7 @@
 
 import type { UnifiedProfile, ProfileScore, AIProfileAnalysis } from '@/types';
 import { aiService } from '@/services/ai';
-import { cacheStore } from '@/lib/cache';
+import { cacheProvider } from '@/shared/infrastructure/cache/cacheProvider';
 import { logger } from '@/services/logger';
 import { getProfileAnalysisPrompt } from '@/services/ai/prompts/profile';
 import crypto from 'crypto';
@@ -79,7 +79,7 @@ export async function analyzeProfile(
 
   // Check cache first
   try {
-    const cached = await cacheStore.get<AIProfileAnalysis>(cacheKey);
+    const cached = await cacheProvider.get<AIProfileAnalysis>(cacheKey);
     if (cached) {
       logger.info(`[ProfileAnalyzer] Cache hit for user: ${profile.uid}`);
       return cached;
@@ -103,7 +103,7 @@ export async function analyzeProfile(
   // Cache for 1 hour
   if (res.success && res.provider !== 'mock') {
     try {
-      await cacheStore.set(cacheKey, analysis, 3600);
+      await cacheProvider.set(cacheKey, analysis, 3600);
     } catch (err) {
       logger.error('[ProfileAnalyzer] Cache write failed', err);
     }

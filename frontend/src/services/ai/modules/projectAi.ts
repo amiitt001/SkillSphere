@@ -1,6 +1,7 @@
-import { aiService, StandardAiResponse } from '../aiService';
+import { modelRouter as aiService } from '../orchestrator/modelRouter';
+import { StandardAiResponse } from '../aiService';
 import { getProjectGenerationPrompt } from '../prompts/project';
-import { cacheStore } from '@/lib/cache';
+import { cacheProvider } from '@/shared/infrastructure/cache/cacheProvider';
 import { logger } from '@/services/logger';
 
 export function getFallbackProjects(career: string, skillLevel: string) {
@@ -33,7 +34,7 @@ export class ProjectAi {
     const cacheKey = `projects:${career}:${skillLevel}:${skills || ''}`;
 
     try {
-      const cached = await cacheStore.get<any>(cacheKey);
+      const cached = await cacheProvider.get<any>(cacheKey);
       if (cached) {
         logger.info(`[ProjectAi] Cache hit for project generation key: ${cacheKey}`);
         return {
@@ -56,7 +57,7 @@ export class ProjectAi {
 
     if (res.success && res.provider !== 'mock') {
       try {
-        await cacheStore.set(cacheKey, res.data, 3600); // 1 hour TTL
+        await cacheProvider.set(cacheKey, res.data, 3600); // 1 hour TTL
       } catch (err) {
         logger.error('[ProjectAi] Cache write failed', err);
       }

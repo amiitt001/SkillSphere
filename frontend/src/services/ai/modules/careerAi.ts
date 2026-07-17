@@ -1,6 +1,7 @@
-import { aiService, StandardAiResponse } from '../aiService';
+import { modelRouter as aiService } from '../orchestrator/modelRouter';
+import { StandardAiResponse } from '../aiService';
 import { getRecommendationsPrompt, getComparisonPrompt } from '../prompts/career';
-import { cacheStore } from '@/lib/cache';
+import { cacheProvider } from '@/shared/infrastructure/cache/cacheProvider';
 import { logger } from '@/services/logger';
 
 export function getFallbackRecommendations(academicStream: string, skills: string, interests: string) {
@@ -165,7 +166,7 @@ export class CareerAi {
     const cacheKey = `recommendations:${academicStream}:${skillsStr}:${interestsStr}${generateMore ? ':more' : ''}`;
 
     try {
-      const cached = await cacheStore.get<any>(cacheKey);
+      const cached = await cacheProvider.get<any>(cacheKey);
       if (cached) {
         logger.info(`[CareerAi] Cache hit for key: ${cacheKey}`);
         return {
@@ -191,7 +192,7 @@ export class CareerAi {
 
     if (res.success && res.provider !== 'mock') {
       try {
-        await cacheStore.set(cacheKey, res.data);
+        await cacheProvider.set(cacheKey, res.data);
       } catch (err) {
         logger.error('[CareerAi] Cache write failed', err);
       }

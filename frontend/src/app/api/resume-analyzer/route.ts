@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request);
     if (authResult.error) {
-      logger.auth(undefined, `resume-analyzer [ReqId: ${requestId}]`, false, authResult.error);
+      logger.audit(`resume-analyzer [ReqId: ${requestId}]`, 'anonymous', false, { error: authResult.error });
       return errorResponse(authResult.error, authResult.status || 401);
     }
 

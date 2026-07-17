@@ -1,26 +1,22 @@
-/**
- * generic Response Caching Layer
- * Designed to be compatible with Redis.
- */
-export interface CacheStore {
+export interface ICacheProvider {
   get<T>(key: string): Promise<T | null>;
   set<T>(key: string, value: T, ttlSeconds?: number): Promise<void>;
   delete(key: string): Promise<void>;
   clear(): Promise<void>;
 }
 
-export class MemoryCacheStore implements CacheStore {
+export class MemoryCacheProvider implements ICacheProvider {
   private cache = new Map<string, { value: any; expiry: number }>();
 
   async get<T>(key: string): Promise<T | null> {
     const entry = this.cache.get(key);
     if (!entry) return null;
-    
+
     if (Date.now() > entry.expiry) {
       this.cache.delete(key);
       return null;
     }
-    
+
     return entry.value as T;
   }
 
@@ -40,5 +36,6 @@ export class MemoryCacheStore implements CacheStore {
   }
 }
 
-export const cacheStore = new MemoryCacheStore();
-export default cacheStore;
+// Concrete instantiation
+export const cacheProvider: ICacheProvider = new MemoryCacheProvider();
+export default cacheProvider;

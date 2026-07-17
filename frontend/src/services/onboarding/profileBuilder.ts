@@ -1,4 +1,5 @@
-import { profileMemory, UnifiedUserProfile, UnifiedProfileFieldMetadata } from './profileMemory';
+import { UnifiedUserProfile, UnifiedProfileFieldMetadata } from './profileMemory';
+import { profileService } from '@/services/profile/profileService';
 import { profileCompleteness } from './profileCompleteness';
 import { confidenceEngine } from './confidenceEngine';
 import { logger } from '@/services/logger';
@@ -21,7 +22,7 @@ export const profileBuilder = {
     }
   ): Promise<UnifiedUserProfile | null> {
     try {
-      const existing = await profileMemory.getProfile(uid);
+      const existing = await profileService.getUnifiedProfile(uid);
 
       // 1. Build personalInfo
       const newPersonalInfo = {
@@ -111,7 +112,7 @@ export const profileBuilder = {
       draftProfile.profileCompleteness = completeness.score;
 
       // 7. Save to database — throws on error so the API surface the real message
-      return await profileMemory.saveProfile(uid, draftProfile);
+      return await profileService.saveUnifiedProfile(uid, draftProfile);
     } catch (error) {
       logger.error(`[ProfileBuilder] Failed to build profile for ${uid}:`, error);
       throw error;

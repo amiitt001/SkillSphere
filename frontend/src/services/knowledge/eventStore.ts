@@ -1,7 +1,7 @@
 import { getFirestore } from 'firebase-admin/firestore';
 import '@/lib/firebaseAdmin';
 import { ProfileEvent, ProfileEventType } from '@/types/profile';
-import { eventBus } from '../events/eventBus';
+import { eventBus } from '@/shared/infrastructure/events/eventBus';
 import { logger } from '@/services/logger';
 
 function getAdminDb() {

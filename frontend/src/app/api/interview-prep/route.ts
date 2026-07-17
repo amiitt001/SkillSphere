@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request);
     if (authResult.error) {
-      logger.auth(undefined, `interview-prep [ReqId: ${requestId}]`, false, authResult.error);
+      logger.audit(`interview-prep [ReqId: ${requestId}]`, 'anonymous', false, { error: authResult.error });
       return errorResponse(authResult.error, authResult.status || 401);
     }
 

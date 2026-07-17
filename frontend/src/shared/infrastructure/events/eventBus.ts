@@ -1,6 +1,11 @@
-type EventCallback = (payload: any) => void;
+export type EventCallback = (payload: any) => void;
 
-export class EventBus {
+export interface IEventBus {
+  subscribe(eventType: string, callback: EventCallback): () => void;
+  publish(eventType: string, payload: any): void;
+}
+
+export class LocalEventBus implements IEventBus {
   private listeners: Map<string, EventCallback[]> = new Map();
 
   subscribe(eventType: string, callback: EventCallback): () => void {
@@ -28,12 +33,12 @@ export class EventBus {
         try {
           cb(payload);
         } catch (err) {
-          console.error(`[EventBus] Error in subscriber for event ${eventType}:`, err);
+          console.error(`[LocalEventBus] Error in subscriber for event ${eventType}:`, err);
         }
       });
     }
   }
 }
 
-export const eventBus = new EventBus();
+export const eventBus: IEventBus = new LocalEventBus();
 export default eventBus;

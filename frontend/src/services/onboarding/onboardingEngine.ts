@@ -1,6 +1,7 @@
 import { resumeParser, ParsedResumeDraft } from './resumeParser';
 import { profileBuilder } from './profileBuilder';
-import { profileMemory, UnifiedUserProfile } from './profileMemory';
+import { UnifiedUserProfile } from './profileMemory';
+import { profileService } from '@/services/profile/profileService';
 import { smartQuestionEngine, SmartQuestion } from './smartQuestionEngine';
 import { profileCompleteness } from './profileCompleteness';
 import { logger } from '@/services/logger';
@@ -50,7 +51,7 @@ export const onboardingEngine = {
     missing: string[];
     nextQuestion: SmartQuestion | null;
   }> {
-    const profile = await profileMemory.getProfile(uid);
+    const profile = await profileService.getUnifiedProfile(uid);
     const completeness = profileCompleteness.calculate(profile);
     const nextQuestion = smartQuestionEngine.getNextQuestion(profile);
 

@@ -44,7 +44,7 @@ function WorkspaceDashboardContent() {
   const [oauthModalAccount, setOauthModalAccount] = useState<ConnectedAccount | null>(null);
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState<'workspace' | 'marketplace' | 'workflows'>('workspace');
+  const [activeTab, setActiveTab] = useState<'workspace' | 'marketplace' | 'workflows' | 'jobs'>('workspace');
 
   // Career Goal & Blueprint State
   const [profileGoal, setProfileGoal] = useState<string | null>(null);
@@ -387,6 +387,7 @@ function WorkspaceDashboardContent() {
         <button className={`difficulty-option ${activeTab === 'workspace' ? 'active' : ''}`} onClick={() => setActiveTab('workspace')} style={{ flex: 1 }}>🖥 Workspace Dashboard</button>
         <button className={`difficulty-option ${activeTab === 'marketplace' ? 'active' : ''}`} onClick={() => setActiveTab('marketplace')} style={{ flex: 1 }}>🛒 Integration Marketplace ({connectedCount} linked)</button>
         <button className={`difficulty-option ${activeTab === 'workflows' ? 'active' : ''}`} onClick={() => setActiveTab('workflows')} style={{ flex: 1 }}>⚡ Workspace Automations</button>
+        <button className={`difficulty-option ${activeTab === 'jobs' ? 'active' : ''}`} onClick={() => setActiveTab('jobs')} style={{ flex: 1 }}>🔖 Tracked Jobs</button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '3fr 1.2fr', gap: '2rem', alignItems: 'start' }}>
@@ -766,6 +767,34 @@ function WorkspaceDashboardContent() {
                 </div>
               </div>
 
+            </div>
+          )}
+
+          {/* TAB 4: TRACKED JOBS */}
+          {activeTab === 'jobs' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Tracked Jobs</h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 4 }}>Jobs you've analyzed and saved. Recalculate scores as your profile improves.</p>
+                </div>
+                <a
+                  href="/job-intelligence"
+                  style={{ padding: '8px 18px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textDecoration: 'none' }}
+                >
+                  ⚡ Analyze New Job
+                </a>
+              </div>
+
+              <div className="quiz-card" style={{ background: 'rgba(25,23,21,0.45)', padding: '1.25rem' }}>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 12 }}>Open the <strong>Job Intelligence Engine</strong> to analyze job postings (URL, paste, or PDF). Saved jobs appear here with live match scores updated against your evolving profile.</p>
+                <a
+                  href="/job-intelligence?tab=saved"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: '#10b981', fontWeight: 600, textDecoration: 'none' }}
+                >
+                  View all tracked jobs →
+                </a>
+              </div>
             </div>
           )}
 

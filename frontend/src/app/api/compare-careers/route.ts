@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request);
     if (authResult.error) {
-      logger.auth(undefined, `compare-careers [ReqId: ${requestId}]`, false, authResult.error);
+      logger.audit(`compare-careers [ReqId: ${requestId}]`, 'anonymous', false, { error: authResult.error });
       return errorResponse(authResult.error, authResult.status || 401);
     }
 

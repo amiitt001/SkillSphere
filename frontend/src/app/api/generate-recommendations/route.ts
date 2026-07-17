@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request);
     if (authResult.error) {
-      logger.auth(undefined, `generate-recommendations [ReqId: ${requestId}]`, false, authResult.error);
+      logger.audit(`generate-recommendations [ReqId: ${requestId}]`, 'anonymous', false, { error: authResult.error });
       return errorResponse(authResult.error, authResult.status || 401);
     }
 

@@ -1,7 +1,8 @@
 import crypto from 'crypto';
-import { aiService, StandardAiResponse } from '../aiService';
+import { modelRouter as aiService } from '../orchestrator/modelRouter';
+import { StandardAiResponse } from '../aiService';
 import { getResumeHelperPrompt, getResumeAnalyzerPrompt } from '../prompts/resume';
-import { cacheStore } from '@/lib/cache';
+import { cacheProvider } from '@/shared/infrastructure/cache/cacheProvider';
 import { logger } from '@/services/logger';
 
 export function getFallbackResumeAnalysis() {
@@ -49,7 +50,7 @@ export class ResumeAi {
     const cacheKey = `resume-analysis:${hash}:${targetCareer || ''}`;
 
     try {
-      const cached = await cacheStore.get<any>(cacheKey);
+      const cached = await cacheProvider.get<any>(cacheKey);
       if (cached) {
         logger.info(`[ResumeAi] Cache hit for resume analysis key: ${cacheKey}`);
         return {
@@ -72,7 +73,7 @@ export class ResumeAi {
 
     if (res.success && res.provider !== 'mock') {
       try {
-        await cacheStore.set(cacheKey, res.data, 1800); // 30 minutes TTL
+        await cacheProvider.set(cacheKey, res.data, 1800); // 30 minutes TTL
       } catch (err) {
         logger.error('[ResumeAi] Cache write failed', err);
       }

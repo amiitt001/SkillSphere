@@ -1,6 +1,6 @@
 import { chatbotSchema, compareCareersSchema, generateRecommendationsSchema } from '../validation';
 import { RateLimiter } from '../rateLimit';
-import { MemoryCacheStore } from '../cache';
+import { MemoryCacheProvider } from '../../shared/infrastructure/cache/cacheProvider';
 
 describe('Production Hardening & Security Utilities', () => {
   
@@ -68,10 +68,10 @@ describe('Production Hardening & Security Utilities', () => {
   });
 
   describe('In-Memory Response Caching', () => {
-    let cacheStore: MemoryCacheStore;
+    let cacheStore: MemoryCacheProvider;
 
     beforeEach(() => {
-      cacheStore = new MemoryCacheStore();
+      cacheStore = new MemoryCacheProvider();
     });
 
     it('should retrieve set cache value within TTL', async () => {

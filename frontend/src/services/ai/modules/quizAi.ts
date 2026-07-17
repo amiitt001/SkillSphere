@@ -1,6 +1,7 @@
-import { aiService, StandardAiResponse } from '../aiService';
+import { modelRouter as aiService } from '../orchestrator/modelRouter';
+import { StandardAiResponse } from '../aiService';
 import { getQuizGenerationPrompt, getQuizEvaluationPrompt } from '../prompts/quiz';
-import { cacheStore } from '@/lib/cache';
+import { cacheProvider } from '@/shared/infrastructure/cache/cacheProvider';
 import { logger } from '@/services/logger';
 
 export function getFallbackQuiz(skills: string[]) {
@@ -42,7 +43,7 @@ export class QuizAi {
     const cacheKey = `quiz:${skillsStr}:${difficulty}:${questionCount}`;
 
     try {
-      const cached = await cacheStore.get<any>(cacheKey);
+      const cached = await cacheProvider.get<any>(cacheKey);
       if (cached) {
         logger.info(`[QuizAi] Cache hit for quiz generation key: ${cacheKey}`);
         return {
@@ -65,7 +66,7 @@ export class QuizAi {
 
     if (res.success && res.provider !== 'mock') {
       try {
-        await cacheStore.set(cacheKey, res.data, 1800); // 30 minutes TTL
+        await cacheProvider.set(cacheKey, res.data, 1800); // 30 minutes TTL
       } catch (err) {
         logger.error('[QuizAi] Cache write failed', err);
       }

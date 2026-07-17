@@ -1,4 +1,5 @@
-import { aiService, StandardAiResponse } from '../aiService';
+import { modelRouter as aiService } from '../orchestrator/modelRouter';
+import { StandardAiResponse } from '../aiService';
 import { getInterviewGenerationPrompt, getInterviewEvaluationPrompt } from '../prompts/interview';
 
 export function getFallbackQuestions(career: string) {

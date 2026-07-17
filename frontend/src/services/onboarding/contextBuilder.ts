@@ -1,4 +1,5 @@
-import { profileMemory, UnifiedUserProfile } from './profileMemory';
+import { UnifiedUserProfile } from './profileMemory';
+import { profileService } from '@/services/profile/profileService';
 
 export const contextBuilder = {
   /**
@@ -11,7 +12,7 @@ export const contextBuilder = {
     preferredRoles: string[];
     preferredLocations: string[];
   } | null> {
-    const profile = await profileMemory.getProfile(uid);
+    const profile = await profileService.getUnifiedProfile(uid);
     if (!profile) return null;
 
     const academicStream = profile.education?.[0]?.stream || 'Engineering / Tech';
@@ -39,7 +40,7 @@ export const contextBuilder = {
     experience: UnifiedUserProfile['experience'];
     education: UnifiedUserProfile['education'];
   } | null> {
-    const profile = await profileMemory.getProfile(uid);
+    const profile = await profileService.getUnifiedProfile(uid);
     if (!profile) return null;
 
     return {
@@ -58,7 +59,7 @@ export const contextBuilder = {
     targetRole: string;
     skills: string[];
   } | null> {
-    const profile = await profileMemory.getProfile(uid);
+    const profile = await profileService.getUnifiedProfile(uid);
     if (!profile) return null;
 
     const targetRole = profile.careerGoals?.preferredRoles?.[0] || 'Software Engineer';
@@ -74,7 +75,7 @@ export const contextBuilder = {
    * Builds context for the Chatbot AI Assistant.
    */
   async getChatbotAIContext(uid: string): Promise<string> {
-    const profile = await profileMemory.getProfile(uid);
+    const profile = await profileService.getUnifiedProfile(uid);
     if (!profile) return 'User has not completed onboarding yet.';
 
     const goals = profile.careerGoals?.preferredRoles?.join(', ') || 'Not specified';

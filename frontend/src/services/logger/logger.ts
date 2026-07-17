@@ -16,23 +16,13 @@ export const logger = {
     console.error(`[ERROR] ${message}`, error instanceof Error ? error.stack || error.message : error || '');
   },
 
-  ai: (provider: string, action: string, success: boolean, error?: any) => {
+  audit: (action: string, actor: string, success: boolean, extra?: any) => {
     const status = success ? 'SUCCESS' : 'FAILED';
-    const msg = `[AI_CALL] Provider: ${provider} | Action: ${action} | Status: ${status}`;
+    const msg = `[AUDIT] Action: ${action} | Actor: ${actor} | Status: ${status}`;
     if (success) {
-      console.info(msg);
+      console.info(msg, extra ? JSON.stringify(extra) : '');
     } else {
-      console.error(msg, error instanceof Error ? error.stack || error.message : error || '');
-    }
-  },
-
-  auth: (userId: string | undefined, action: string, success: boolean, error?: any) => {
-    const status = success ? 'SUCCESS' : 'FAILED';
-    const msg = `[AUTH] User: ${userId || 'anonymous'} | Action: ${action} | Status: ${status}`;
-    if (success) {
-      console.info(msg);
-    } else {
-      console.error(msg, error instanceof Error ? error.stack || error.message : error || '');
+      console.error(msg, extra ? JSON.stringify(extra) : '');
     }
   }
 };

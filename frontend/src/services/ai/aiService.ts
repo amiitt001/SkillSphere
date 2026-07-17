@@ -172,7 +172,7 @@ export class AiService {
       if (!geminiBlocked && process.env.GEMINI_API_KEY) {
         const data = await retryWithDelay(() => operation(geminiProvider));
         const latency = Date.now() - start;
-        logger.ai('gemini', 'executeJSON/Text', true);
+        logger.audit('executeJSON/Text', 'gemini', true, { latency });
         return {
           data,
           provider: 'gemini',
@@ -182,6 +182,7 @@ export class AiService {
       }
     } catch (err: any) {
       logger.error('[AiService] Gemini call failed, trying fallback...', err);
+      logger.audit('executeJSON/Text', 'gemini', false, { error: err.message || err });
       if (err.message && (err.message.includes('429') || err.message.toLowerCase().includes('resource_exhausted'))) {
         await blockGemini();
       }
@@ -193,7 +194,7 @@ export class AiService {
       if (!nvidiaBlocked && process.env.NVIDIA_API_KEY) {
         const data = await retryWithDelay(() => operation(deepseekProvider));
         const latency = Date.now() - start;
-        logger.ai('deepseek', 'executeJSON/Text', true);
+        logger.audit('executeJSON/Text', 'deepseek', true, { latency });
         return {
           data,
           provider: 'deepseek',
@@ -203,6 +204,7 @@ export class AiService {
       }
     } catch (err: any) {
       logger.error('[AiService] DeepSeek call failed, using mock...', err);
+      logger.audit('executeJSON/Text', 'deepseek', false, { error: err.message || err });
       if (err.message && (err.message.includes('429') || err.message.toLowerCase().includes('resource_exhausted'))) {
         await blockNvidia();
       }
