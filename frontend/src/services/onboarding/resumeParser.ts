@@ -3,11 +3,16 @@ import mammoth from 'mammoth';
 import { aiService } from '@/services/ai';
 import { logger } from '@/services/logger';
 import path from 'path';
+import fs from 'fs';
 
 // Bind absolute worker path to prevent Next.js dynamic build chunk loader failures
 try {
   const workerPath = path.resolve(process.cwd(), 'node_modules/pdfjs-dist/build/pdf.worker.mjs');
-  PDFParse.setWorker(workerPath);
+  if (fs.existsSync(workerPath)) {
+    PDFParse.setWorker(workerPath);
+  } else {
+    logger.warn('[ResumeParser] Local PDFJS worker file not found at:', workerPath);
+  }
 } catch (err) {
   logger.warn('[ResumeParser] Failed to initialize absolute PDFJS worker path:', err);
 }
