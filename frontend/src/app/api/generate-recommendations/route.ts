@@ -1,11 +1,14 @@
 import { type NextRequest } from 'next/server';
 import { verifyAuth } from '@/lib/authMiddleware';
-import { careerAi } from '@/services/ai';
+import { careerAi, CareerRecommendationContext } from '@/services/ai';
+import { computeCareerProfileHash } from '@/services/ai';
 import { logger } from '@/services/logger';
 import { successResponse, errorResponse } from '@/utils';
 import { generateRecommendationsSchema } from '@/lib/validation';
 import { globalRateLimiter } from '@/lib/rateLimit';
 import { contextBuilder } from '@/services/onboarding/contextBuilder';
+import { getFirestore } from 'firebase-admin/firestore';
+import '@/lib/firebaseAdmin';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,7 +53,7 @@ export async function GET(request: NextRequest) {
       return errorResponse(errorMsg, 400);
     }
 
-    const { academicStream, skills, interests, cNum1, cNum2, cAns } = result.data;
+    const { cNum1, cNum2, cAns } = result.data;
 
     // Verify security check
     if (cNum1 + cNum2 !== cAns) {
@@ -58,38 +61,79 @@ export async function GET(request: NextRequest) {
       return errorResponse('Security check failed. Please verify CAPTCHA.', 400);
     }
 
-    // Check and load dynamic profile context
-    let activeStream = academicStream;
-    let activeSkills = skills ? skills.split(',').map((s) => s.trim()).filter(Boolean) : [];
-    let activeInterests = interests ? interests.split(',').map((s) => s.trim()).filter(Boolean) : [];
+    // --- 2. BUILD PERSONALIZED CONTEXT FROM UNIFIED PROFILE ---
+    const db = getFirestore();
+    const [userContext, userDocSnap] = await Promise.all([
+      contextBuilder.getCareerAIContext(userId),
+      db.collection('users').doc(userId).get(),
+    ]);
 
-    if (userId !== 'anonymous') {
-      const userContext = await contextBuilder.getCareerAIContext(userId);
-      if (userContext) {
-        // If preferred roles are completely missing, ask the user progressively
-        if (!userContext.preferredRoles || userContext.preferredRoles.length === 0) {
-          return successResponse({
-            missingFields: ['careerGoals.preferredRoles'],
-            question: 'What professional role(s) are you targeting?'
-          });
-        }
-        
-        if (userContext.academicStream) activeStream = userContext.academicStream;
-        if (userContext.skills.length > 0) activeSkills = userContext.skills;
-        if (userContext.interests.length > 0) activeInterests = userContext.interests;
-      }
+    if (!userContext?.profile) {
+      return errorResponse('Unified profile not found. Please complete your profile or upload your resume first.', 400);
     }
 
+    const resumeFilename = userDocSnap.data()?.currentResumeFilename || 'unknown';
+    const profileHash = computeCareerProfileHash({
+      userId,
+      academicStream: userContext.academicStream,
+      skills: userContext.skills,
+      certifications: userContext.certifications,
+      interests: userContext.interests,
+      preferredRoles: userContext.preferredRoles,
+      experience: userContext.experience,
+      projects: userContext.projects,
+      education: userContext.education,
+      profileVersion: userContext.profileVersion,
+    });
+
+    const activeStream = userContext.academicStream;
+    const activeSkills = userContext.skills;
+    const activeCertifications = userContext.certifications;
+    const activeInterests = userContext.interests;
+    const activeRoles = userContext.preferredRoles;
+    const activeExperience = userContext.experience;
+    const activeProjects = userContext.projects;
+    const activeEducation = userContext.education;
+    const profileVersion = userContext.profileVersion;
+
     const isGenerateMore = searchParams.get('generateMore') === 'true';
+
+    if (process.env.NODE_ENV !== 'production') {
+      logger.info(`[Generate Recommendations API] [ReqId: ${requestId}] Development profile snapshot`, {
+        resumeFilename,
+        profileVersion,
+        profileHash,
+        parsedSkills: activeSkills,
+        parsedExperience: activeExperience,
+      });
+    }
 
     logger.info(`[Generate Recommendations API] [ReqId: ${requestId}] Generating recommendations for user: ${userId}`, {
       academicStream: activeStream,
       skillsCount: activeSkills.length,
+      certificationsCount: activeCertifications.length,
       interestsCount: activeInterests.length,
+      experienceCount: activeExperience.length,
+      projectsCount: activeProjects.length,
       generateMore: isGenerateMore
     });
 
-    const aiRes = await careerAi.generateRecommendations(activeStream, activeSkills, activeInterests, isGenerateMore);
+    // --- 3. BUILD FULL CONTEXT AND CALL AI ---
+    const recommendationContext: CareerRecommendationContext = {
+      userId,
+      academicStream: activeStream,
+      skills: activeSkills,
+      certifications: activeCertifications,
+      interests: activeInterests,
+      preferredRoles: activeRoles,
+      experience: activeExperience,
+      projects: activeProjects,
+      education: activeEducation,
+      profileVersion,
+      profileHash,
+    };
+
+    const aiRes = await careerAi.generateRecommendations(recommendationContext, isGenerateMore);
     const latency = Date.now() - start;
 
     logger.info(`[Generate Recommendations API] [ReqId: ${requestId}] Completed successfully in ${latency}ms`);

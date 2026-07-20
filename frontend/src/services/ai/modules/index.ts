@@ -1,4 +1,6 @@
 export { careerAi, CareerAi } from './careerAi';
+export { computeCareerProfileHash, getFallbackRecommendations } from './careerAi';
+export type { CareerRecommendationContext } from './careerAi';
 export { resumeAi, ResumeAi } from './resumeAi';
 export { interviewAi, InterviewAi } from './interviewAi';
 export { quizAi, QuizAi } from './quizAi';

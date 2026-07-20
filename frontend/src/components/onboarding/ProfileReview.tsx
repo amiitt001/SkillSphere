@@ -46,6 +46,7 @@ export const ProfileReview = ({ draft, onSave, onBack }: ProfileReviewProps) => 
       },
       education: draft.education,
       skills: parsedSkills,
+      certifications: draft.certifications,
       projects: draft.projects,
       experience: draft.experience,
       confidenceScores: draft.confidenceScores,
@@ -249,25 +250,70 @@ export const ProfileReview = ({ draft, onSave, onBack }: ProfileReviewProps) => 
         </div>
       </div>
 
-      <div style={{ marginTop: 28, display: 'flex', gap: 12 }}>
+      {error && (
+        <div
+          style={{
+            marginTop: 16,
+            padding: '12px 16px',
+            borderRadius: 8,
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            color: '#f87171',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+          }}
+        >
+          ⚠️ {error}
+        </div>
+      )}
+
+      <div style={{ marginTop: 24, display: 'flex', gap: 12, alignItems: 'center' }}>
         <button
           onClick={handleApprove}
           disabled={saving}
           style={{
             flex: 1,
-            padding: '12px 24px',
-            background: 'var(--accent-terra)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 8,
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'opacity 0.2s',
+            padding: '14px 24px',
+            background: saving ? 'rgba(226, 125, 95, 0.5)' : 'linear-gradient(135deg, #e27d5f, #c4704b)',
+            color: '#ffffff',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: 12,
+            fontWeight: 700,
+            fontSize: '0.95rem',
+            cursor: saving ? 'not-allowed' : 'pointer',
+            boxShadow: '0 8px 24px rgba(196, 112, 75, 0.35)',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
           }}
-          onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-          onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+          onMouseEnter={(e) => {
+            if (!saving) e.currentTarget.style.transform = 'translateY(-2px)';
+          }}
+          onMouseLeave={(e) => {
+            if (!saving) e.currentTarget.style.transform = 'translateY(0)';
+          }}
         >
-          {saving ? 'Saving Profile...' : 'Approve & Go to Dashboard'}
+          {saving ? '⌛ Saving Unified Profile...' : '✓ Approve & Save to Unified Profile'}
+        </button>
+
+        <button
+          onClick={onBack}
+          disabled={saving}
+          style={{
+            padding: '14px 20px',
+            borderRadius: 12,
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-secondary)',
+            fontWeight: 600,
+            fontSize: '0.9rem',
+            cursor: saving ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          Cancel
         </button>
       </div>
     </div>

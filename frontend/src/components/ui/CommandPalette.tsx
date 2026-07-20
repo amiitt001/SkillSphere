@@ -24,6 +24,7 @@ export default function CommandPalette() {
     { label: 'Career GPS analytics tracker', category: 'Pages', href: '/intelligence' },
     { label: 'AI Recommendations dashboard', category: 'Pages', href: '/recommendations' },
     { label: 'AI Resume Scan enhancer', category: 'Pages', href: '/resume-analyzer' },
+    { label: 'Resume Intelligence single source of truth', category: 'Pages', href: '/resume-intelligence' },
     { label: 'Resume AI bullets assistant', category: 'Pages', href: '/resume-helper' },
     { label: 'AI Interview preparation engine', category: 'Pages', href: '/interview-prep' },
     { label: 'Interactive Skill Quiz assessment', category: 'Pages', href: '/skill-quiz' },

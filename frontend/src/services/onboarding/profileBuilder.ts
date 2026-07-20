@@ -14,6 +14,7 @@ export const profileBuilder = {
       personalInfo?: Partial<UnifiedUserProfile['personalInfo']>;
       education?: UnifiedUserProfile['education'];
       skills?: string[];
+      certifications?: string[];
       projects?: UnifiedUserProfile['projects'];
       experience?: UnifiedUserProfile['experience'];
       careerGoals?: Partial<UnifiedUserProfile['careerGoals']>;
@@ -39,6 +40,11 @@ export const profileBuilder = {
       const mergedSkills = Array.from(new Set([
         ...(existing?.skills || []),
         ...(inputs.skills || [])
+      ])).filter(Boolean);
+
+      const mergedCertifications = Array.from(new Set([
+        ...(existing?.certifications || []),
+        ...(inputs.certifications || [])
       ])).filter(Boolean);
 
       // 3. Merge education, projects, experience
@@ -99,6 +105,7 @@ export const profileBuilder = {
         personalInfo: newPersonalInfo,
         education: mergedEducation,
         skills: mergedSkills,
+        certifications: mergedCertifications,
         projects: mergedProjects,
         experience: mergedExperience,
         careerGoals: mergedGoals,

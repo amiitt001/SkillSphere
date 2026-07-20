@@ -32,6 +32,7 @@ export interface ParsedResumeDraft {
     stream?: string;
   }>;
   skills: string[];
+  certifications: string[];
   projects: Array<{
     title: string;
     description: string;
@@ -79,6 +80,7 @@ Analyze the following extracted resume text and construct a structured JSON obje
 - personalInfo (fullName, email, location, githubUrl, linkedinUrl)
 - education (institution, degree, graduationYear (as integer), stream)
 - skills (array of technical skills/languages/frameworks)
+- certifications (array of professional certifications, coursework certificates, or exam credentials explicitly mentioned in the resume)
 - projects (title, description, technologies (array))
 - experience (company, role, duration, description)
 - confidenceScores (assign confidence rating from 0.0 to 1.0 for each of these keys: 'personalInfo.fullName', 'personalInfo.email', 'skills', 'education', 'projects', 'experience')
@@ -93,43 +95,24 @@ Ensure output matches the JSON schema structure exactly.
 
     const fallback: ParsedResumeDraft = {
       personalInfo: {
-        fullName: 'Amit Verma',
-        email: 'amit.verma@email.com',
-        location: 'Bengaluru, India',
-        githubUrl: 'https://github.com/amit-verma',
-        linkedinUrl: 'https://linkedin.com/in/amitverma'
+        fullName: '',
+        email: '',
+        location: '',
+        githubUrl: '',
+        linkedinUrl: ''
       },
-      education: [
-        {
-          institution: 'Indian Institute of Technology, Delhi',
-          degree: 'B.Tech in Computer Science',
-          graduationYear: 2025,
-          stream: 'Engineering / Tech'
-        }
-      ],
-      skills: ['React', 'TypeScript', 'Node.js', 'Express', 'Python', 'Firebase', 'PostgreSQL', 'Docker'],
-      projects: [
-        {
-          title: 'SkillSphere Learning Platform',
-          description: 'A premium AI-powered developer roadmap and skill assessment portal.',
-          technologies: ['React', 'Next.js', 'TypeScript', 'Firebase']
-        }
-      ],
-      experience: [
-        {
-          company: 'TechCorp Solutions',
-          role: 'Frontend Engineer Intern',
-          duration: 'May 2024 - August 2024',
-          description: 'Developed interactive dashboards and optimized API payload caching layers.'
-        }
-      ],
+      education: [],
+      skills: [],
+      certifications: [],
+      projects: [],
+      experience: [],
       confidenceScores: {
-        'personalInfo.fullName': 0.95,
-        'personalInfo.email': 0.95,
-        'skills': 0.90,
-        'education': 0.88,
-        'projects': 0.85,
-        'experience': 0.85
+        'personalInfo.fullName': 0,
+        'personalInfo.email': 0,
+        'skills': 0,
+        'education': 0,
+        'projects': 0,
+        'experience': 0
       }
     };
 

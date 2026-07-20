@@ -6,27 +6,43 @@ export const contextBuilder = {
    * Builds context for the Career AI Recommendations engine.
    */
   async getCareerAIContext(uid: string): Promise<{
+    profile: UnifiedUserProfile;
+    profileVersion: number;
     academicStream: string;
     skills: string[];
+    certifications: string[];
     interests: string[];
     preferredRoles: string[];
     preferredLocations: string[];
+    experience: UnifiedUserProfile['experience'];
+    projects: UnifiedUserProfile['projects'];
+    education: UnifiedUserProfile['education'];
   } | null> {
     const profile = await profileService.getUnifiedProfile(uid);
     if (!profile) return null;
 
     const academicStream = profile.education?.[0]?.stream || 'Engineering / Tech';
     const skills = profile.skills || [];
+    const certifications = profile.certifications || [];
     const interests = profile.careerGoals?.preferredIndustries || [];
     const preferredRoles = profile.careerGoals?.preferredRoles || [];
     const preferredLocations = profile.careerGoals?.preferredLocations || [];
+    const experience = profile.experience || [];
+    const projects = profile.projects || [];
+    const education = profile.education || [];
 
     return {
+      profile,
+      profileVersion: profile.profileVersion || 0,
       academicStream,
       skills,
+      certifications,
       interests,
       preferredRoles,
-      preferredLocations
+      preferredLocations,
+      experience,
+      projects,
+      education,
     };
   },
 

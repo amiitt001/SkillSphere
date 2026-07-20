@@ -2,6 +2,8 @@ export interface ICacheProvider {
   get<T>(key: string): Promise<T | null>;
   set<T>(key: string, value: T, ttlSeconds?: number): Promise<void>;
   delete(key: string): Promise<void>;
+  /** Deletes all cache entries whose key starts with the given prefix. */
+  deleteByPrefix(prefix: string): Promise<void>;
   clear(): Promise<void>;
 }
 
@@ -29,6 +31,14 @@ export class MemoryCacheProvider implements ICacheProvider {
 
   async delete(key: string): Promise<void> {
     this.cache.delete(key);
+  }
+
+  async deleteByPrefix(prefix: string): Promise<void> {
+    for (const key of this.cache.keys()) {
+      if (key.startsWith(prefix)) {
+        this.cache.delete(key);
+      }
+    }
   }
 
   async clear(): Promise<void> {

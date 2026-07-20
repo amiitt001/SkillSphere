@@ -2,30 +2,57 @@
  * Career Prompts Library
  */
 
-export const getRecommendationsPrompt = (academicStream: string, skills: string, interests: string) => `
-You are an expert career and skills advisor. Your task is to provide personalized career path recommendations for a user in India.
+/**
+ * All fields required to build a personalized career recommendation prompt.
+ * Every field maps directly from the Unified User Profile.
+ */
+export interface CareerPromptContext {
+  academicStream: string;
+  skills: string;
+  certifications: string;
+  interests: string;
+  preferredRoles: string;
+  education: string;
+  experience: string;
+  projects: string;
+}
+
+export const getRecommendationsPrompt = (ctx: CareerPromptContext) => `
+You are an expert career and skills advisor. Your task is to provide highly personalized career path recommendations for a user in India based on their complete, real profile.
 Your entire response MUST be a single, valid JSON object. Do not include any text, markdown formatting, or notes before or after the JSON object.
 
 The JSON object should have a single key "recommendations", which is an array of 3 career path objects.
 Each career path object must have the following keys:
 - "title": The name of the career path (e.g., "AI/Machine Learning Engineer").
-- "justification": A concise, one-sentence explanation of why it's a good fit for the user.
-- "roadmap": An array of 3-4 strings, with each string being a short, actionable step.
+- "justification": A concise, one-sentence explanation of why it's a good fit for THIS SPECIFIC USER — reference their actual skills, experience, or projects.
+- "roadmap": An array of 3-4 strings, each a short, actionable step tailored to bridge THIS USER's specific skill gaps.
 - "estimatedSalary": A typical annual salary range in India (e.g., "₹8,00,000 - ₹15,00,000 LPA").
 - "suggestedCertifications": An array of 2-3 relevant professional certifications.
 - "keyCompanies": An array of 2-3 notable companies in India that hire for this role.
 - "skillGapAnalysis": A JSON object containing:
-  - "readinessScore": An integer score (0-100) representing readiness.
+  - "readinessScore": An integer score (0-100) based on the user's ACTUAL skills listed below.
   - "estimatedTime": Estimated time to become ready (e.g., "4-6 Months").
-  - "currentSkills": Array of strings matching user skills that are relevant to this career.
+  - "currentSkills": Array of strings pulled from the user's actual skill list that are relevant to this career.
   - "missingSkills": Array of objects representing missing skills. Each object has "name" (string) and "level" (number, 0-60 representing current partial exposure).
-  - "topPrioritySkills": Array of top 3 priority skills to learn.
-  - "aiInsight": A concise personalized career recommendation insight under 25 words.
+  - "topPrioritySkills": Array of top 3 priority skills to learn based on THIS USER's specific gaps.
+  - "aiInsight": A concise personalized insight under 25 words that references this user's specific background.
 
-User's Profile:
-- Academic Stream: ${academicStream}
-- Skills: ${skills}
-- Interests: ${interests}
+User's Complete Profile:
+- Academic Stream / Background: ${ctx.academicStream}
+- Education: ${ctx.education || 'Not specified'}
+- Technical Skills: ${ctx.skills || 'Not specified'}
+- Certifications: ${ctx.certifications || 'Not specified'}
+- Career Interests / Preferred Industries: ${ctx.interests || 'General tech sector'}
+- Target Roles: ${ctx.preferredRoles || 'Open to suggestions based on profile'}
+- Work Experience: ${ctx.experience || 'Fresher / No prior work experience'}
+- Projects Built: ${ctx.projects || 'No projects specified'}
+
+CRITICAL INSTRUCTIONS:
+1. Base recommendations SPECIFICALLY on this user's actual skills, experience, and projects above.
+2. Do NOT produce generic recommendations — reference specific technologies from their skill list.
+3. If they have real work experience, tailor the roadmap to build on it, not restart from scratch.
+4. If "Work Experience" says "Fresher", recommend entry-level paths with strong project-building roadmaps.
+5. The three recommended careers must be distinct from each other and reflect the user's unique profile.
 `.trim();
 
 export const getComparisonPrompt = (career1: string, career2: string) => `

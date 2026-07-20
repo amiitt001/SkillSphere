@@ -4,6 +4,7 @@ import { onboardingEngine } from '@/services/onboarding/onboardingEngine';
 import { logger } from '@/services/logger';
 import { successResponse, errorResponse } from '@/utils';
 import { globalRateLimiter } from '@/lib/rateLimit';
+import { cacheProvider } from '@/shared/infrastructure/cache/cacheProvider';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,6 +92,15 @@ export async function PUT(request: NextRequest) {
     }
 
     const updatedProfile = await onboardingEngine.saveApprovedDraft(userId, draft);
+
+    // Invalidate all cached career recommendations for this user.
+    // The new resume may have completely different skills/experience.
+    try {
+      await cacheProvider.deleteByPrefix(`recommendations:${userId}:`);
+      logger.info(`[Question API PUT] Cleared stale recommendation cache for user: ${userId}`);
+    } catch (cacheErr) {
+      logger.warn('[Question API PUT] Failed to clear recommendation cache:', cacheErr);
+    }
 
     const nextData = await onboardingEngine.getStatusAndQuestion(userId);
     return successResponse({

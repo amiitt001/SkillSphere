@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { verifyAuth } from '@/lib/authMiddleware';
 import { onboardingEngine } from '@/services/onboarding/onboardingEngine';
+import { resumeIntelligenceBuilder } from '@/services/resume-intelligence';
 import { logger } from '@/services/logger';
 import { successResponse, errorResponse } from '@/utils';
 import { globalRateLimiter } from '@/lib/rateLimit';
@@ -38,22 +39,35 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Call the engine
-    const { draft, text } = await onboardingEngine.processResumeUpload(buffer, file.type || '');
+    if (process.env.NODE_ENV !== 'production') {
+      logger.info(`[Parse Resume API] [ReqId: ${requestId}] Development upload snapshot`, {
+        resumeFilename: file.name,
+        mimeType: file.type || '',
+      });
+    }
+
+    // Call the new Resume Intelligence Engine
+    const { draft, rawText } = await resumeIntelligenceBuilder.processUpload(
+      buffer,
+      file.type || '',
+      file.name,
+      userId
+    );
     const latency = Date.now() - start;
-    logger.info(`[Parse Resume API] [ReqId: ${requestId}] Parsed file successfully in ${latency}ms`);
+    logger.info(`[Parse Resume API] [ReqId: ${requestId}] Parsed file successfully via Resume Intelligence Engine in ${latency}ms`);
 
     // Persist resume details to the user document as the single source of truth
     if (userId !== 'anonymous') {
       const db = getFirestore();
       await db.collection('users').doc(userId).set({
         currentResumeFilename: file.name,
-        currentResumeText: text,
+        currentResumeText: rawText,
         updatedAt: new Date().toISOString()
       }, { merge: true });
     }
 
-    return successResponse({ success: true, data: draft });
+    const compatibleDraft = resumeIntelligenceBuilder.mapToDraft(draft);
+    return successResponse({ success: true, data: compatibleDraft });
   } catch (error: any) {
     logger.error(`[Parse Resume API] [ReqId: ${requestId}] Unexpected error:`, error);
     return errorResponse(error.stack || error.message || 'Error processing resume file.', 500);

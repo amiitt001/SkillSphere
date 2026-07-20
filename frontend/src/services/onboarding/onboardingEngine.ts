@@ -5,6 +5,7 @@ import { profileService } from '@/services/profile/profileService';
 import { smartQuestionEngine, SmartQuestion } from './smartQuestionEngine';
 import { profileCompleteness } from './profileCompleteness';
 import { logger } from '@/services/logger';
+import { resumeIntelligenceBuilder } from '@/services/resume-intelligence';
 
 export const onboardingEngine = {
   /**
@@ -25,21 +26,14 @@ export const onboardingEngine = {
    */
   async saveApprovedDraft(uid: string, draft: ParsedResumeDraft): Promise<UnifiedUserProfile | null> {
     logger.info(`[OnboardingEngine] Committing approved resume draft for user: ${uid}`);
-    return await profileBuilder.buildAndSave(uid, {
-      personalInfo: {
-        fullName: draft.personalInfo.fullName,
-        email: draft.personalInfo.email,
-        githubUrl: draft.personalInfo.githubUrl,
-        linkedinUrl: draft.personalInfo.linkedinUrl,
-        location: draft.personalInfo.location,
-      },
-      education: draft.education,
-      skills: draft.skills,
-      projects: draft.projects,
-      experience: draft.experience,
-      source: 'resume',
-      confidenceScores: draft.confidenceScores
-    });
+    
+    // Construct rich UnifiedCareerProfile from the approved draft (reflects user manual edits)
+    const careerProfile = await resumeIntelligenceBuilder.buildProfileFromDraft(uid, draft);
+    
+    // Commit the profile to Firestore (saves version log, hashes, enrichment features, and legacy fields)
+    const savedProfile = await resumeIntelligenceBuilder.commitApprovedProfile(uid, careerProfile);
+    
+    return savedProfile as unknown as UnifiedUserProfile;
   },
 
   /**

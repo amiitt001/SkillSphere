@@ -42,7 +42,7 @@ const ChevronDown = ({ rotated }: { rotated: boolean }) => (
 const Header = ({ onMenuClick, sidebarOpen = false, onCollapseToggle, isCollapsed, onSidebarHideToggle }: HeaderProps) => {
   const pathname = usePathname();
   const { user } = useAuth();
-  const isDashboard = pathname.startsWith('/dashboard') || pathname.startsWith('/history') || pathname.startsWith('/resume-helper') || pathname.startsWith('/profile') || pathname.startsWith('/profile-aggregator') || pathname.startsWith('/skill-quiz') || pathname.startsWith('/resume-analyzer') || pathname.startsWith('/project-generator') || pathname.startsWith('/interview-prep');
+  const isDashboard = pathname.startsWith('/dashboard') || pathname.startsWith('/history') || pathname.startsWith('/resume-helper') || pathname.startsWith('/profile') || pathname.startsWith('/profile-aggregator') || pathname.startsWith('/skill-quiz') || pathname.startsWith('/resume-analyzer') || pathname.startsWith('/project-generator') || pathname.startsWith('/interview-prep') || pathname.startsWith('/resume-intelligence');
   const [toolsOpen, setToolsOpen] = useState(false);
 
   // --- RENDER ---
@@ -165,6 +165,7 @@ const Header = ({ onMenuClick, sidebarOpen = false, onCollapseToggle, isCollapse
                   {[
                     { href: '/skill-quiz', icon: '🧩', label: 'Skill Quiz' },
                     { href: '/resume-analyzer', icon: '📊', label: 'Resume Analyzer' },
+                    { href: '/resume-intelligence', icon: '🧠', label: 'Resume Intelligence' },
                     { href: '/project-generator', icon: '🛠️', label: 'Project Generator' },
                     { href: '/interview-prep', icon: '🎤', label: 'Interview Prep' },
                     { href: '/resume-helper', icon: '📝', label: 'Resume Co-Pilot' },

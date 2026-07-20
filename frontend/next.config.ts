@@ -32,6 +32,15 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/resume-inteligence',
+        destination: '/resume-intelligence',
+        permanent: true,
+      },
+    ];
+  },
   // Security headers for production
   async headers() {
     return [

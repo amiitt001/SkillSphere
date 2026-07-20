@@ -4,7 +4,13 @@ import { logger } from '@/services/logger';
 
 // Lazy getter — ensures the Admin app is initialized before first use
 function getAdminDb() {
-  return getFirestore();
+  const db = getFirestore();
+  try {
+    db.settings({ ignoreUndefinedProperties: true });
+  } catch (e) {
+    // Settings already applied
+  }
+  return db;
 }
 
 export interface UnifiedProfileFieldMetadata {
@@ -15,6 +21,7 @@ export interface UnifiedProfileFieldMetadata {
 
 export interface UnifiedUserProfile {
   uid: string;
+  profileVersion?: number;
   personalInfo: {
     fullName: string;
     email: string;
@@ -31,6 +38,7 @@ export interface UnifiedUserProfile {
     stream?: string;
   }>;
   skills: string[];
+  certifications?: string[];
   projects: Array<{
     title: string;
     description: string;
@@ -71,7 +79,6 @@ export const profileMemory = {
       return null;
     } catch (error: any) {
       logger.error(`[ProfileMemory] Error getting profile for ${uid}:`, error);
-      // Don't swallow – re-throw so callers can surface the real error
       throw error;
     }
   },
@@ -98,6 +105,7 @@ export const profileMemory = {
       } as any,
       education: profile.education ?? existingProfile.education ?? [],
       skills: Array.from(new Set([...(existingProfile.skills || []), ...(profile.skills || [])])),
+      certifications: Array.from(new Set([...(existingProfile.certifications || []), ...(profile.certifications || [])])),
       projects: profile.projects ?? existingProfile.projects ?? [],
       experience: profile.experience ?? existingProfile.experience ?? [],
       careerGoals: {
@@ -105,6 +113,7 @@ export const profileMemory = {
         ...(profile.careerGoals || {}),
       } as any,
       profileCompleteness: profile.profileCompleteness ?? existingProfile.profileCompleteness ?? 0,
+      profileVersion: (existingProfile.profileVersion || 0) + 1,
       confidenceMetadata: {
         ...(existingProfile.confidenceMetadata || {}),
         ...(profile.confidenceMetadata || {}),
@@ -112,8 +121,10 @@ export const profileMemory = {
       lastUpdated: new Date().toISOString(),
     };
 
-    // Throws on permission/network errors – DO NOT catch here so callers surface the real message
-    await docRef.set({ unifiedProfile: mergedProfile }, { merge: true });
+    // Clean undefined fields to ensure Firestore save compatibility
+    const cleanProfile = JSON.parse(JSON.stringify(mergedProfile));
+
+    await docRef.set({ unifiedProfile: cleanProfile }, { merge: true });
     logger.info(`[ProfileMemory] Profile successfully saved for ${uid}`);
     return mergedProfile;
   }

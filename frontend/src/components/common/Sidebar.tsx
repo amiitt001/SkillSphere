@@ -121,6 +121,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed = false, onCollapseToggle, isHid
       items: [
         { href: '/recommendations', label: 'Recommend', icon: RecommendationIcon },
         { href: '/resume-analyzer', label: 'Resume Scan', icon: ResumeAnalyzerIcon },
+        { href: '/resume-intelligence', label: 'Resume Intel', icon: ResumeAnalyzerIcon },
         { href: '/resume-helper', label: 'Resume AI', icon: ResumeIcon },
         { href: '/interview-prep', label: 'Interview', icon: InterviewIcon },
         { href: '/skill-quiz', label: 'Skill Quiz', icon: QuizIcon },
